@@ -1,4 +1,5 @@
 #include "command.hpp"
+#include "logging.hpp"
 
 int main(int argc, char *argv[])
 {
