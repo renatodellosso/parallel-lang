@@ -1,5 +1,6 @@
 #include "cli.hpp"
 #include "logging.hpp"
+#include "compiler/compiler.hpp"
 #include <map>
 #include <functional>
 #include <filesystem>
@@ -113,6 +114,9 @@ bool validateArgs(const CliArgs &args)
 
 ExitCode executeCommand(const CliArgs &args)
 {
+  if (args.mode == CliMode::Compile)
+    return compile(args);
+
   return ExitCode::Ok;
 }
 
