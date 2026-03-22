@@ -33,12 +33,12 @@ jobs:
         with:
           cmakeVersion: 4.1.1
       - name: Configure CMake
-        run: cmake -B build
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build
       - name: Run Tests
         run: build/Tests
         if: ${{ matrix.os != 'windows-latest' }}
       - name: Run Tests (Windows)
-        run: ls && ls build && ./build/Tests.exe
+        run: ls && ls build && ./build/Release/Tests.exe
         if: ${{ matrix.os == 'windows-latest' }}
