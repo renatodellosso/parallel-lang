@@ -5,6 +5,9 @@
 #include <string>
 #include <memory>
 
+#define DISABLE_COUT auto macro_coutRedirect = redirectCout();
+#define REENABLE_COUT restoreCout(std::move(macro_coutRedirect));
+
 struct CoutRedirect
 {
   std::ostringstream oss;

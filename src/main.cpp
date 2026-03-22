@@ -3,6 +3,5 @@
 
 int main(int argc, char *argv[])
 {
-  log("main", "Starting CLI");
-  return 0;
+  return (int)runCli(argc, argv);
 }

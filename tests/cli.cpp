@@ -67,3 +67,31 @@ TEST(parseArgs, parsesShortcuts)
   auto res = parseArgs(argc, argv);
   EXPECT_EQ(res.mode, CliMode::Compile);
 }
+
+TEST(validateArgs, returnsTrueForValidArgs)
+{
+  CliArgs args = {
+      .mode = CliMode::Compile,
+      .target = "DESIGN.md"};
+
+  EXPECT_TRUE(validateArgs(args));
+}
+
+TEST(validateArgs, returnsFalseForInvalidArgs)
+{
+  DISABLE_COUT
+
+  CliArgs args = {
+      .mode = CliMode::Compile};
+  EXPECT_FALSE(validateArgs(args));
+
+  args = {
+      .target = "DESIGN.md"};
+  EXPECT_FALSE(validateArgs(args));
+
+  args = {
+      .target = "DOESNT_EXIST.md"};
+  EXPECT_FALSE(validateArgs(args));
+
+  REENABLE_COUT
+}

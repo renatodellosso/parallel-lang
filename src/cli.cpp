@@ -2,6 +2,7 @@
 #include "logging.hpp"
 #include <map>
 #include <functional>
+#include <filesystem>
 
 const char *LOCATION = "CLI";
 
@@ -10,10 +11,10 @@ const std::unordered_map<std::string, std::string> shortcuts = {
     {"-c", "--compile"},
     {"-i", "--interpret"}};
 
-#define OPTIONS_HANDLER_PARAMS CommandLineArgs &args, int i, int count, char *argv[]
+#define OPTIONS_HANDLER_PARAMS CliArgs &args, int i, int count, char *argv[]
 
 // key(options struct, current arg index, arg count, args) => extra args consumed
-const std::unordered_map<std::string, std::function<int(CommandLineArgs &, int, int, char *[])>>
+const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, char *[])>>
     options = {{"--target", [](OPTIONS_HANDLER_PARAMS) -> int
                 {
                   if (i == count - 1)
@@ -60,10 +61,10 @@ std::string resolveShortcuts(std::string key)
   return key;
 }
 
-CommandLineArgs parseArgs(int argc, char *argv[])
+CliArgs parseArgs(int argc, char *argv[])
 {
   std::unordered_map<std::string, std::string> argMap;
-  CommandLineArgs args = {
+  CliArgs args = {
       .mode = CliMode::Unset};
 
   // argv[0] is the executable path
@@ -83,4 +84,47 @@ CommandLineArgs parseArgs(int argc, char *argv[])
   }
 
   return args;
+}
+
+bool validateArgs(const CliArgs &args)
+{
+  bool valid = true;
+
+  if (args.mode == CliMode::Unset)
+  {
+    logError(LOCATION, "CLI mode was not set to either compile or interpret!");
+    valid = false;
+  }
+
+  if (args.target.length() == 0)
+  {
+    logError(LOCATION, "Target was not set!");
+    valid = false;
+  }
+
+  if (!std::filesystem::exists(args.target))
+  {
+    logError(LOCATION, "Target file does not exist!");
+    valid = false;
+  }
+
+  return valid;
+}
+
+ExitCode executeCommand(const CliArgs &args)
+{
+  return ExitCode::Ok;
+}
+
+ExitCode runCli(int argc, char *argv[])
+{
+  CliArgs args = parseArgs(argc, argv);
+
+  if (!validateArgs(args))
+  {
+    logError(LOCATION, "CLI arguments are invalid!");
+    return ExitCode::InvalidCli;
+  }
+
+  return executeCommand(args);
 }
