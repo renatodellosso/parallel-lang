@@ -5,4 +5,24 @@
 #include <vector>
 #include <fstream>
 
-std::unique_ptr<std::vector<Token>> tokenize(std::ifstream stream);
+class Tokenizer
+{
+private:
+  std::istream &stream;
+  std::unique_ptr<std::vector<Token>> tokens;
+  int line;
+
+  void skipWhitespace();
+  void parseToken();
+
+public:
+  Tokenizer(std::istream &stream) : stream(stream), tokens(std::make_unique<std::vector<Token>>()), line(1) {}
+  /**
+   * Parses everything from the stream
+   */
+  void parse();
+  /**
+   * Closes the tokenizer and returns the tokens
+   */
+  std::unique_ptr<std::vector<Token>> close();
+};

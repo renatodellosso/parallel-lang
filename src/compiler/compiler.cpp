@@ -5,5 +5,5 @@
 ExitCode compile(const CliArgs &args)
 {
   std::ifstream stream(args.target);
-  auto tokens = tokenize(std::move(stream));
+  // auto tokens = tokenize(std::move(stream));
 }
