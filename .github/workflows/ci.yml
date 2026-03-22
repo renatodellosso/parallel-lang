@@ -37,4 +37,8 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Run Tests
-        run: ./build/Tests
+        run: build/Tests
+        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Run Tests (Windows)
+        run: build\Tests.exe
+        if: ${{ matrix.os == 'windows-latest' }}
