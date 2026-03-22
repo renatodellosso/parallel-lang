@@ -34,6 +34,6 @@ target_sources(Tests
     ${test_sources}
 )
 
-target_link_libraries(Tests PRIVATE GTest::gtest_main)
+target_link_libraries(Tests PRIVATE GTest::gtest_main gmock_main)
 include(GoogleTest)
 gtest_discover_tests(Tests)
