@@ -1,4 +1,4 @@
-#include "command.hpp"
+#include "cli.hpp"
 #include "logging.hpp"
 
 int main(int argc, char *argv[])
