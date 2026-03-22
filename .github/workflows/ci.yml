@@ -40,5 +40,5 @@ jobs:
         run: build/Tests
         if: ${{ matrix.os != 'windows-latest' }}
       - name: Run Tests (Windows)
-        run: ls && ls build && ls build/Release && ./build/Release/Tests.exe
+        run: ./build/Debug/Tests.exe
         if: ${{ matrix.os == 'windows-latest' }}
