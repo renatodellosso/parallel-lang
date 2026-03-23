@@ -124,7 +124,7 @@ TEST(Tokenizer, handlesWhitespaceInsideStrings)
 TEST(Tokenizer, tracksLineNumbersInMultilineStrings)
 {
   char *rawText = new char[]{
-      '"', '\n', '"', ' ', '"', 'a', '"'};
+      '"', '\n', '"', ' ', '"', 'a', '"', '\0'};
   std::string text(rawText);
 
   std::istringstream stream(text);
