@@ -71,8 +71,8 @@ TEST(parseArgs, parsesShortcuts)
 TEST(validateArgs, returnsTrueForValidArgs)
 {
   CliArgs args = {
-      .mode = CliMode::Compile,
-      .target = "DESIGN.md"};
+      .target = "DESIGN.md",
+      .mode = CliMode::Compile};
 
   EXPECT_TRUE(validateArgs(args));
 }
