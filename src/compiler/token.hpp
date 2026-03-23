@@ -18,6 +18,7 @@ enum class TokenType
   Equals,
   LessThan,
   GreaterThan,
+  Comma,
   Literal,
   Identifier
 };

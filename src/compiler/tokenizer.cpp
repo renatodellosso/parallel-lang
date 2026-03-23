@@ -18,7 +18,7 @@ static bool isNumber(char c)
 
 static bool isAlphanumeric(char c)
 {
-  return isAlpha(c) || isAlphanumeric(c);
+  return isAlpha(c) || isNumber(c);
 }
 
 void Tokenizer::skipWhitespace()
@@ -83,6 +83,9 @@ void Tokenizer::parseToken()
   case '>':
     token.type = TokenType::GreaterThan;
     break;
+  case ',':
+    token.type = TokenType::Comma;
+    break;
 
   default:
     break;
@@ -90,20 +93,27 @@ void Tokenizer::parseToken()
 
   if (token.type != TokenType::Error)
   {
+    token.raw = raw;
     tokens.get()->push_back(token);
     return;
   }
-
-  std::cout << "(multi-char)";
 
   // Multi-char tokens
 
   if (c == '"')
   {
     // String
-    for (c = stream.get(); raw.at(raw.size() - 1) != '"' && raw.at(raw.size() - 2) != '\\'; c = stream.get())
+    for (c = stream.peek(); raw.size() < 3 || raw.at(raw.size() - 1) != '"' && raw.at(raw.size() - 2) != '\\'; c = stream.peek())
     {
+      stream.get();
+
       raw += c;
+
+      if (c == '\n' || c == '\r')
+        line++;
+
+      if (stream.eof())
+        break;
     }
 
     token.type = TokenType::Literal;
@@ -111,21 +121,35 @@ void Tokenizer::parseToken()
   else if (isNumber(c))
   {
     // Number
-    for (c = stream.get(); !stream.eof() && isNumber(c); c = stream.get())
+    for (c = stream.peek(); isNumber(c); c = stream.peek())
     {
+      stream.get();
+
       raw += c;
+
+      if (stream.eof())
+        break;
     }
 
     token.type = TokenType::Literal;
   }
   else
   {
-    for (c = stream.get(); !stream.eof() && isAlphanumeric(c); c = stream.get())
+    // Identifier
+    for (c = stream.peek(); isAlphanumeric(c); c = stream.peek())
     {
+      stream.get();
+
       raw += c;
+
+      if (stream.eof())
+        break;
     }
+
     token.type = TokenType::Identifier;
   }
+
+  token.raw = raw;
 
   tokens.get()->push_back(token);
 }
