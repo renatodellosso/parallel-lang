@@ -20,6 +20,8 @@ TEST(Tokenizer, identifiesSingleCharTokenTypes)
   EXPECT_EQ(tokens.size(), singleCharTypes.size());
   for (int i = 0; i < tokens.size(); i++)
   {
+    if (i >= singleCharTypes.size())
+      break;
     EXPECT_EQ(tokens[i].type, singleCharTypes[i]);
   }
 

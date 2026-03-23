@@ -1,4 +1,5 @@
 #include "tokenizer.hpp"
+#include <iostream>
 
 static bool isWhitespace(char c)
 {
@@ -22,8 +23,9 @@ static bool isAlphanumeric(char c)
 
 void Tokenizer::skipWhitespace()
 {
-  for (char c = stream.get(); !stream.eof() && isWhitespace(c); c = stream.get())
+  for (char c = stream.peek(); !stream.eof() && isWhitespace(c); c = stream.peek())
   {
+    stream.get(); // We know it's whitespace, so we read the character
     if (c == '\n' || c == '\r')
       line++;
   }
@@ -34,6 +36,8 @@ void Tokenizer::parseToken()
   skipWhitespace();
 
   char c = stream.get();
+  if (stream.eof())
+    return;
 
   std::string raw;
   raw += c;
@@ -90,27 +94,36 @@ void Tokenizer::parseToken()
     return;
   }
 
+  std::cout << "(multi-char)";
+
   // Multi-char tokens
 
   if (c == '"')
   {
     // String
     for (c = stream.get(); raw.at(raw.size() - 1) != '"' && raw.at(raw.size() - 2) != '\\'; c = stream.get())
+    {
       raw += c;
+    }
 
     token.type = TokenType::Literal;
   }
   else if (isNumber(c))
   {
+    // Number
     for (c = stream.get(); !stream.eof() && isNumber(c); c = stream.get())
+    {
       raw += c;
+    }
 
     token.type = TokenType::Literal;
   }
   else
   {
     for (c = stream.get(); !stream.eof() && isAlphanumeric(c); c = stream.get())
+    {
       raw += c;
+    }
     token.type = TokenType::Identifier;
   }
 
