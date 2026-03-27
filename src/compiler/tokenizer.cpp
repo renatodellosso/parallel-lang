@@ -42,7 +42,7 @@ void Tokenizer::parseToken()
   std::string raw;
   raw += c;
 
-  Token token{.type = TokenType::Error, .line = line};
+  Token token{.type = TokenType::Error, .subtype = TokenSubtype::None, .line = line};
 
   // Single-char tokens
   switch (c)
@@ -117,6 +117,7 @@ void Tokenizer::parseToken()
     }
 
     token.type = TokenType::Literal;
+    token.subtype = TokenSubtype::String;
   }
   else if (isNumber(c))
   {
@@ -132,6 +133,7 @@ void Tokenizer::parseToken()
     }
 
     token.type = TokenType::Literal;
+    token.subtype = TokenSubtype::Number;
   }
   else
   {
@@ -146,7 +148,13 @@ void Tokenizer::parseToken()
         break;
     }
 
-    token.type = TokenType::Identifier;
+    if (raw == "false" || raw == "true")
+    {
+      token.type = TokenType::Literal;
+      token.subtype = TokenSubtype::Bool;
+    }
+    else
+      token.type = TokenType::Identifier;
   }
 
   token.raw = raw;

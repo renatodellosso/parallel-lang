@@ -79,6 +79,7 @@ TEST(Tokenizer, identifiesStrings)
 
   ASSERT_EQ(tokens.size(), 1);
   EXPECT_EQ(tokens[0].type, TokenType::Literal);
+  EXPECT_EQ(tokens[0].subtype, TokenSubtype::String);
   EXPECT_EQ(tokens[0].raw, text);
 
   // Cleanup
@@ -97,6 +98,7 @@ TEST(Tokenizer, identifiesStringsMixedWithOtherTypes)
 
   ASSERT_EQ(tokens.size(), 3);
   EXPECT_EQ(tokens[1].type, TokenType::Literal);
+  EXPECT_EQ(tokens[1].subtype, TokenSubtype::String);
   EXPECT_EQ(tokens[1].raw, "\"abc\"");
 
   // Cleanup
@@ -115,6 +117,7 @@ TEST(Tokenizer, handlesWhitespaceInsideStrings)
 
   ASSERT_EQ(tokens.size(), 1);
   EXPECT_EQ(tokens[0].type, TokenType::Literal);
+  EXPECT_EQ(tokens[0].subtype, TokenSubtype::String);
   EXPECT_EQ(tokens[0].raw, text);
 
   // Cleanup
@@ -153,6 +156,7 @@ TEST(Tokenizer, identifiesNumbers)
 
   ASSERT_EQ(tokens.size(), 1);
   EXPECT_EQ(tokens[0].type, TokenType::Literal);
+  EXPECT_EQ(tokens[0].subtype, TokenSubtype::Number);
   EXPECT_EQ(tokens[0].raw, text);
 
   // Cleanup
@@ -171,7 +175,46 @@ TEST(Tokenizer, identifiesNumbersMixedWithOtherTypes)
 
   ASSERT_EQ(tokens.size(), 3);
   EXPECT_EQ(tokens[1].type, TokenType::Literal);
+  EXPECT_EQ(tokens[1].subtype, TokenSubtype::Number);
   EXPECT_EQ(tokens[1].raw, "123");
+
+  // Cleanup
+  delete tokenizer;
+}
+
+TEST(Tokenizer, identifiesBooleans)
+{
+  std::string text("false");
+
+  std::istringstream stream(text);
+  Tokenizer *tokenizer = new Tokenizer(stream);
+
+  tokenizer->parse();
+  auto tokens = *(tokenizer->close().get());
+
+  ASSERT_EQ(tokens.size(), 1);
+  EXPECT_EQ(tokens[0].type, TokenType::Literal);
+  EXPECT_EQ(tokens[0].subtype, TokenSubtype::Bool);
+  EXPECT_EQ(tokens[0].raw, text);
+
+  // Cleanup
+  delete tokenizer;
+}
+
+TEST(Tokenizer, identifiesBooleanssMixedWithOtherTypes)
+{
+  std::string text(";false)");
+
+  std::istringstream stream(text);
+  Tokenizer *tokenizer = new Tokenizer(stream);
+
+  tokenizer->parse();
+  auto tokens = *(tokenizer->close().get());
+
+  ASSERT_EQ(tokens.size(), 3);
+  EXPECT_EQ(tokens[1].type, TokenType::Literal);
+  EXPECT_EQ(tokens[1].subtype, TokenSubtype::Bool);
+  EXPECT_EQ(tokens[1].raw, "false");
 
   // Cleanup
   delete tokenizer;
@@ -197,11 +240,11 @@ TEST(Tokenizer, identifiesIdentifiers)
 
 TEST(Tokenizer, identifiesMixOfTypes)
 {
-  std::string text("int abc(1, \"test\");");
+  std::string text("int abc(1, \"test\");true");
   std::vector<TokenType> expected = {
       TokenType::Identifier, TokenType::Identifier,
       TokenType::LeftParen, TokenType::Literal, TokenType::Comma,
-      TokenType::Literal, TokenType::RightParen, TokenType::Semicolon};
+      TokenType::Literal, TokenType::RightParen, TokenType::Semicolon, TokenType::Literal};
 
   std::istringstream stream(text);
   Tokenizer *tokenizer = new Tokenizer(stream);
