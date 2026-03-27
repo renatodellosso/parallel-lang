@@ -1,5 +1,6 @@
 #include "compiler.hpp"
 #include "tokenizer.hpp"
+#include "astBuilder.hpp"
 #include "../logging.hpp"
 #include <fstream>
 
@@ -12,6 +13,11 @@ ExitCode compile(const CliArgs &args)
   auto tokens = tokenizer->close();
   delete tokenizer;
 
-  log("Compiler", "Compiled {:d} tokens", tokens.get()->size());
+  log("Compiler", "Parsed {:d} tokens. Building AST...", tokens.get()->size());
+
+  AstBuilder astBuilder(std::move(tokens));
+  astBuilder.build();
+
+  log("Compiler", "Built AST");
   return ExitCode::Ok;
 }
