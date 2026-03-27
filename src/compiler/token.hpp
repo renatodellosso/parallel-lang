@@ -23,9 +23,18 @@ enum class TokenType
   Identifier
 };
 
+enum class TokenSubtype
+{
+  None,
+  String,
+  Number,
+  Bool
+};
+
 struct Token
 {
   TokenType type;
+  TokenSubtype subtype;
   std::string raw;
   int line;
 };
