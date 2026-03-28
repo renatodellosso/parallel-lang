@@ -5,13 +5,19 @@ AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens)
   errors = std::make_unique<std::vector<SyntaxError>>();
   this->tokens = std::move(tokens);
   root = std::make_unique<BlockExpression>();
+  currExpr = std::make_unique<std::optional<Expression>>(std::optional<Expression>());
   line = 0;
   nextTokenIndex = 0;
 }
 
+bool AstBuilder::hasNext()
+{
+  return nextTokenIndex < tokens.get()->size();
+}
+
 Token AstBuilder::next()
 {
-  if (nextTokenIndex >= tokens.get()->size())
+  if (!hasNext())
     throw "No more tokens!";
 
   auto token = tokens.get()->operator[](nextTokenIndex);
@@ -24,19 +30,52 @@ Token AstBuilder::next()
 
 Token AstBuilder::peek()
 {
-  if (nextTokenIndex >= tokens.get()->size())
+  auto tokens = this->tokens.get();
+  if (!hasNext())
     throw "No more tokens!";
 
-  return tokens.get()->operator[](nextTokenIndex);
+  return tokens->operator[](nextTokenIndex);
 }
 
-bool AstBuilder::lineEnding()
+bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype)
 {
-  return next().type == TokenType::Semicolon;
+  if (!hasNext())
+    return false;
+
+  Token nextToken = peek();
+  if (nextToken.type != type)
+    return false;
+  if (subtype.has_value() && nextToken.subtype != subtype.value())
+    return false;
+  return true;
+}
+
+std::unique_ptr<std::optional<Expression>> AstBuilder::buildLine()
+{
+  // Reset current expression
+  currExpr = std::make_unique<std::optional<Expression>>(std::optional<Expression>());
+
+  return std::move(currExpr);
+}
+
+std::unique_ptr<BlockExpression> AstBuilder::buildBlock()
+{
+  BlockExpression block;
+
+  // Loop until we have no more expressions
+  while (hasNext())
+  {
+    auto expr = *buildLine().get();
+    if (expr.has_value())
+      block.expressions.push_back(expr.value());
+  }
+
+  return std::move(std::make_unique<BlockExpression>(block));
 }
 
 void AstBuilder::build()
 {
+  root = std::move(buildBlock());
 }
 
 void AstBuilder::syntaxError(std::string msg)
@@ -44,7 +83,7 @@ void AstBuilder::syntaxError(std::string msg)
   errors.get()->push_back({line, msg});
 
   // Read until we hit semicolon to end the line
-  while (!lineEnding())
+  while (hasNext() && next().type != TokenType::Semicolon)
     continue;
 }
 
