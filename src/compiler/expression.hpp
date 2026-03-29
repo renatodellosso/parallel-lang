@@ -15,7 +15,7 @@ struct RootExpression : public Expression
 {
   Token token;
 
-  RootExpression(Token token) : Expression(InstructionType::GetLiteral), token(token) {}
+  RootExpression(InstructionType type, Token token) : Expression(type), token(token) {}
 };
 
 struct UnaryExpression : public Expression

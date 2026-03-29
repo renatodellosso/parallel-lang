@@ -49,9 +49,51 @@ bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype)
   return true;
 }
 
-std::optional<Expression> AstBuilder::buildExpression(std::optional<Expression> prev)
+std::optional<Expression> AstBuilder::extendExpression(std::optional<Expression> prev)
 {
-  
+  if (!prev.has_value())
+  {
+    // No previous value
+    if (match(TokenType::Identifier))
+      return std::optional(RootExpression(InstructionType::GetIdentifier, next()));
+    if (match(TokenType::Literal))
+      return std::optional(RootExpression(InstructionType::GetLiteral, next()));
+
+    syntaxError("Could not parse line: No valid starting expression");
+    return std::nullopt;
+  }
+
+  // Binary operators
+  InstructionType type;
+  switch (peek().type)
+  {
+  case TokenType::Plus:
+    type = InstructionType::Add;
+    break;
+  case TokenType::Minus:
+    type = InstructionType::Subtract;
+    break;
+  case TokenType::Star:
+    type = InstructionType::Multiply;
+    break;
+  case TokenType::Slash:
+    type = InstructionType::Divide;
+    break;
+
+  default:
+    syntaxError("Could not parse line: No matching instruction type");
+    return std::nullopt;
+  }
+
+  // Parse right operand
+  auto nextExpr = extendExpression(std::nullopt);
+  if (!nextExpr.has_value())
+  {
+    syntaxError("Could not parse line: Binary expression has no right operand");
+    return std::nullopt;
+  }
+
+  return BinaryExpression(type, prev.value(), nextExpr.value());
 }
 
 std::optional<Expression> AstBuilder::buildLine()
@@ -62,7 +104,9 @@ std::optional<Expression> AstBuilder::buildLine()
   // Continually add onto expression
   while (!match(TokenType::Semicolon))
   {
-    curr = buildExpression(curr);
+    curr = extendExpression(curr);
+    if (!curr.has_value())
+      break;
   }
 
   return curr;

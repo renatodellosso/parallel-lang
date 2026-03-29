@@ -29,7 +29,8 @@ private:
 
   // Building methods
 
-  std::optional<Expression> buildExpression(std::optional<Expression> prev);
+  // Adds (usually) one token to the expression
+  std::optional<Expression> extendExpression(std::optional<Expression> prev);
   std::optional<Expression> buildLine();
   BlockExpression buildBlock();
 
