@@ -9,9 +9,9 @@
 class AstBuilder
 {
 private:
-  std::unique_ptr<std::vector<SyntaxError>> errors;
+  std::shared_ptr<std::vector<SyntaxError>> errors;
   std::unique_ptr<std::vector<Token>> tokens;
-  std::unique_ptr<BlockExpression> root;
+  std::shared_ptr<BlockExpression> root;
 
   // Token reading
 
@@ -30,8 +30,8 @@ private:
   // Building methods
 
   // Adds (usually) one token to the expression
-  std::optional<Expression> extendExpression(std::optional<Expression> prev);
-  std::optional<Expression> buildLine();
+  std::optional<std::unique_ptr<Expression>> extendExpression(std::optional<std::unique_ptr<Expression>> prev);
+  std::optional<std::unique_ptr<Expression>> buildLine();
   BlockExpression buildBlock();
 
   void syntaxError(std::string msg);
@@ -40,6 +40,6 @@ public:
   AstBuilder(std::unique_ptr<std::vector<Token>> tokens);
   void build();
 
-  std::unique_ptr<std::vector<SyntaxError>> getErrors();
-  std::unique_ptr<BlockExpression> getRoot();
+  std::shared_ptr<std::vector<SyntaxError>> getErrors();
+  std::shared_ptr<BlockExpression> getRoot();
 };

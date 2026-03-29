@@ -3,12 +3,15 @@
 #include "../instruction.hpp"
 #include "token.hpp"
 #include <vector>
+#include <string>
 
 struct Expression
 {
   InstructionType type;
 
   Expression(InstructionType type) : type(type) {}
+
+  virtual std::string toString() const;
 };
 
 struct RootExpression : public Expression
@@ -16,26 +19,36 @@ struct RootExpression : public Expression
   Token token;
 
   RootExpression(InstructionType type, Token token) : Expression(type), token(token) {}
+
+  std::string toString() const override;
 };
 
 struct UnaryExpression : public Expression
 {
-  Expression root;
+  std::unique_ptr<Expression> root;
 
-  UnaryExpression(InstructionType type, Expression root) : Expression(type), root(root) {}
+  UnaryExpression(InstructionType type, std::unique_ptr<Expression> root) : Expression(type), root(std::move(root)) {}
+
+  std::string toString() const override;
 };
 
 struct BinaryExpression : public Expression
 {
-  Expression left, right;
+  std::unique_ptr<Expression> left, right;
 
-  BinaryExpression(InstructionType type, Expression left, Expression right) : Expression(type), left(left), right(right) {}
+  BinaryExpression(InstructionType type, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+      : Expression(type), left(std::move(left)), right(std::move(right)) {}
+
+  std::string toString() const override;
 };
 
 struct BlockExpression : public Expression
 {
-  std::vector<Expression> expressions;
+  std::vector<std::unique_ptr<Expression>> expressions;
 
-  BlockExpression() : BlockExpression(std::vector<Expression>()) {}
-  BlockExpression(std::vector<Expression> expressions) : Expression(InstructionType::Block), expressions(expressions) {}
+  BlockExpression() : BlockExpression(std::vector<std::unique_ptr<Expression>>()) {}
+  BlockExpression(std::vector<std::unique_ptr<Expression>> expressions)
+      : Expression(InstructionType::Block), expressions(std::move(expressions)) {}
+
+  std::string toString() const override;
 };

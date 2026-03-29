@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../src/compiler/token.hpp"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -24,3 +25,9 @@ std::unique_ptr<CoutRedirect> redirectCout();
  * output.
  */
 std::string restoreCout(std::unique_ptr<CoutRedirect> redirect);
+
+#define EXPECT_TOKEN_EQ(lhs, rhs)      \
+  EXPECT_EQ(lhs.type, rhs.type);       \
+  EXPECT_EQ(lhs.subtype, rhs.subtype); \
+  EXPECT_EQ(lhs.line, rhs.line);       \
+  EXPECT_EQ(lhs.raw, rhs.raw);

@@ -1,10 +1,11 @@
 #include "astBuilder.hpp"
+#include "../logging.hpp"
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens)
 {
-  errors = std::make_unique<std::vector<SyntaxError>>();
+  errors = std::make_shared<std::vector<SyntaxError>>();
   this->tokens = std::move(tokens);
-  root = std::make_unique<BlockExpression>();
+  root = std::make_shared<BlockExpression>();
   line = 0;
   nextTokenIndex = 0;
 }
@@ -17,13 +18,14 @@ bool AstBuilder::hasNext()
 Token AstBuilder::next()
 {
   if (!hasNext())
-    throw "No more tokens!";
+    throw std::runtime_error("Attempted to next() when there are no more tokens!");
 
   auto token = tokens.get()->operator[](nextTokenIndex);
 
   line = token.line;
 
   nextTokenIndex++;
+  log("AstBuilder", "Consumed token {}", token.raw);
   return token;
 }
 
@@ -31,7 +33,7 @@ Token AstBuilder::peek()
 {
   auto tokens = this->tokens.get();
   if (!hasNext())
-    throw "No more tokens!";
+    throw std::runtime_error("Attempted to peek() when there are no more tokens!");
 
   return tokens->operator[](nextTokenIndex);
 }
@@ -49,21 +51,25 @@ bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype)
   return true;
 }
 
-std::optional<Expression> AstBuilder::extendExpression(std::optional<Expression> prev)
+std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev)
 {
   if (!prev.has_value())
   {
     // No previous value
-    if (match(TokenType::Identifier))
-      return std::optional(RootExpression(InstructionType::GetIdentifier, next()));
-    if (match(TokenType::Literal))
-      return std::optional(RootExpression(InstructionType::GetLiteral, next()));
 
-    syntaxError("Could not parse line: No valid starting expression");
-    return std::nullopt;
+    // Specify RootExpression as type to make_unique to ensure it doesn't become just an Expression
+    if (match(TokenType::Identifier))
+      return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetIdentifier, next())));
+    if (match(TokenType::Literal))
+      return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetLiteral, next())));
+
+    throw std::runtime_error("Could not parse line: No valid starting expression");
   }
 
   // Binary operators
+  if (!hasNext())
+    throw std::runtime_error("Could not parse line: No matching instruction type");
+
   InstructionType type;
   switch (peek().type)
   {
@@ -81,32 +87,42 @@ std::optional<Expression> AstBuilder::extendExpression(std::optional<Expression>
     break;
 
   default:
-    syntaxError("Could not parse line: No matching instruction type");
-    return std::nullopt;
+    throw std::runtime_error("Could not parse line: No matching instruction type");
   }
+
+  next(); // Be sure to consume the token!
 
   // Parse right operand
   auto nextExpr = extendExpression(std::nullopt);
   if (!nextExpr.has_value())
   {
-    syntaxError("Could not parse line: Binary expression has no right operand");
-    return std::nullopt;
+    throw std::runtime_error("Could not parse line: Binary expression has no right operand");
   }
 
-  return BinaryExpression(type, prev.value(), nextExpr.value());
+  return std::make_optional(
+      std::make_unique<BinaryExpression>(BinaryExpression(type, std::move(prev.value()), std::move(nextExpr.value()))));
 }
 
-std::optional<Expression> AstBuilder::buildLine()
+std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine()
 {
   // Reset current expression
-  auto curr = std::optional<Expression>();
+  std::optional<std::unique_ptr<Expression>> curr = std::nullopt;
 
   // Continually add onto expression
-  while (!match(TokenType::Semicolon))
+  try
   {
-    curr = extendExpression(curr);
-    if (!curr.has_value())
-      break;
+    while (!match(TokenType::Semicolon))
+    {
+      curr = extendExpression(std::move(curr));
+      if (!curr.has_value())
+        break;
+    }
+
+    next(); // Consume semicolon
+  }
+  catch (const std::runtime_error &e)
+  {
+    syntaxError(e.what());
   }
 
   return curr;
@@ -121,7 +137,7 @@ BlockExpression AstBuilder::buildBlock()
   {
     auto expr = buildLine();
     if (expr.has_value())
-      block.expressions.push_back(expr.value());
+      block.expressions.push_back(std::move(expr.value()));
   }
 
   return block;
@@ -137,16 +153,16 @@ void AstBuilder::syntaxError(std::string msg)
   errors.get()->push_back({line, msg});
 
   // Read until we hit semicolon to end the line
-  while (hasNext() && next().type != TokenType::Semicolon)
-    continue;
+  while (hasNext() && match(TokenType::Semicolon))
+    next();
 }
 
-std::unique_ptr<std::vector<SyntaxError>> AstBuilder::getErrors()
+std::shared_ptr<std::vector<SyntaxError>> AstBuilder::getErrors()
 {
   return std::move(errors);
 }
 
-std::unique_ptr<BlockExpression> AstBuilder::getRoot()
+std::shared_ptr<BlockExpression> AstBuilder::getRoot()
 {
   return std::move(root);
 }
