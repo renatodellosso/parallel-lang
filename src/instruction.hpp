@@ -4,6 +4,7 @@ enum class InstructionType
 {
   Block,
   GetLiteral,
+  GetIdentifier,
   Set,
   Add,
   Subtract,

@@ -12,7 +12,6 @@ private:
   std::unique_ptr<std::vector<SyntaxError>> errors;
   std::unique_ptr<std::vector<Token>> tokens;
   std::unique_ptr<BlockExpression> root;
-  std::unique_ptr<std::optional<Expression>> currExpr;
 
   // Token reading
 
@@ -22,15 +21,17 @@ private:
   bool hasNext();
   Token next();
   Token peek();
-  // Returns true if the next token has the specified type. NOTE: Returns false if there is no next token
-  bool match(TokenType type, std::optional<TokenSubtype> subtype);
-
-  // Token filtering
+  /**
+   * Returns true if the next token has the specified type. NOTE: Returns false if there is no next token.
+   * Does not consume the token.
+   */
+  bool match(TokenType type, std::optional<TokenSubtype> subtype = std::nullopt);
 
   // Building methods
 
-  std::unique_ptr<std::optional<Expression>> buildLine();
-  std::unique_ptr<BlockExpression> buildBlock();
+  std::optional<Expression> buildExpression(std::optional<Expression> prev);
+  std::optional<Expression> buildLine();
+  BlockExpression buildBlock();
 
   void syntaxError(std::string msg);
 

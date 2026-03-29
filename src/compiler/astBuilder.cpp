@@ -5,7 +5,6 @@ AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens)
   errors = std::make_unique<std::vector<SyntaxError>>();
   this->tokens = std::move(tokens);
   root = std::make_unique<BlockExpression>();
-  currExpr = std::make_unique<std::optional<Expression>>(std::optional<Expression>());
   line = 0;
   nextTokenIndex = 0;
 }
@@ -50,32 +49,43 @@ bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype)
   return true;
 }
 
-std::unique_ptr<std::optional<Expression>> AstBuilder::buildLine()
+std::optional<Expression> AstBuilder::buildExpression(std::optional<Expression> prev)
 {
-  // Reset current expression
-  currExpr = std::make_unique<std::optional<Expression>>(std::optional<Expression>());
-
-  return std::move(currExpr);
+  
 }
 
-std::unique_ptr<BlockExpression> AstBuilder::buildBlock()
+std::optional<Expression> AstBuilder::buildLine()
+{
+  // Reset current expression
+  auto curr = std::optional<Expression>();
+
+  // Continually add onto expression
+  while (!match(TokenType::Semicolon))
+  {
+    curr = buildExpression(curr);
+  }
+
+  return curr;
+}
+
+BlockExpression AstBuilder::buildBlock()
 {
   BlockExpression block;
 
   // Loop until we have no more expressions
   while (hasNext())
   {
-    auto expr = *buildLine().get();
+    auto expr = buildLine();
     if (expr.has_value())
       block.expressions.push_back(expr.value());
   }
 
-  return std::move(std::make_unique<BlockExpression>(block));
+  return block;
 }
 
 void AstBuilder::build()
 {
-  root = std::move(buildBlock());
+  root = std::make_unique<BlockExpression>(buildBlock());
 }
 
 void AstBuilder::syntaxError(std::string msg)
