@@ -14,6 +14,7 @@ struct Expression
   Expression(InstructionType type) : type(type) {}
 
   virtual std::string toString() const;
+  virtual std::string toByteCode() const;
 };
 
 struct RootExpression : public Expression
@@ -23,6 +24,7 @@ struct RootExpression : public Expression
   RootExpression(InstructionType type, Token token) : Expression(type), token(token) {}
 
   std::string toString() const override;
+  std::string toByteCode() const override;
 };
 
 struct UnaryExpression : public Expression
@@ -32,6 +34,7 @@ struct UnaryExpression : public Expression
   UnaryExpression(InstructionType type, std::unique_ptr<Expression> root) : Expression(type), root(std::move(root)) {}
 
   std::string toString() const override;
+  std::string toByteCode() const override;
 };
 
 struct BinaryExpression : public Expression
@@ -42,6 +45,7 @@ struct BinaryExpression : public Expression
       : Expression(type), left(std::move(left)), right(std::move(right)) {}
 
   std::string toString() const override;
+  std::string toByteCode() const override;
 };
 
 struct BlockExpression : public Expression
@@ -53,4 +57,5 @@ struct BlockExpression : public Expression
       : Expression(InstructionType::Block), expressions(std::move(expressions)) {}
 
   std::string toString() const override;
+  std::string toByteCode() const override;
 };

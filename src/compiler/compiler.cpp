@@ -33,5 +33,7 @@ ExitCode compile(const CliArgs &args)
   }
 
   log(LOCATION, "Built AST");
+  log(LOCATION, "{}", astBuilder.getRoot()->toByteCode());
+
   return ExitCode::Ok;
 }

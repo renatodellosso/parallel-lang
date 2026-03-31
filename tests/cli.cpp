@@ -72,6 +72,7 @@ TEST(validateArgs, returnsTrueForValidArgs)
 {
   CliArgs args = {
       .target = "DESIGN.md",
+      .outputFile = "out.out",
       .mode = CliMode::Compile};
 
   EXPECT_TRUE(validateArgs(args));

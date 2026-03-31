@@ -10,7 +10,8 @@ const char *LOCATION = "CLI";
 const std::unordered_map<std::string, std::string> shortcuts = {
     {"-t", "--target"},
     {"-c", "--compile"},
-    {"-i", "--interpret"}};
+    {"-i", "--interpret"},
+    {"-o", "--out"}};
 
 #define OPTIONS_HANDLER_PARAMS CliArgs &args, int i, int count, char *argv[]
 
@@ -25,6 +26,18 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
                   }
 
                   args.target = std::string(argv[i + 1]);
+
+                  return 1;
+                }},
+               {"--out", [](OPTIONS_HANDLER_PARAMS) -> int
+                {
+                  if (i == count - 1)
+                  {
+                    logError(LOCATION, "Missing value for --out");
+                    return 0;
+                  }
+
+                  args.outputFile = std::make_optional(std::string(argv[i + 1]));
 
                   return 1;
                 }},
@@ -66,7 +79,8 @@ CliArgs parseArgs(int argc, char *argv[])
 {
   std::unordered_map<std::string, std::string> argMap;
   CliArgs args = {
-      .mode = CliMode::Unset};
+      .mode = CliMode::Unset,
+      .outputFile = std::nullopt};
 
   // argv[0] is the executable path
   for (int i = 1; i < argc; i++)
@@ -106,6 +120,12 @@ bool validateArgs(const CliArgs &args)
   if (!std::filesystem::exists(args.target))
   {
     logError(LOCATION, "Target file does not exist!");
+    valid = false;
+  }
+
+  if (args.mode == CliMode::Compile && args.outputFile == std::nullopt)
+  {
+    logError(LOCATION, "Must specify an output file location using --out when compiling!");
     valid = false;
   }
 

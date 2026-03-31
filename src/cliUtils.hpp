@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 enum class CliMode
 {
@@ -12,5 +13,6 @@ enum class CliMode
 struct CliArgs
 {
   std::string target;
+  std::optional<std::string> outputFile;
   CliMode mode;
 };

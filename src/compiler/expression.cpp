@@ -37,9 +37,19 @@ std::string Expression::toString() const
   }
 }
 
+std::string Expression::toByteCode() const
+{
+  return std::to_string((int)type);
+}
+
 std::string RootExpression::toString() const
 {
   return Expression::toString() + "(" + token.raw + ")";
+}
+
+std::string RootExpression::toByteCode() const
+{
+  return Expression::toByteCode() + " " + token.raw;
 }
 
 std::string UnaryExpression::toString() const
@@ -47,9 +57,19 @@ std::string UnaryExpression::toString() const
   return Expression::toString() + "(" + root.get()->toString() + ")";
 }
 
+std::string UnaryExpression::toByteCode() const
+{
+  return root->toByteCode() + "\n" + Expression::toByteCode();
+}
+
 std::string BinaryExpression::toString() const
 {
   return Expression::toString() + "(" + left.get()->toString() + ", " + right.get()->toString() + ")";
+}
+
+std::string BinaryExpression::toByteCode() const
+{
+  return left->toByteCode() + "\n" + right->toByteCode() + "\n" + Expression::toByteCode();
 }
 
 std::string BlockExpression::toString() const
@@ -63,4 +83,17 @@ std::string BlockExpression::toString() const
   }
 
   return str + "}";
+}
+
+std::string BlockExpression::toByteCode() const
+{
+  std::string str;
+
+  // Use references
+  for (auto &line : expressions)
+  {
+    str += line->toByteCode() + "\n";
+  }
+
+  return str;
 }
