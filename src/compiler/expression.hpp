@@ -4,6 +4,7 @@
 #include "token.hpp"
 #include <vector>
 #include <string>
+#include <memory>
 
 struct Expression
 {
