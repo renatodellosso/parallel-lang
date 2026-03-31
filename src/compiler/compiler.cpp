@@ -4,6 +4,8 @@
 #include "../logging.hpp"
 #include <fstream>
 
+#define LOCATION "compiler"
+
 ExitCode compile(const CliArgs &args)
 {
   std::ifstream stream(args.target);
@@ -13,11 +15,20 @@ ExitCode compile(const CliArgs &args)
   auto tokens = tokenizer->close();
   delete tokenizer;
 
-  log("Compiler", "Parsed {:d} tokens. Building AST...", tokens.get()->size());
+  log(LOCATION, "Parsed {:d} tokens. Building AST...", tokens.get()->size());
 
   AstBuilder astBuilder(std::move(tokens));
   astBuilder.build();
 
-  log("Compiler", "Built AST");
+  auto errors = astBuilder.getErrors();
+  if (!errors->empty())
+  {
+    for (auto error : *errors.get())
+    {
+      logError(LOCATION, "{}", error.toString());
+    }
+  }
+
+  log(LOCATION, "Built AST");
   return ExitCode::Ok;
 }

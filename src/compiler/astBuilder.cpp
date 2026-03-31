@@ -1,5 +1,5 @@
 #include "astBuilder.hpp"
-#include "../logging.hpp"
+#include <format>
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens)
 {
@@ -25,7 +25,6 @@ Token AstBuilder::next()
   line = token.line;
 
   nextTokenIndex++;
-  log("AstBuilder", "Consumed token {}", token.raw);
   return token;
 }
 
@@ -63,12 +62,12 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::opt
     if (match(TokenType::Literal))
       return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetLiteral, next())));
 
-    throw std::runtime_error("Could not parse line: No valid starting expression");
+    throw std::runtime_error(std::format("Could not parse line: No valid starting expression for token '{}'", peek().raw));
   }
 
   // Binary operators
   if (!hasNext())
-    throw std::runtime_error("Could not parse line: No matching instruction type");
+    throw std::runtime_error("Could not parse line: No matching instruction type as there is no next token");
 
   InstructionType type;
   switch (peek().type)
@@ -87,7 +86,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::opt
     break;
 
   default:
-    throw std::runtime_error("Could not parse line: No matching instruction type");
+    throw std::runtime_error(std::format("Could not parse line: No matching instruction type for token '{}'", peek().raw));
   }
 
   next(); // Be sure to consume the token!
@@ -96,7 +95,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::opt
   auto nextExpr = extendExpression(std::nullopt);
   if (!nextExpr.has_value())
   {
-    throw std::runtime_error("Could not parse line: Binary expression has no right operand");
+    throw std::runtime_error(std::format("Could not parse line: Binary expression ('{}') has no right operand", peek().raw));
   }
 
   return std::make_optional(
@@ -123,6 +122,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine()
   catch (const std::runtime_error &e)
   {
     syntaxError(e.what());
+    return std::nullopt;
   }
 
   return curr;
@@ -153,7 +153,7 @@ void AstBuilder::syntaxError(std::string msg)
   errors.get()->push_back({line, msg});
 
   // Read until we hit semicolon to end the line
-  while (hasNext() && match(TokenType::Semicolon))
+  while (hasNext() && !match(TokenType::Semicolon))
     next();
 }
 
