@@ -23,10 +23,13 @@ ExitCode compile(const CliArgs &args)
   auto errors = astBuilder.getErrors();
   if (!errors->empty())
   {
+    logError(LOCATION, "Found {} syntax errors", errors->size());
     for (auto error : *errors.get())
     {
       logError(LOCATION, "{}", error.toString());
     }
+
+    return ExitCode::SyntaxErrors;
   }
 
   log(LOCATION, "Built AST");

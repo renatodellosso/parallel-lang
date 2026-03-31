@@ -3,5 +3,6 @@
 enum class ExitCode
 {
   Ok,
-  InvalidCli
+  InvalidCli,
+  SyntaxErrors
 };

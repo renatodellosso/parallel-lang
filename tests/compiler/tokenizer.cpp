@@ -261,3 +261,27 @@ TEST(Tokenizer, identifiesMixOfTypes)
   // Cleanup
   delete tokenizer;
 }
+
+TEST(Tokenizer, identifiesMixOfTypesWithWhitespace)
+{
+  std::string text("int abc\r(1\n, \"test\");true");
+  std::vector<TokenType> expected = {
+      TokenType::Identifier, TokenType::Identifier,
+      TokenType::LeftParen, TokenType::Literal, TokenType::Comma,
+      TokenType::Literal, TokenType::RightParen, TokenType::Semicolon, TokenType::Literal};
+
+  std::istringstream stream(text);
+  Tokenizer *tokenizer = new Tokenizer(stream);
+
+  tokenizer->parse();
+  auto tokens = *(tokenizer->close().get());
+
+  ASSERT_EQ(tokens.size(), expected.size());
+  for (int i = 0; i < tokens.size(); i++)
+  {
+    EXPECT_EQ(tokens[i].type, expected[i]);
+  }
+
+  // Cleanup
+  delete tokenizer;
+}
