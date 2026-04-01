@@ -92,7 +92,7 @@ std::string BlockExpression::toByteCode() const
   // Use references
   for (auto &line : expressions)
   {
-    str += line->toByteCode() + "\n";
+    str += line->toByteCode() + ";\n";
   }
 
   return str.erase(str.length() - 1); // Erase trailing \n

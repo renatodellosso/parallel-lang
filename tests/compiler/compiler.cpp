@@ -22,17 +22,17 @@ std::string testCompile(std::string program)
 TEST(compile, compilesBasicProgram)
 {
   auto out = testCompile("1+1;");
-  EXPECT_EQ(out, "1 1\n1 1\n4");
+  EXPECT_EQ(out, "1 1\n1 1\n4;");
 }
 
 TEST(compile, compilesMultilineProgram)
 {
   auto out = testCompile("1+1;\n1-2;");
-  EXPECT_EQ(out, "1 1\n1 1\n4\n1 1\n1 2\n5");
+  EXPECT_EQ(out, "1 1\n1 1\n4;\n1 1\n1 2\n5;");
 }
 
 TEST(compile, compilesCompoundExpressions)
 {
   auto out = testCompile("1+1+1;");
-  EXPECT_EQ(out, "1 1\n1 1\n4\n1 1\n4");
+  EXPECT_EQ(out, "1 1\n1 1\n4\n1 1\n4;");
 }
