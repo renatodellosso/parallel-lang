@@ -95,5 +95,5 @@ std::string BlockExpression::toByteCode() const
     str += line->toByteCode() + "\n";
   }
 
-  return str;
+  return str.erase(str.length() - 1); // Erase trailing \n
 }

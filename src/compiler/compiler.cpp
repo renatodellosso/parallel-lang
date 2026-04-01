@@ -6,10 +6,9 @@
 
 #define LOCATION "compiler"
 
-ExitCode compile(const CliArgs &args)
+ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<std::optional<std::string>(std::string)> writeOutput)
 {
-  std::ifstream stream(args.target);
-  Tokenizer *tokenizer = new Tokenizer(stream);
+  Tokenizer *tokenizer = new Tokenizer(inputStream);
 
   tokenizer->parse();
   auto tokens = tokenizer->close();
@@ -33,7 +32,16 @@ ExitCode compile(const CliArgs &args)
   }
 
   log(LOCATION, "Built AST");
-  log(LOCATION, "{}", astBuilder.getRoot()->toByteCode());
 
+  auto bytecode = astBuilder.getRoot()->toByteCode();
+  auto result = writeOutput(bytecode);
+
+  if (result.has_value())
+  {
+    logError(LOCATION, "Failed to write bytecode to file: {}", result.value());
+    return ExitCode::FailedToWriteFile;
+  }
+
+  log(LOCATION, "Wrote bytecode to file!");
   return ExitCode::Ok;
 }

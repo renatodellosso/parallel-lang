@@ -1,9 +1,14 @@
 #include "cli.hpp"
 #include "logging.hpp"
 #include "compiler/compiler.hpp"
+#include "interpreter/interpreter.hpp"
 #include <map>
 #include <functional>
 #include <filesystem>
+#include <string>
+#include <optional>
+#include <fstream>
+#include <format>
 
 const char *LOCATION = "CLI";
 
@@ -132,12 +137,35 @@ bool validateArgs(const CliArgs &args)
   return valid;
 }
 
+std::optional<std::string> writeFile(const CliArgs &args, std::string text)
+{
+  if (!args.outputFile.has_value())
+    return std::make_optional("No output file specified!");
+
+  std::ofstream file(args.outputFile.value());
+
+  if (!file.is_open())
+    return std::make_optional(std::format("Could not open file '{}'", args.outputFile.value()));
+
+  file.clear();
+  file << text;
+
+  file.close();
+  return std::nullopt;
+}
+
 ExitCode executeCommand(const CliArgs &args)
 {
   if (args.mode == CliMode::Compile)
-    return compile(args);
+  {
+    std::ifstream stream(args.target);
+    return compile(args, stream, [args](std::string text)
+                   { return writeFile(args, text); });
+  }
+  if (args.mode == CliMode::Interpret)
+    return interpet(args);
 
-  return ExitCode::Ok;
+  return ExitCode::InvalidCli;
 }
 
 ExitCode runCli(int argc, char *argv[])

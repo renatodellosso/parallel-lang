@@ -4,5 +4,6 @@ enum class ExitCode
 {
   Ok,
   InvalidCli,
-  SyntaxErrors
+  SyntaxErrors,
+  FailedToWriteFile
 };
