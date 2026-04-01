@@ -84,8 +84,8 @@ CliArgs parseArgs(int argc, char *argv[])
 {
   std::unordered_map<std::string, std::string> argMap;
   CliArgs args = {
-      .mode = CliMode::Unset,
-      .outputFile = std::nullopt};
+      .outputFile = std::nullopt,
+      .mode = CliMode::Unset};
 
   // argv[0] is the executable path
   for (int i = 1; i < argc; i++)
