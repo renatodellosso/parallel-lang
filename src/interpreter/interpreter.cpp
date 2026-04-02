@@ -4,10 +4,10 @@
 
 #define LOCATION "Interpreter"
 
-ExitCode Interpreter::buildSingleInstruction()
+void Interpreter::buildSingleInstruction()
 {
-  Line line = {
-      .lineNumber = lineCount,
+  Instruction instr = {
+      .lineNumber = (int)instructions.size(),
       .endsLine = false,
       .type = InstructionType::Add,
       .args = std::vector<Arg>()};
@@ -19,7 +19,7 @@ ExitCode Interpreter::buildSingleInstruction()
     stream.get();
     curr += c;
   }
-  line.type = (InstructionType)std::atoi(curr.c_str());
+  instr.type = (InstructionType)std::atoi(curr.c_str());
 
   stream.get(); // Consume ' '
 
@@ -49,8 +49,6 @@ ExitCode Interpreter::buildSingleInstruction()
       }
       if (!inStr && (c == ' ' || c == '\n' || c == '\r' || c == ';'))
       {
-        if (c == ';')
-          lineCount++;
         break;
       }
       curr += c;
@@ -83,41 +81,58 @@ ExitCode Interpreter::buildSingleInstruction()
     }
     else
     {
-      logError(LOCATION, "Unknown argument format on line {}: '{}'", lineCount, curr);
-      return ExitCode::InvalidBytecode;
+      throw std::runtime_error(std::format("Unknown argument format on instruction {}: '{}'", instructions.size(), curr));
     }
 
-    line.args.push_back(arg);
+    instr.args.push_back(arg);
   }
 
-  return ExitCode::Ok;
+  instructions.push_back(instr);
+  return;
 }
 
-ExitCode Interpreter::buildLines()
+void Interpreter::buildInstructions()
 {
   while (!stream.eof())
   {
-    ExitCode code = buildSingleInstruction();
-    if (code != ExitCode::Ok)
-      return code;
+    buildSingleInstruction();
 
     stream.get(); // Consume '\n'
   }
 
-  log(LOCATION, "Parsed {} lines", lineCount);
-
-  return ExitCode::Ok;
+  log(LOCATION, "Parsed {} instructions", instructions.size());
 }
 
-Interpreter::Interpreter(const CliArgs &args, std::istream &stream) : args(args), stream(stream), lines(std::vector<Line>()), lineCount(1) {}
+void Interpreter::execSingleInstruction(const Instruction &instr)
+{
+}
+
+void Interpreter::execInstructions()
+{
+  for (auto instr : instructions)
+  {
+    execSingleInstruction(instr);
+  }
+
+  log(LOCATION, "Done! Executed {} instructions.", instructions.size());
+}
+
+Interpreter::Interpreter(const CliArgs &args, std::istream &stream) : args(args), stream(stream), instructions(std::vector<Instruction>()) {}
 
 ExitCode Interpreter::interpret()
 {
   log(LOCATION, "Interpreting file '{}'...", args.target);
 
-  ExitCode code = buildLines();
-  if (code != ExitCode::Ok)
-    return code;
+  try
+  {
+    buildInstructions();
+    execInstructions();
+  }
+  catch (std::runtime_error err)
+  {
+    logError(LOCATION, "Encountered runtime error: {}", err.what());
+    return ExitCode::RuntimeError;
+  }
 
   return ExitCode::Ok;
 }

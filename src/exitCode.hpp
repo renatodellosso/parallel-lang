@@ -6,5 +6,5 @@ enum class ExitCode
   InvalidCli,
   SyntaxErrors,
   FailedToWriteFile,
-  InvalidBytecode
+  RuntimeError
 };
