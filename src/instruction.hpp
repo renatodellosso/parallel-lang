@@ -28,16 +28,18 @@ enum ArgType
   Bool
 };
 
-struct Arg
+struct Value
 {
   ArgType type;
   std::variant<std::string, int, bool> val;
 };
+
+std::string valToStr(Value val);
 
 struct Instruction
 {
   int lineNumber;
   bool endsLine;
   InstructionType type;
-  std::vector<Arg> args;
+  std::vector<Value> args;
 };

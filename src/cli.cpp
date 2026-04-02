@@ -165,8 +165,8 @@ ExitCode executeCommand(const CliArgs &args)
   if (args.mode == CliMode::Interpret)
   {
     std::ifstream stream(args.target);
-    Interpreter interpreter(args, stream);
-    interpreter.interpret();
+    Interpreter interpreter(args);
+    interpreter.interpret(stream);
   }
 
   return ExitCode::InvalidCli;

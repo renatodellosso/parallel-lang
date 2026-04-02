@@ -9,16 +9,9 @@
 class Interpreter
 {
   const CliArgs &args;
-  std::istream &stream;
   std::vector<Instruction> instructions;
 
-  void buildSingleInstruction();
-  void buildInstructions();
-
-  void execSingleInstruction(const Instruction &instr);
-  void execInstructions();
-
 public:
-  Interpreter(const CliArgs &args, std::istream &stream);
-  ExitCode interpret();
+  Interpreter(const CliArgs &args);
+  ExitCode interpret(std::istream &stream);
 };
