@@ -163,7 +163,11 @@ ExitCode executeCommand(const CliArgs &args)
                    { return writeFile(args, text); });
   }
   if (args.mode == CliMode::Interpret)
-    return interpet(args);
+  {
+    std::ifstream stream(args.target);
+    Interpreter interpreter(args, stream);
+    interpreter.interpret();
+  }
 
   return ExitCode::InvalidCli;
 }

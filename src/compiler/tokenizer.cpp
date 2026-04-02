@@ -133,7 +133,7 @@ void Tokenizer::parseToken()
     }
 
     token.type = TokenType::Literal;
-    token.subtype = TokenSubtype::Number;
+    token.subtype = TokenSubtype::Integer;
   }
   else
   {

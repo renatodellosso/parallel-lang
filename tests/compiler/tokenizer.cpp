@@ -156,7 +156,7 @@ TEST(Tokenizer, identifiesNumbers)
 
   ASSERT_EQ(tokens.size(), 1);
   EXPECT_EQ(tokens[0].type, TokenType::Literal);
-  EXPECT_EQ(tokens[0].subtype, TokenSubtype::Number);
+  EXPECT_EQ(tokens[0].subtype, TokenSubtype::Integer);
   EXPECT_EQ(tokens[0].raw, text);
 
   // Cleanup
@@ -175,7 +175,7 @@ TEST(Tokenizer, identifiesNumbersMixedWithOtherTypes)
 
   ASSERT_EQ(tokens.size(), 3);
   EXPECT_EQ(tokens[1].type, TokenType::Literal);
-  EXPECT_EQ(tokens[1].subtype, TokenSubtype::Number);
+  EXPECT_EQ(tokens[1].subtype, TokenSubtype::Integer);
   EXPECT_EQ(tokens[1].raw, "123");
 
   // Cleanup

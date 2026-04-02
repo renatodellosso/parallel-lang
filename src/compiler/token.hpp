@@ -27,7 +27,7 @@ enum class TokenSubtype
 {
   None,
   String,
-  Number,
+  Integer,
   Bool
 };
 

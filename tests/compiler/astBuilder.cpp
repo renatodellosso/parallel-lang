@@ -6,7 +6,7 @@ TEST(AstBuilder, buildsLiteralExpressions)
 {
   std::vector<Token> tokens = {
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "1",
        1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
@@ -33,7 +33,7 @@ TEST(AstBuilder, buildsBinaryExpressions)
 {
   std::vector<Token> tokens = {
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "1",
        1},
       {TokenType::Plus,
@@ -41,7 +41,7 @@ TEST(AstBuilder, buildsBinaryExpressions)
        "+",
        1},
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "2",
        1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
@@ -72,7 +72,7 @@ TEST(AstBuilder, buildsMultipleLines)
 {
   std::vector<Token> tokens = {
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "1",
        1},
       {TokenType::Plus,
@@ -80,12 +80,12 @@ TEST(AstBuilder, buildsMultipleLines)
        "+",
        1},
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "2",
        1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1},
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "2",
        2},
       {TokenType::Minus,
@@ -93,7 +93,7 @@ TEST(AstBuilder, buildsMultipleLines)
        "-",
        2},
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "3",
        2},
       {TokenType::Semicolon, TokenSubtype::None, ";", 2}};
@@ -118,7 +118,7 @@ TEST(AstBuilder, errorsOnInvalidToken)
 {
   std::vector<Token> tokens = {
       {TokenType::Error,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "1",
        1},
   };
@@ -135,7 +135,7 @@ TEST(AstBuilder, errorsOnPartialBinaryExpression)
 {
   std::vector<Token> tokens = {
       {TokenType::Literal,
-       TokenSubtype::Number,
+       TokenSubtype::Integer,
        "1",
        1},
       {TokenType::Plus,
