@@ -35,6 +35,7 @@ struct Value
 };
 
 std::string valToStr(Value val);
+bool valToBool(Value val);
 
 struct Instruction
 {

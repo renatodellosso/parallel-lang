@@ -11,7 +11,6 @@ Value BytecodeParser::buildArg()
   // Consume spaces
   while (stream.peek() == ' ')
   {
-    std::cout << stream.peek();
     stream.get();
   }
 
@@ -82,11 +81,12 @@ void BytecodeParser::buildSingleInstruction()
 
   // Parse type
   std::string curr = "";
-  for (char c = stream.peek(); c != ' ' && c != ';'; c = stream.peek())
+  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r'; c = stream.peek())
   {
     stream.get();
     curr += c;
   }
+
   instr.type = (InstructionType)std::atoi(curr.c_str());
 
   // Parse args
