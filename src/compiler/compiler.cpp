@@ -49,7 +49,7 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
     return ExitCode::SyntaxErrors;
   }
 
-  log(LOCATION, "Linked AST");
+  log(LOCATION, "Linked graph");
 
   auto bytecode = astBuilder.getRoot()->toByteCode();
   auto result = writeOutput(bytecode);

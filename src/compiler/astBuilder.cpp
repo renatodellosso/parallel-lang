@@ -160,10 +160,10 @@ void AstBuilder::syntaxError(std::string msg)
 
 std::shared_ptr<std::vector<SyntaxError>> AstBuilder::getErrors()
 {
-  return std::move(errors);
+  return errors;
 }
 
 std::shared_ptr<BlockExpression> AstBuilder::getRoot()
 {
-  return std::move(root);
+  return root;
 }
