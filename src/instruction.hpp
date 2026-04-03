@@ -38,7 +38,7 @@ std::string valToStr(Value val);
 
 struct Instruction
 {
-  int lineNumber;
+  int instructionNumber;
   bool endsLine;
   InstructionType type;
   std::vector<Value> args;

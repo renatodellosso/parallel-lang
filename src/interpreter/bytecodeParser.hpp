@@ -11,6 +11,8 @@ class BytecodeParser
   std::vector<Instruction> &instructions;
   std::istream &stream;
 
+  // Does not consume whatever char signifies the end of the arg (' ' or ';' for example)
+  Value buildArg();
   void buildSingleInstruction();
 
 public:

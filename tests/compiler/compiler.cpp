@@ -1,10 +1,13 @@
 #include "../../src/compiler/compiler.hpp"
+#include "../testUtils.hpp"
 #include <gtest/gtest.h>
 
 const CliArgs args = {};
 
 std::string testCompile(std::string program)
 {
+  DISABLE_COUT
+
   std::istringstream stream(program);
 
   std::string out;
@@ -16,6 +19,7 @@ std::string testCompile(std::string program)
 
   compile(args, stream, writeOut);
 
+  REENABLE_COUT
   return out;
 }
 

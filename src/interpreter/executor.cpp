@@ -33,7 +33,7 @@ void Executor::execSingleInstruction(Instruction instr)
     break;
 
   default:
-    throw std::runtime_error(std::format("Unknown instruction on line {}: {}", instr.lineNumber, (int)instr.type));
+    throw std::runtime_error(std::format("Unknown instruction on line {}: {}", instr.instructionNumber, (int)instr.type));
   }
 
   // Log top of stack
