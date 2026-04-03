@@ -10,8 +10,13 @@
 struct Expression
 {
   InstructionType type;
+  int lineNumber;
 
-  Expression(InstructionType type) : type(type) {}
+  int id;
+  std::vector<Expression *> dependencies;
+  std::vector<Expression *> dependents;
+
+  Expression(InstructionType type, int lineNumber) : type(type), lineNumber(lineNumber), dependencies(std::vector<Expression *>()), dependents(std::vector<Expression *>()) {}
 
   virtual std::string toString() const;
   virtual std::string toByteCode() const;
@@ -21,7 +26,7 @@ struct RootExpression : public Expression
 {
   Token token;
 
-  RootExpression(InstructionType type, Token token) : Expression(type), token(token) {}
+  RootExpression(InstructionType type, int lineNumber, Token token) : Expression(type, lineNumber), token(token) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;
@@ -31,7 +36,7 @@ struct UnaryExpression : public Expression
 {
   std::unique_ptr<Expression> root;
 
-  UnaryExpression(InstructionType type, std::unique_ptr<Expression> root) : Expression(type), root(std::move(root)) {}
+  UnaryExpression(InstructionType type, int lineNumber, std::unique_ptr<Expression> root) : Expression(type, lineNumber), root(std::move(root)) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;
@@ -41,8 +46,8 @@ struct BinaryExpression : public Expression
 {
   std::unique_ptr<Expression> left, right;
 
-  BinaryExpression(InstructionType type, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
-      : Expression(type), left(std::move(left)), right(std::move(right)) {}
+  BinaryExpression(InstructionType type, int lineNumber, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+      : Expression(type, lineNumber), left(std::move(left)), right(std::move(right)) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;
@@ -52,9 +57,9 @@ struct BlockExpression : public Expression
 {
   std::vector<std::unique_ptr<Expression>> expressions;
 
-  BlockExpression() : BlockExpression(std::vector<std::unique_ptr<Expression>>()) {}
-  BlockExpression(std::vector<std::unique_ptr<Expression>> expressions)
-      : Expression(InstructionType::Block), expressions(std::move(expressions)) {}
+  BlockExpression() : BlockExpression(std::vector<std::unique_ptr<Expression>>(), 0) {}
+  BlockExpression(std::vector<std::unique_ptr<Expression>> expressions, int lineNumber)
+      : Expression(InstructionType::Block, lineNumber), expressions(std::move(expressions)) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;

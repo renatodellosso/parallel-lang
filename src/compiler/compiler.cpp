@@ -1,6 +1,7 @@
 #include "compiler.hpp"
 #include "tokenizer.hpp"
 #include "astBuilder.hpp"
+#include "graphLinker.hpp"
 #include "../logging.hpp"
 #include <fstream>
 
@@ -22,7 +23,7 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
   auto errors = astBuilder.getErrors();
   if (!errors->empty())
   {
-    logError(LOCATION, "Found {} syntax errors", errors->size());
+    logError(LOCATION, "Found {} syntax errors while building AST", errors->size());
     for (auto error : *errors.get())
     {
       logError(LOCATION, "{}", error.toString());
@@ -32,6 +33,23 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
   }
 
   log(LOCATION, "Built AST");
+
+  GraphLinker graphLinker(astBuilder.getRoot());
+  graphLinker.linkGraph();
+
+  errors = graphLinker.getErrors();
+  if (!errors->empty())
+  {
+    logError(LOCATION, "Found {} syntax errors while linking graph", errors->size());
+    for (auto error : *errors.get())
+    {
+      logError(LOCATION, "{}", error.toString());
+    }
+
+    return ExitCode::SyntaxErrors;
+  }
+
+  log(LOCATION, "Linked AST");
 
   auto bytecode = astBuilder.getRoot()->toByteCode();
   auto result = writeOutput(bytecode);
