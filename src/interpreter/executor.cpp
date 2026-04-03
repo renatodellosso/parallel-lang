@@ -12,8 +12,6 @@ Value Executor::pop()
 
 void Executor::execSingleInstruction(Instruction instr)
 {
-  log(LOCATION, "Executing instruction {}: type {} with {} args. Stack size: {}", instr.instructionNumber, (int)instr.type, instr.args.size(), stack.size());
-
   switch (instr.type)
   {
   case InstructionType::GetLiteral:
@@ -44,8 +42,8 @@ void Executor::execSingleInstruction(Instruction instr)
           .val = valToBool(left) || valToBool(right)};
     }
     stack.push(result);
+    break;
   }
-  break;
   case InstructionType::Subtract:
   {
     // Block so we can declare vars
@@ -58,18 +56,56 @@ void Executor::execSingleInstruction(Instruction instr)
           .val = std::get<int>(left.val) - std::get<int>(right.val)};
       stack.push(result);
     }
+    else
+      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.instructionNumber, (int)left.type, (int)right.type));
+
+    break;
+  }
+  case InstructionType::Multiply:
+  {
+    // Block so we can declare vars
+    Value right = pop(), left = pop();
+
+    if (left.type == ArgType::Integer && right.type == ArgType::Integer)
+    {
+      Value result = {
+          .type = ArgType::Integer,
+          .val = std::get<int>(left.val) * std::get<int>(right.val)};
+      stack.push(result);
+    }
+    else
+      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.instructionNumber, (int)left.type, (int)right.type));
+
+    break;
+  }
+  case InstructionType::Divide:
+  {
+    // Block so we can declare vars
+    Value right = pop(), left = pop();
+
+    if (left.type == ArgType::Integer && right.type == ArgType::Integer)
+    {
+      Value result = {
+          .type = ArgType::Integer,
+          .val = std::get<int>(left.val) / std::get<int>(right.val)};
+      stack.push(result);
+    }
+    else
+      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.instructionNumber, (int)left.type, (int)right.type));
+
+    break;
   }
 
   default:
-    throw std::runtime_error(std::format("Unknown instruction on line {}: {}", instr.instructionNumber, (int)instr.type));
+    throw std::runtime_error(std::format("Unknown instruction type on instruction {}: {}", instr.instructionNumber, (int)instr.type));
   }
-
-  // Log top of stack
-  log(LOCATION, "Top of Stack: {}, {} (stack size: {})", (int)stack.top().type, valToStr(stack.top()), stack.size());
 
   // Clean up stack if at end of line
   if (instr.endsLine)
+  {
+    log(LOCATION, "{}", valToStr(stack.top()));
     stack = std::stack<Value>();
+  }
 }
 
 void Executor::execInstructions()
