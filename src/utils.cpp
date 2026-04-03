@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <algorithm>
 
 bool beginsWith(std::string str, std::string prefix)
 {
