@@ -1,4 +1,6 @@
 #include "expression.hpp"
+#include <algorithm>
+#include <iterator>
 
 std::string Expression::toString() const
 {
@@ -42,6 +44,12 @@ std::string Expression::toByteCode() const
   return std::to_string((int)type);
 }
 
+std::vector<std::reference_wrapper<Expression>> Expression::getWithSubExpressions() const
+{
+  std::vector<std::reference_wrapper<Expression>> vector{*(Expression *)this};
+  return vector;
+}
+
 std::string RootExpression::toString() const
 {
   return Expression::toString() + "(" + token.raw + ")";
@@ -62,6 +70,16 @@ std::string UnaryExpression::toByteCode() const
   return root->toByteCode() + "\n" + Expression::toByteCode();
 }
 
+std::vector<std::reference_wrapper<Expression>> UnaryExpression::getWithSubExpressions() const
+{
+  std::vector<std::reference_wrapper<Expression>> vector = root.get()->getWithSubExpressions();
+
+  auto super = Expression::getWithSubExpressions();
+  std::move(super.begin(), super.end(), std::back_inserter(vector));
+
+  return vector;
+}
+
 std::string BinaryExpression::toString() const
 {
   return Expression::toString() + "(" + left.get()->toString() + ", " + right.get()->toString() + ")";
@@ -70,6 +88,19 @@ std::string BinaryExpression::toString() const
 std::string BinaryExpression::toByteCode() const
 {
   return left->toByteCode() + "\n" + right->toByteCode() + "\n" + Expression::toByteCode();
+}
+
+std::vector<std::reference_wrapper<Expression>> BinaryExpression::getWithSubExpressions() const
+{
+  std::vector<std::reference_wrapper<Expression>> vector = left.get()->getWithSubExpressions();
+
+  auto rightVec = right.get()->getWithSubExpressions();
+  std::move(rightVec.begin(), rightVec.end(), std::back_inserter(vector)); // Move rightVec into end of vector
+
+  auto super = Expression::getWithSubExpressions();
+  std::move(super.begin(), super.end(), std::back_inserter(vector));
+
+  return vector;
 }
 
 std::string BlockExpression::toString() const
@@ -96,4 +127,20 @@ std::string BlockExpression::toByteCode() const
   }
 
   return str.erase(str.length() - 1); // Erase trailing \n
+}
+
+std::vector<std::reference_wrapper<Expression>> BlockExpression::getWithSubExpressions() const
+{
+  std::vector<std::reference_wrapper<Expression>> vector;
+
+  for (auto expr : expressions)
+  {
+    auto exprVec = expr.get()->getWithSubExpressions();
+    std::move(exprVec.begin(), exprVec.end(), std::back_inserter(vector)); // Move rightVec into end of vector
+  }
+
+  auto super = Expression::getWithSubExpressions();
+  std::move(super.begin(), super.end(), std::back_inserter(vector));
+
+  return vector;
 }

@@ -79,6 +79,8 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(s
     break;
   case TokenType::Identifier:
   {
+    // Special case with no middle token
+
     // Types are identifiers
     if (prev.value().get()->type != InstructionType::GetIdentifier)
       throw std::runtime_error(std::format("Expected type identifier before declaration. Previous Expression: '{}', Current Token: '{}'", prev.value().get()->toString(), peek().raw));
@@ -92,6 +94,9 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(s
     return std::make_optional(
         std::make_unique<BinaryExpression>(BinaryExpression(InstructionType::Declare, line, std::move(prev.value()), std::make_shared<RootExpression>(nameExpr))));
   }
+  case TokenType::Equals:
+    type = InstructionType::Set;
+    break;
 
   default:
     throw std::runtime_error(std::format("Could not parse line: No matching instruction type for token '{}'", peek().raw));

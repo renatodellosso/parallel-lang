@@ -68,6 +68,80 @@ TEST(AstBuilder, buildsBinaryExpressions)
   EXPECT_TOKEN_EQ(right->token, tokens[2]);
 }
 
+TEST(AstBuilder, buildsDeclarations)
+{
+  std::vector<Token> tokens = {
+      {TokenType::Identifier,
+       TokenSubtype::None,
+       "int",
+       1},
+      {TokenType::Identifier,
+       TokenSubtype::None,
+       "var",
+       1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+  auto root = builder.getRoot();
+  ASSERT_EQ(root.get()->expressions.size(), 1); // Assert to avoid segfault if no expressions
+
+  auto expr = root.get()->expressions[0].get();
+  EXPECT_EQ(expr->type, InstructionType::Declare);
+
+  // Can't use dynamic_cast here since Expression has no virtual methods
+  BinaryExpression *binary = static_cast<BinaryExpression *>(expr);
+  RootExpression *left = static_cast<RootExpression *>(binary->left.get());
+  RootExpression *right = static_cast<RootExpression *>(binary->right.get());
+
+  EXPECT_EQ(binary->type, InstructionType::Declare);
+  EXPECT_TOKEN_EQ(left->token, tokens[0]);
+  EXPECT_TOKEN_EQ(right->token, tokens[1]);
+}
+
+TEST(AstBuilder, buildsSets)
+{
+  std::vector<Token> tokens = {
+      {TokenType::Identifier,
+       TokenSubtype::None,
+       "int",
+       1},
+      {TokenType::Equals,
+       TokenSubtype::None,
+       "=",
+       1},
+      {TokenType::Identifier,
+       TokenSubtype::None,
+       "int",
+       1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+  auto root = builder.getRoot();
+  ASSERT_EQ(root.get()->expressions.size(), 1); // Assert to avoid segfault if no expressions
+
+  auto expr = root.get()->expressions[0].get();
+  EXPECT_EQ(expr->type, InstructionType::Set);
+
+  // Can't use dynamic_cast here since Expression has no virtual methods
+  BinaryExpression *binary = static_cast<BinaryExpression *>(expr);
+  RootExpression *left = static_cast<RootExpression *>(binary->left.get());
+  RootExpression *right = static_cast<RootExpression *>(binary->right.get());
+
+  EXPECT_EQ(binary->type, InstructionType::Set);
+  EXPECT_TOKEN_EQ(left->token, tokens[0]);
+  EXPECT_TOKEN_EQ(right->token, tokens[2]);
+}
+
 TEST(AstBuilder, buildsMultipleLines)
 {
   std::vector<Token> tokens = {

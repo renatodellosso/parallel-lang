@@ -11,6 +11,8 @@ class GraphLinker
   std::unordered_map<std::string, Resource> resources;
   std::shared_ptr<BlockExpression> root;
 
+  void createResource(Expression &expr);
+  void useResource(Expression &expr, bool write);
   void processExpression(Expression &expr);
 
   void syntaxError(int line, std::string msg);

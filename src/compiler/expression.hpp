@@ -6,20 +6,25 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include <functional>
 
 struct Expression
 {
   InstructionType type;
   int lineNumber;
 
-  int id;
-  std::vector<Expression *> dependencies;
-  std::vector<Expression *> dependents;
+  std::vector<std::reference_wrapper<Expression>> dependencies;
+  std::vector<std::reference_wrapper<Expression>> dependents;
 
-  Expression(InstructionType type, int lineNumber) : type(type), lineNumber(lineNumber), dependencies(std::vector<Expression *>()), dependents(std::vector<Expression *>()) {}
+  Expression(InstructionType type, int lineNumber) : type(type),
+                                                     lineNumber(lineNumber),
+                                                     dependencies(std::vector<std::reference_wrapper<Expression>>()),
+                                                     dependents(std::vector<std::reference_wrapper<Expression>>()) {}
 
   virtual std::string toString() const;
   virtual std::string toByteCode() const;
+  // Returns this expression and all its subexpressions, in the order they will be executed
+  virtual std::vector<std::reference_wrapper<Expression>> getWithSubExpressions() const;
 };
 
 struct RootExpression : public Expression
@@ -40,6 +45,7 @@ struct UnaryExpression : public Expression
 
   std::string toString() const override;
   std::string toByteCode() const override;
+  std::vector<std::reference_wrapper<Expression>> getWithSubExpressions() const override;
 };
 
 struct BinaryExpression : public Expression
@@ -51,6 +57,7 @@ struct BinaryExpression : public Expression
 
   std::string toString() const override;
   std::string toByteCode() const override;
+  std::vector<std::reference_wrapper<Expression>> getWithSubExpressions() const override;
 };
 
 struct BlockExpression : public Expression
@@ -63,4 +70,5 @@ struct BlockExpression : public Expression
 
   std::string toString() const override;
   std::string toByteCode() const override;
+  std::vector<std::reference_wrapper<Expression>> getWithSubExpressions() const override;
 };
