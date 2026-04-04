@@ -2,6 +2,7 @@
 #include "../../src/instruction.hpp"
 #include "../testUtils.hpp"
 #include <gtest/gtest.h>
+#include <format>
 
 const CliArgs args = {};
 

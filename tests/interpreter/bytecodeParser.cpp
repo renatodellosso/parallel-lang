@@ -1,6 +1,7 @@
 #include "../../src/interpreter/bytecodeParser.hpp"
 #include "../testUtils.hpp"
 #include <gtest/gtest.h>
+#include <format>
 
 TEST(buildInstructions, buildsSingleInstruction)
 {
