@@ -6,6 +6,10 @@ GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root) : root(root),
 {
 }
 
+void GraphLinker::processExpression(Expression &expr)
+{
+}
+
 void GraphLinker::syntaxError(int line, std::string msg)
 {
   errors.get()->push_back({line, msg});
@@ -13,6 +17,10 @@ void GraphLinker::syntaxError(int line, std::string msg)
 
 void GraphLinker::linkGraph()
 {
+  for (auto expr : root.get()->expressions)
+  {
+    processExpression(*expr.get());
+  }
 }
 
 std::shared_ptr<std::vector<SyntaxError>> GraphLinker::getErrors()

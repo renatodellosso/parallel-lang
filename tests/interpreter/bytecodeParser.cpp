@@ -6,7 +6,7 @@ TEST(buildInstructions, buildsSingleInstruction)
 {
   DISABLE_COUT
 
-  std::string text("1 1\n1 2\n4;");
+  std::string text(std::format("{} 1\n{} 2\n{};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add));
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
@@ -39,7 +39,8 @@ TEST(buildInstructions, buildsMultipleInstructions)
 {
   DISABLE_COUT
 
-  std::string text("1 1\n1 2\n4;\n1 3\n1 4\n4;");
+  std::string text(std::format("{} 1\n{} 2\n{};\n{} 3\n{} 4\n{};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add,
+                               (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add));
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
@@ -72,7 +73,8 @@ TEST(buildInstructions, buildsCompoundInstructions)
 {
   DISABLE_COUT
 
-  std::string text("1 1\n1 2\n4\n1 3\n5;");
+  std::string text(std::format("{} 1\n{} 2\n{}\n{} 3\n{};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add,
+                               (int)InstructionType::GetLiteral, (int)InstructionType::Subtract));
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();

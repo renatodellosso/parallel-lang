@@ -50,25 +50,18 @@ bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype)
   return true;
 }
 
-std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev)
+std::optional<std::unique_ptr<Expression>> AstBuilder::parseLeadingExpression()
+{ // Specify RootExpression as type to make_unique to ensure it doesn't become just an Expression
+  if (match(TokenType::Identifier))
+    return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetIdentifier, line, next())));
+  if (match(TokenType::Literal))
+    return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetLiteral, line, next())));
+
+  throw std::runtime_error(std::format("Could not parse line: No valid starting expression for token '{}'", peek().raw));
+}
+
+std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev)
 {
-  if (!prev.has_value())
-  {
-    // No previous value
-
-    // Specify RootExpression as type to make_unique to ensure it doesn't become just an Expression
-    if (match(TokenType::Identifier))
-      return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetIdentifier, line, next())));
-    if (match(TokenType::Literal))
-      return std::optional(std::make_unique<RootExpression>(RootExpression(InstructionType::GetLiteral, line, next())));
-
-    throw std::runtime_error(std::format("Could not parse line: No valid starting expression for token '{}'", peek().raw));
-  }
-
-  // Binary operators
-  if (!hasNext())
-    throw std::runtime_error("Could not parse line: No matching instruction type as there is no next token");
-
   InstructionType type;
   switch (peek().type)
   {
@@ -84,6 +77,21 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::opt
   case TokenType::Slash:
     type = InstructionType::Divide;
     break;
+  case TokenType::Identifier:
+  {
+    // Types are identifiers
+    if (prev.value().get()->type != InstructionType::GetIdentifier)
+      throw std::runtime_error(std::format("Expected type identifier before declaration. Previous Expression: '{}', Current Token: '{}'", prev.value().get()->toString(), peek().raw));
+
+    // Parse name
+    auto name = next();
+    if (name.type != TokenType::Identifier)
+      throw std::runtime_error(std::format("Expected identifer when naming declaration. Got: '{}'", name.raw));
+    RootExpression nameExpr(InstructionType::GetIdentifier, line, name);
+
+    return std::make_optional(
+        std::make_unique<BinaryExpression>(BinaryExpression(InstructionType::Declare, line, std::move(prev.value()), std::make_shared<RootExpression>(nameExpr))));
+  }
 
   default:
     throw std::runtime_error(std::format("Could not parse line: No matching instruction type for token '{}'", peek().raw));
@@ -100,6 +108,21 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::opt
 
   return std::make_optional(
       std::make_unique<BinaryExpression>(BinaryExpression(type, line, std::move(prev.value()), std::move(nextExpr.value()))));
+}
+
+std::optional<std::unique_ptr<Expression>> AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev)
+{
+  if (!prev.has_value())
+  {
+    // No previous value
+    return parseLeadingExpression();
+  }
+
+  // Binary operators
+  if (!hasNext())
+    throw std::runtime_error("Could not parse line: No matching instruction type as there is no next token");
+
+  return parseCompoundExpression(std::move(prev));
 }
 
 std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine()

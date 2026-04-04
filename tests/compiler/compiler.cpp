@@ -1,4 +1,5 @@
 #include "../../src/compiler/compiler.hpp"
+#include "../../src/instruction.hpp"
 #include "../testUtils.hpp"
 #include <gtest/gtest.h>
 
@@ -26,17 +27,19 @@ std::string testCompile(std::string program)
 TEST(compile, compilesBasicProgram)
 {
   auto out = testCompile("1+1;");
-  EXPECT_EQ(out, "1 1\n1 1\n4;");
+  EXPECT_EQ(out, std::format("{} 1\n{} 1\n{};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add));
 }
 
 TEST(compile, compilesMultilineProgram)
 {
   auto out = testCompile("1+1;\n1-2;");
-  EXPECT_EQ(out, "1 1\n1 1\n4;\n1 1\n1 2\n5;");
+  EXPECT_EQ(out, std::format("{} 1\n{} 1\n{};\n{} 1\n{} 2\n{};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add,
+                             (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Subtract));
 }
 
 TEST(compile, compilesCompoundExpressions)
 {
   auto out = testCompile("1+1+1;");
-  EXPECT_EQ(out, "1 1\n1 1\n4\n1 1\n4;");
+  EXPECT_EQ(out, std::format("{} 1\n{} 1\n{}\n{} 1\n{};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add,
+                             (int)InstructionType::GetLiteral, (int)InstructionType::Add));
 }

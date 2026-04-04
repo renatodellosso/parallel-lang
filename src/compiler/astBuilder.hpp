@@ -30,6 +30,8 @@ private:
   // Building methods
 
   // Adds (usually) one token to the expression
+  std::optional<std::unique_ptr<Expression>> parseLeadingExpression();
+  std::optional<std::unique_ptr<Expression>> parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev);
   std::optional<std::unique_ptr<Expression>> extendExpression(std::optional<std::unique_ptr<Expression>> prev);
   std::optional<std::unique_ptr<Expression>> buildLine();
   BlockExpression buildBlock();
