@@ -3,7 +3,7 @@
 #include "resource.hpp"
 #include "syntaxError.hpp"
 #include <string>
-#include <map>
+#include <unordered_map>
 
 class GraphLinker
 {
