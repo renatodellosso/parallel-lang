@@ -2,6 +2,12 @@
 #include <algorithm>
 #include <iterator>
 
+void addDependency(Expression &expr, Expression &dependsOn)
+{
+  expr.dependencies.push_back(dependsOn);
+  dependsOn.dependents.push_back(expr);
+}
+
 std::string Expression::toString() const
 {
   switch (type)
@@ -50,6 +56,11 @@ std::vector<std::reference_wrapper<Expression>> Expression::getWithSubExpression
   return vector;
 }
 
+void Expression::linkInternally()
+{
+  return;
+}
+
 std::string RootExpression::toString() const
 {
   return Expression::toString() + "(" + token.raw + ")";
@@ -80,6 +91,11 @@ std::vector<std::reference_wrapper<Expression>> UnaryExpression::getWithSubExpre
   return vector;
 }
 
+void UnaryExpression::linkInternally()
+{
+  addDependency(*this, *root.get());
+}
+
 std::string BinaryExpression::toString() const
 {
   return Expression::toString() + "(" + left.get()->toString() + ", " + right.get()->toString() + ")";
@@ -101,6 +117,12 @@ std::vector<std::reference_wrapper<Expression>> BinaryExpression::getWithSubExpr
   std::move(super.begin(), super.end(), std::back_inserter(vector));
 
   return vector;
+}
+
+void BinaryExpression::linkInternally()
+{
+  addDependency(*this, *left.get());
+  addDependency(*this, *right.get());
 }
 
 std::string BlockExpression::toString() const

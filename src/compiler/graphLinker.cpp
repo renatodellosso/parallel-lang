@@ -5,6 +5,19 @@ GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root) : root(root),
                                                                   errors(std::make_shared<std::vector<SyntaxError>>(std::vector<SyntaxError>())),
                                                                   resources(std::unordered_map<std::string, Resource>())
 {
+  // Init default resources
+  createResource("int");
+  createResource("bool");
+  createResource("string");
+}
+
+Resource &GraphLinker::createResource(std::string name)
+{
+  Resource resource = {
+      .name = name,
+      .lastWrittenBy = nullptr};
+
+  resources.insert(std::make_pair(resource.name, resource));
 }
 
 void GraphLinker::createResource(Expression &expr)
@@ -14,11 +27,8 @@ void GraphLinker::createResource(Expression &expr)
     BinaryExpression &binary = dynamic_cast<BinaryExpression &>(expr);
     RootExpression *name = dynamic_cast<RootExpression *>(binary.right.get());
 
-    Resource resource = {
-        .name = name->token.raw,
-        .lastWrittenBy = expr};
-
-    resources.insert(std::make_pair(resource.name, resource));
+    Resource resource = createResource(name->token.raw);
+    resource.lastWrittenBy = &expr;
   }
   catch (const std::bad_cast &err)
   {
@@ -37,11 +47,15 @@ void GraphLinker::useResource(Expression &expr, bool write)
       throw std::runtime_error(std::format("Expression attempted to use resource '{}', which does not exist! Expression: {}", root.token.raw, root.toString()));
 
     Resource &resource = entry->second;
-    resource.lastWrittenBy.dependents.push_back(expr);
-    expr.dependencies.push_back(resource.lastWrittenBy);
+    if (resource.lastWrittenBy)
+    {
+      // If not written yet, don't add dependency to nullptr
+      resource.lastWrittenBy->dependents.push_back(expr);
+      expr.dependencies.push_back(*resource.lastWrittenBy);
+    }
 
     if (write)
-      resource.lastWrittenBy = expr;
+      resource.lastWrittenBy = &expr;
   }
   catch (const std::bad_cast &err)
   {
@@ -88,6 +102,7 @@ void GraphLinker::linkGraph()
   for (auto expr : expressions)
   {
     processExpression(expr);
+    expr.get().linkInternally();
   }
 }
 

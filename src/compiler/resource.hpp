@@ -6,5 +6,5 @@
 struct Resource
 {
   std::string name;
-  Expression &lastWrittenBy;
+  Expression *lastWrittenBy;
 };
