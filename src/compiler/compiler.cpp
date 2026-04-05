@@ -51,6 +51,9 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
 
   log(LOCATION, "Linked graph");
 
+  astBuilder.getRoot().get()->numberExpressions(0);
+  log(LOCATION, "Numbered expressions");
+
   auto bytecode = astBuilder.getRoot()->toByteCode();
   auto result = writeOutput(bytecode);
 

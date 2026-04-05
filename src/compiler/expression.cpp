@@ -65,6 +65,12 @@ void Expression::linkInternally()
   return;
 }
 
+int Expression::numberExpressions(int startWith)
+{
+  this->id = startWith;
+  return startWith + 1;
+}
+
 std::string RootExpression::toString() const
 {
   return Expression::toString() + "(" + token.raw + ")";
@@ -100,6 +106,12 @@ void UnaryExpression::linkInternally()
   addDependency(*this, *root.get());
 }
 
+int UnaryExpression::numberExpressions(int startWith)
+{
+  startWith = root.get()->numberExpressions(startWith);
+  return Expression::numberExpressions(startWith);
+}
+
 std::string BinaryExpression::toString() const
 {
   return Expression::toString() + "(" + left.get()->toString() + ", " + right.get()->toString() + ")";
@@ -127,6 +139,13 @@ void BinaryExpression::linkInternally()
 {
   addDependency(*this, *left.get());
   addDependency(*this, *right.get());
+}
+
+int BinaryExpression::numberExpressions(int startWith)
+{
+  startWith = left.get()->numberExpressions(startWith);
+  startWith = right.get()->numberExpressions(startWith);
+  return Expression::numberExpressions(startWith);
 }
 
 std::string BlockExpression::toString() const
@@ -169,4 +188,14 @@ std::vector<std::reference_wrapper<Expression>> BlockExpression::getWithSubExpre
   std::move(super.begin(), super.end(), std::back_inserter(vector));
 
   return vector;
+}
+
+int BlockExpression::numberExpressions(int startWith)
+{
+  for (auto &line : expressions)
+  {
+    startWith = line.get()->numberExpressions(startWith);
+  }
+
+  return startWith;
 }
