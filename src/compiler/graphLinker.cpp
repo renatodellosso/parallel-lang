@@ -14,9 +14,7 @@ GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root) : root(root),
 
 Resource &GraphLinker::createResource(std::string name)
 {
-  Resource resource = {
-      .name = name,
-      .lastWrittenBy = nullptr};
+  Resource resource(name);
 
   auto [iterator, inserted] = resources.insert(std::make_pair(resource.name, resource));
   if (!inserted)
@@ -33,6 +31,7 @@ void GraphLinker::createResource(Expression &expr)
 
     auto &resource = createResource(name->token.raw);
     resource.lastWrittenBy = &expr;
+    resource.currAccesses.push_back(expr);
   }
   catch (const std::bad_cast &err)
   {
@@ -40,31 +39,36 @@ void GraphLinker::createResource(Expression &expr)
   }
 }
 
-void GraphLinker::useResource(Expression &expr, bool write)
+void GraphLinker::useResource(Expression &expr, std::string name, bool write)
 {
-  try
+  auto entry = resources.find(name);
+  if (entry == resources.end())
+    throw std::runtime_error(std::format("Expression attempted to use resource '{}', which does not exist! Expression: {}", name, expr.toString()));
+
+  Resource &resource = entry->second;
+
+  // If not written yet, don't add dependency to nullptr
+  // If we're writing to this resource, the last write is in currAccesses, so we add the dependency there
+  if (!write && resource.lastWrittenBy)
   {
-    RootExpression &root = dynamic_cast<RootExpression &>(expr);
-
-    auto entry = resources.find(root.token.raw);
-    if (entry == resources.end())
-      throw std::runtime_error(std::format("Expression attempted to use resource '{}', which does not exist! Expression: {}", root.token.raw, root.toString()));
-
-    Resource &resource = entry->second;
-    if (resource.lastWrittenBy)
-    {
-      // If not written yet, don't add dependency to nullptr
-      resource.lastWrittenBy->dependents.push_back(expr);
-      expr.dependencies.push_back(*resource.lastWrittenBy);
-    }
-
-    if (write)
-      resource.lastWrittenBy = &expr;
+    resource.lastWrittenBy->dependents.push_back(expr);
+    expr.dependencies.push_back(*resource.lastWrittenBy);
   }
-  catch (const std::bad_cast &err)
+
+  if (write)
   {
-    throw std::runtime_error(std::format("Attempted to use resource, but expression was not a root expression! Expression: {}", expr.toString()));
+    resource.lastWrittenBy = &expr;
+
+    // Add a dependency to everything in the access set
+    for (auto dep : resource.currAccesses)
+      dep.get().dependents.push_back(expr);
+    std::move(resource.currAccesses.begin(), resource.currAccesses.end(), std::back_inserter(expr.dependencies));
+
+    // Clear accesses
+    resource.currAccesses = std::vector<std::reference_wrapper<Expression>>();
   }
+
+  resource.currAccesses.push_back(expr);
 }
 
 void GraphLinker::processExpression(Expression &expr)
@@ -74,18 +78,28 @@ void GraphLinker::processExpression(Expression &expr)
     if (expr.type == InstructionType::Declare)
       createResource(expr);
     else if (expr.type == InstructionType::GetIdentifier)
-      useResource(expr, false);
+    {
+      try
+      {
+        RootExpression &root = dynamic_cast<RootExpression &>(expr);
+        useResource(expr, root.token.raw, false);
+      }
+      catch (std::bad_cast err)
+      {
+        syntaxError(expr.lineNumber, std::format("GetIdentifier expression was not a RootExpression! Expr: {}", expr.toString()));
+      }
+    }
     else if (expr.type == InstructionType::Set)
     {
       try
       {
-        BinaryExpression &binary = dynamic_cast<BinaryExpression &>(expr);
-        RootExpression &identifier = dynamic_cast<RootExpression &>(*binary.left.get());
-        useResource(identifier, true);
+        BinaryExpression &set = dynamic_cast<BinaryExpression &>(expr);
+        RootExpression &identifier = dynamic_cast<RootExpression &>(*set.left.get());
+        useResource(set, identifier.token.raw, true);
       }
       catch (const std::bad_cast &err)
       {
-        throw std::runtime_error(std::format("Attempted to create resource, but expression was not a binary expression! Expression: {}", expr.toString()));
+        throw std::runtime_error(std::format("Attempted to write resource, but expression was not a binary expression! Expression: {}", expr.toString()));
       }
     }
   }

@@ -14,7 +14,7 @@ class GraphLinker
   Resource &createResource(std::string name);
 
   void createResource(Expression &expr);
-  void useResource(Expression &expr, bool write);
+  void useResource(Expression &expr, std::string name, bool write);
   void processExpression(Expression &expr);
 
   void syntaxError(int line, std::string msg);
