@@ -1,5 +1,6 @@
 #include "graphLinker.hpp"
 #include <format>
+#include <iostream>
 
 GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root) : root(root),
                                                                   errors(std::make_shared<std::vector<SyntaxError>>(std::vector<SyntaxError>())),
@@ -18,6 +19,8 @@ Resource &GraphLinker::createResource(std::string name)
       .lastWrittenBy = nullptr};
 
   auto [iterator, inserted] = resources.insert(std::make_pair(resource.name, resource));
+  if (!inserted)
+    throw new std::runtime_error(std::format("Tried to declare resource '{}', but it already existed!", name));
   return iterator->second;
 }
 
@@ -28,7 +31,7 @@ void GraphLinker::createResource(Expression &expr)
     BinaryExpression &binary = dynamic_cast<BinaryExpression &>(expr);
     RootExpression *name = dynamic_cast<RootExpression *>(binary.right.get());
 
-    Resource resource = createResource(name->token.raw);
+    auto &resource = createResource(name->token.raw);
     resource.lastWrittenBy = &expr;
   }
   catch (const std::bad_cast &err)
@@ -70,9 +73,9 @@ void GraphLinker::processExpression(Expression &expr)
   {
     if (expr.type == InstructionType::Declare)
       createResource(expr);
-    if (expr.type == InstructionType::GetIdentifier)
+    else if (expr.type == InstructionType::GetIdentifier)
       useResource(expr, false);
-    if (expr.type == InstructionType::Set)
+    else if (expr.type == InstructionType::Set)
     {
       try
       {

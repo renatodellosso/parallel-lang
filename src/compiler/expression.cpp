@@ -18,6 +18,10 @@ std::string Expression::toString() const
     return "GetLiteral";
   case InstructionType::GetIdentifier:
     return "GetIdentifier";
+  case InstructionType::ReferenceIdentifier:
+    return "ReferenceIdentifier";
+  case InstructionType::Declare:
+    return "Declare";
   case InstructionType::Set:
     return "Set";
   case InstructionType::Add:
@@ -132,7 +136,7 @@ std::string BlockExpression::toString() const
   // Use references
   for (auto &line : expressions)
   {
-    str += line.get()->toString() + "\n";
+    str += "\t" + line.get()->toString() + "\n";
   }
 
   return str + "}";

@@ -8,6 +8,7 @@ enum class InstructionType
   Block,
   GetLiteral,
   GetIdentifier,
+  ReferenceIdentifier,
   Declare,
   Set,
   Add,
