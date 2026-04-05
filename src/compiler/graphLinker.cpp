@@ -17,7 +17,8 @@ Resource &GraphLinker::createResource(std::string name)
       .name = name,
       .lastWrittenBy = nullptr};
 
-  resources.insert(std::make_pair(resource.name, resource));
+  auto [iterator, inserted] = resources.insert(std::make_pair(resource.name, resource));
+  return iterator->second;
 }
 
 void GraphLinker::createResource(Expression &expr)
@@ -109,4 +110,9 @@ void GraphLinker::linkGraph()
 std::shared_ptr<std::vector<SyntaxError>> GraphLinker::getErrors()
 {
   return errors;
+}
+
+std::unordered_map<std::string, Resource> &GraphLinker::getResources()
+{
+  return resources;
 }

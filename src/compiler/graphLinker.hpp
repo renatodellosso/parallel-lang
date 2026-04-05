@@ -23,4 +23,5 @@ public:
   GraphLinker(std::shared_ptr<BlockExpression> root);
   void linkGraph();
   std::shared_ptr<std::vector<SyntaxError>> getErrors();
+  std::unordered_map<std::string, Resource> &getResources();
 };
