@@ -51,7 +51,24 @@ std::string Expression::toString() const
 
 std::string Expression::toByteCode() const
 {
-  return std::to_string((int)type);
+  std::string bytecode = "";
+
+  // Write number of dependencies
+  bytecode += std::to_string(dependencies.size());
+
+  // Write dependents
+  bytecode += " ";
+  for (auto dep : dependents)
+  {
+    bytecode += dep.toString();
+    bytecode += ",";
+  }
+  // Remove trailing ','
+  bytecode = bytecode.substr(0, bytecode.length() - 1);
+
+  bytecode += " " + std::to_string((int)type);
+
+  return bytecode;
 }
 
 std::vector<std::reference_wrapper<Expression>> Expression::getWithSubExpressions() const
