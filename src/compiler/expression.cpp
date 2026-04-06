@@ -2,10 +2,10 @@
 #include <algorithm>
 #include <iterator>
 
-void addDependency(Expression &expr, Expression &dependsOn)
+void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1)
 {
   expr.dependencies.push_back(dependsOn);
-  dependsOn.dependents.push_back(expr);
+  dependsOn.dependents.push_back(Dependent(expr, argIndex != -1 ? std::make_optional(argIndex) : std::nullopt));
 }
 
 std::string Expression::toString() const
@@ -103,7 +103,7 @@ std::vector<std::reference_wrapper<Expression>> UnaryExpression::getWithSubExpre
 
 void UnaryExpression::linkInternally()
 {
-  addDependency(*this, *root.get());
+  addDependency(*this, *root.get(), 0);
 }
 
 int UnaryExpression::numberExpressions(int startWith)
@@ -137,8 +137,8 @@ std::vector<std::reference_wrapper<Expression>> BinaryExpression::getWithSubExpr
 
 void BinaryExpression::linkInternally()
 {
-  addDependency(*this, *left.get());
-  addDependency(*this, *right.get());
+  addDependency(*this, *left.get(), 0);
+  addDependency(*this, *right.get(), 1);
 }
 
 int BinaryExpression::numberExpressions(int startWith)
@@ -198,4 +198,18 @@ int BlockExpression::numberExpressions(int startWith)
   }
 
   return startWith;
+}
+
+Dependent::Dependent(Expression &expr, std::optional<int> argIndex) : expr(expr), argIndex(argIndex) {}
+
+Dependent::Dependent(Expression &expr, int argIndex) : Dependent(expr, std::make_optional(argIndex)) {}
+
+Dependent::Dependent(Expression &expr) : Dependent(expr, std::nullopt) {}
+
+std::string Dependent::toString()
+{
+  std::string str = std::to_string(expr.get().id);
+  if (argIndex.has_value())
+    str += "-" + std::to_string(argIndex.value());
+  return str;
 }

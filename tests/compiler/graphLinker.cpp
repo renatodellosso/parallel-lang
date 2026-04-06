@@ -65,7 +65,7 @@ TEST(linkGraph, readsResources)
   ASSERT_EQ(refName.get()->dependencies.size(), 1);
   ASSERT_EQ(lastWrite->dependents.size(), 1);
   EXPECT_EQ(&refName.get()->dependencies[0].get(), lastWrite);
-  EXPECT_EQ(&lastWrite->dependents[0].get(), refName.get());
+  EXPECT_EQ(&lastWrite->dependents[0].expr.get(), refName.get());
 
   ASSERT_EQ(var->second.currAccesses.size(), 2);
   EXPECT_EQ(&var->second.currAccesses[1].get(), refName.get());
@@ -107,5 +107,41 @@ TEST(linkGraph, writesResources)
   ASSERT_EQ(set.get()->dependencies.size(), 3);
   ASSERT_EQ(declaration.get()->dependents.size(), 1);
   EXPECT_EQ(&set.get()->dependencies[0].get(), declaration.get());
-  EXPECT_EQ(&declaration.get()->dependents[0].get(), set.get());
+  EXPECT_EQ(&declaration.get()->dependents[0].expr.get(), set.get());
+}
+
+TEST(linkGraph, linksInternally)
+{
+  auto left = std::make_shared<RootExpression>(RootExpression(InstructionType::GetLiteral, 0, {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto right = std::make_shared<RootExpression>(RootExpression(InstructionType::GetLiteral, 0, {TokenType::Literal, TokenSubtype::Integer, "2", 1}));
+  auto binary = std::make_shared<BinaryExpression>(BinaryExpression(InstructionType::Add, 0, left, right));
+
+  auto root = std::make_shared<BlockExpression>(BlockExpression());
+  root.get()->expressions.push_back(binary);
+
+  GraphLinker *linker = new GraphLinker(root);
+  auto &resources = linker->getResources();
+  int originalResourceCount = resources.size();
+
+  linker->linkGraph();
+
+  EXPECT_EQ(linker->getErrors().get()->size(), 0);
+
+  ASSERT_EQ(binary.get()->dependencies.size(), 2);
+  ASSERT_EQ(left.get()->dependents.size(), 1);
+  ASSERT_EQ(right.get()->dependents.size(), 1);
+
+  // Check binary -> left, right
+  EXPECT_EQ(&binary.get()->dependencies[0].get(), left.get());
+  EXPECT_EQ(&binary.get()->dependencies[1].get(), right.get());
+
+  // Check left, right -> binary
+  EXPECT_EQ(&left.get()->dependents[0].expr.get(), binary.get());
+  EXPECT_EQ(&right.get()->dependents[0].expr.get(), binary.get());
+
+  // Check arg indices
+  ASSERT_TRUE(left.get()->dependents[0].argIndex.has_value());
+  ASSERT_TRUE(right.get()->dependents[0].argIndex.has_value());
+  EXPECT_EQ(left.get()->dependents[0].argIndex.value(), 0);
+  EXPECT_EQ(right.get()->dependents[0].argIndex.value(), 1);
 }
