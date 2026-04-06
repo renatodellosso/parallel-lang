@@ -63,8 +63,10 @@ std::string Expression::toByteCode() const
     bytecode += dep.toString();
     bytecode += ",";
   }
+
   // Remove trailing ','
-  bytecode = bytecode.substr(0, bytecode.length() - 1);
+  if (dependents.size() > 0)
+    bytecode = bytecode.substr(0, bytecode.length() - 1);
 
   bytecode += " " + std::to_string((int)type);
 
