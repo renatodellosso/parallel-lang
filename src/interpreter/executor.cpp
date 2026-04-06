@@ -15,7 +15,7 @@ void Executor::execSingleInstruction(Instruction instr)
   switch (instr.type)
   {
   case InstructionType::GetLiteral:
-    stack.push(instr.args[0]);
+    stack.push(instr.bytecodeArgs[0]);
     break;
   case InstructionType::Add:
   {
@@ -57,7 +57,7 @@ void Executor::execSingleInstruction(Instruction instr)
       stack.push(result);
     }
     else
-      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.instructionNumber, (int)left.type, (int)right.type));
+      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
 
     break;
   }
@@ -74,7 +74,7 @@ void Executor::execSingleInstruction(Instruction instr)
       stack.push(result);
     }
     else
-      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.instructionNumber, (int)left.type, (int)right.type));
+      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
 
     break;
   }
@@ -91,13 +91,13 @@ void Executor::execSingleInstruction(Instruction instr)
       stack.push(result);
     }
     else
-      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.instructionNumber, (int)left.type, (int)right.type));
+      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
 
     break;
   }
 
   default:
-    throw std::runtime_error(std::format("Unknown instruction type on instruction {}: {}", instr.instructionNumber, (int)instr.type));
+    throw std::runtime_error(std::format("Unknown instruction type on instruction {}: {}", instr.id, (int)instr.type));
   }
 
   // Clean up stack if at end of line

@@ -51,7 +51,7 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write)
   // If we're writing to this resource, the last write is in currAccesses, so we add the dependency there
   if (!write && resource.lastWrittenBy)
   {
-    resource.lastWrittenBy->dependents.push_back(Dependent(expr));
+    resource.lastWrittenBy->dependents.push_back(ExprDependent(expr));
     expr.dependencies.push_back(*resource.lastWrittenBy);
   }
 
@@ -61,7 +61,7 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write)
 
     // Add a dependency to everything in the access set
     for (auto dep : resource.currAccesses)
-      dep.get().dependents.push_back(Dependent(expr));
+      dep.get().dependents.push_back(ExprDependent(expr));
     std::move(resource.currAccesses.begin(), resource.currAccesses.end(), std::back_inserter(expr.dependencies));
 
     // Clear accesses

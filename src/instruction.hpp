@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <variant>
+
 enum class InstructionType
 {
   Block,
@@ -23,6 +24,8 @@ enum class InstructionType
   CompareGreaterThanEquals
 };
 
+std::string instructionTypeToString(InstructionType type);
+
 enum ArgType
 {
   String,
@@ -39,10 +42,34 @@ struct Value
 std::string valToStr(Value val);
 bool valToBool(Value val);
 
+struct Instruction;
+
+struct InstrDependent
+{
+  int instrId;
+  std::optional<int> argIndex;
+
+  InstrDependent(int instrId, std::optional<int> argIndex);
+  InstrDependent(int instrId, int argIndex);
+  InstrDependent(int instrId);
+};
+
 struct Instruction
 {
-  int instructionNumber;
+  int id;
   bool endsLine;
+
   InstructionType type;
-  std::vector<Value> args;
+
+  // Args inherent to the instruction
+  std::vector<Value> bytecodeArgs;
+  // Args from previous instructions
+  std::vector<Value> depArgs;
+
+  int depCount, depsFulfilled;
+  std::vector<InstrDependent> dependents;
+
+  Instruction(int id);
+
+  std::string toString();
 };

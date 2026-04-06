@@ -5,48 +5,12 @@
 void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1)
 {
   expr.dependencies.push_back(dependsOn);
-  dependsOn.dependents.push_back(Dependent(expr, argIndex != -1 ? std::make_optional(argIndex) : std::nullopt));
+  dependsOn.dependents.push_back(ExprDependent(expr, argIndex != -1 ? std::make_optional(argIndex) : std::nullopt));
 }
 
 std::string Expression::toString() const
 {
-  switch (type)
-  {
-  case InstructionType::Block:
-    return "Block";
-  case InstructionType::GetLiteral:
-    return "GetLiteral";
-  case InstructionType::GetIdentifier:
-    return "GetIdentifier";
-  case InstructionType::ReferenceIdentifier:
-    return "ReferenceIdentifier";
-  case InstructionType::Declare:
-    return "Declare";
-  case InstructionType::Set:
-    return "Set";
-  case InstructionType::Add:
-    return "Add";
-  case InstructionType::Subtract:
-    return "Subtract";
-  case InstructionType::Multiply:
-    return "Multiply";
-  case InstructionType::Divide:
-    return "Divide";
-  case InstructionType::Negate:
-    return "Negate";
-  case InstructionType::CompareEquals:
-    return "CompareEquals";
-  case InstructionType::CompareLessThan:
-    return "CompareLessThan";
-  case InstructionType::CompareLessThanEquals:
-    return "CompareLessThanEquals";
-  case InstructionType::CompareGreaterThan:
-    return "CompareGreaterThan";
-  case InstructionType::CompareGreaterThanEquals:
-    return "CompareGreaterThanEquals";
-  default:
-    return "Unknown Expression Type";
-  }
+  return instructionTypeToString(type);
 }
 
 std::string Expression::toByteCode() const
@@ -219,16 +183,16 @@ int BlockExpression::numberExpressions(int startWith)
   return startWith;
 }
 
-Dependent::Dependent(Expression &expr, std::optional<int> argIndex) : expr(expr), argIndex(argIndex) {}
+ExprDependent::ExprDependent(Expression &expr, std::optional<int> argIndex) : expr(expr), argIndex(argIndex) {}
 
-Dependent::Dependent(Expression &expr, int argIndex) : Dependent(expr, std::make_optional(argIndex)) {}
+ExprDependent::ExprDependent(Expression &expr, int argIndex) : ExprDependent(expr, std::make_optional(argIndex)) {}
 
-Dependent::Dependent(Expression &expr) : Dependent(expr, std::nullopt) {}
+ExprDependent::ExprDependent(Expression &expr) : ExprDependent(expr, std::nullopt) {}
 
-std::string Dependent::toString()
+std::string ExprDependent::toString()
 {
   std::string str = std::to_string(expr.get().id);
   if (argIndex.has_value())
-    str += "-" + std::to_string(argIndex.value());
+    str += "." + std::to_string(argIndex.value());
   return str;
 }

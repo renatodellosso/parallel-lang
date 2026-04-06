@@ -10,14 +10,14 @@
 
 struct Expression;
 
-struct Dependent
+struct ExprDependent
 {
   std::reference_wrapper<Expression> expr;
   std::optional<int> argIndex;
 
-  Dependent(Expression &expr, std::optional<int> argIndex);
-  Dependent(Expression &expr, int argIndex);
-  Dependent(Expression &expr);
+  ExprDependent(Expression &expr, std::optional<int> argIndex);
+  ExprDependent(Expression &expr, int argIndex);
+  ExprDependent(Expression &expr);
   std::string toString();
 };
 
@@ -28,13 +28,13 @@ struct Expression
   int id;
 
   std::vector<std::reference_wrapper<Expression>> dependencies;
-  std::vector<Dependent> dependents;
+  std::vector<ExprDependent> dependents;
 
   Expression(InstructionType type, int lineNumber) : type(type),
                                                      lineNumber(lineNumber),
                                                      id(-1),
                                                      dependencies(std::vector<std::reference_wrapper<Expression>>()),
-                                                     dependents(std::vector<Dependent>()) {}
+                                                     dependents(std::vector<ExprDependent>()) {}
 
   virtual std::string toString() const;
   virtual std::string toByteCode() const;

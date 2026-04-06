@@ -13,6 +13,7 @@ class BytecodeParser
 
   // Does not consume whatever char signifies the end of the arg (' ' or ';' for example)
   Value buildArg();
+  std::vector<InstrDependent> buildDependents();
   void buildSingleInstruction();
 
 public:

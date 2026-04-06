@@ -71,16 +71,83 @@ Value BytecodeParser::buildArg()
   return arg;
 }
 
+std::vector<InstrDependent> BytecodeParser::buildDependents()
+{
+  // Build overall string
+  std::string depStr = "";
+  for (char c = stream.peek(); c != ' '; c = stream.peek())
+  {
+    depStr += c;
+    stream.get();
+  }
+
+  // Split string into dependents
+  std::vector<std::string> rawDeps;
+  std::string curr = "";
+  for (auto c : depStr)
+  {
+    if (c != ',')
+      curr += c;
+    else
+    {
+      rawDeps.push_back(curr);
+      curr = "";
+    }
+  }
+  // Push last string
+  if (curr != "")
+    rawDeps.push_back(curr);
+
+  // Convert strings to Dependents
+  std::vector<InstrDependent> deps;
+  for (auto str : rawDeps)
+  {
+    std::string id = "", index = "", curr = "";
+    for (auto c : str)
+    {
+      if (c != '.')
+        curr += c;
+      else
+      {
+        id = curr;
+        curr = "";
+      }
+    }
+    // Check if dep has arg index
+    if (id != "" && curr != "")
+      index = curr;
+    else if (id == "")
+      id = curr;
+
+    deps.emplace_back(std::atoi(id.c_str()), index != "" ? std::make_optional(std::atoi(index.c_str())) : std::nullopt);
+  }
+
+  return deps;
+}
+
 void BytecodeParser::buildSingleInstruction()
 {
-  Instruction instr = {
-      .instructionNumber = (int)instructions.size() + 1,
-      .endsLine = false,
-      .type = InstructionType::Add,
-      .args = std::vector<Value>()};
+  Instruction instr((int)instructions.size());
+
+  // Parse depCount
+  std::string curr = "";
+  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r'; c = stream.peek())
+  {
+    stream.get();
+    curr += c;
+  }
+
+  // Skip ' '
+  if (stream.peek() == ' ')
+    stream.get();
+
+  instr.depCount = std::atoi(curr.c_str());
+
+  instr.dependents = buildDependents();
+  stream.get(); // Consume ' '
 
   // Parse type
-  std::string curr = "";
+  curr = "";
   for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r'; c = stream.peek())
   {
     stream.get();
@@ -93,7 +160,7 @@ void BytecodeParser::buildSingleInstruction()
   while (stream.peek() != ';' && stream.peek() != '\n' && stream.peek() != '\r' && !stream.eof())
   {
     Value arg = buildArg();
-    instr.args.push_back(arg);
+    instr.bytecodeArgs.push_back(arg);
   }
 
   if (stream.peek() == ';')
