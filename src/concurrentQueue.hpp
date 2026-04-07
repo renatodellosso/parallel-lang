@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <mutex>
+#include <stdexcept>
 
 template <class T>
 class ConcurrentQueue
