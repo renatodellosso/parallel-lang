@@ -183,7 +183,11 @@ void Executor::supervisor()
     log(LOCATION, "Executor halted!");
 
   for (int i = 0; i < workers.size(); i++)
-    workers[i].detach();
+  {
+    // Can only detach from joinable threads
+    if (workers[i].joinable())
+      workers[i].join();
+  }
 }
 
 void Executor::initQueue()
