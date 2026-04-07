@@ -17,14 +17,14 @@ std::string formatNs(std::chrono::nanoseconds time)
   auto micros = ns / 1000;
   auto ms = micros / 1000;
   auto secs = ms / 1000;
-  auto mins = secs / 1000;
+  auto mins = secs / 60;
 
   std::string msg = "";
 
   if (mins > 0)
     msg += std::to_string(mins) + "m";
   if (secs > 0)
-    msg += std::to_string(secs % 1000) + "s";
+    msg += std::to_string(secs % 60) + "s";
   if (ms > 0)
     msg += std::to_string(ms % 1000) + "ms";
   if (micros > 0)
