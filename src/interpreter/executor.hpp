@@ -9,10 +9,8 @@
 class Executor
 {
   std::vector<Instruction> &instructions;
-  std::stack<Value> stack;
 
-  // Pops and returns the top of the stack
-  Value pop();
+  void pushResult(Instruction instr, Value result);
   void execSingleInstruction(Instruction instr);
 
 public:

@@ -3,26 +3,38 @@
 
 #define LOCATION "Executor"
 
-Value Executor::pop()
+void Executor::pushResult(Instruction instr, Value result)
 {
-  Value val = stack.top();
-  stack.pop();
-  return val;
+  for (auto dep : instr.dependents)
+  {
+    if (!dep.argIndex.has_value())
+      continue;
+
+    auto &depVec = instructions[dep.instrId].depArgs;
+    int i = dep.argIndex.value();
+
+    // Ensure vector has an index i
+    if (depVec.size() < i + 1)
+      depVec.resize(i + 1);
+
+    depVec[i] = result;
+  }
 }
 
 void Executor::execSingleInstruction(Instruction instr)
 {
+  Value result;
+
   switch (instr.type)
   {
   case InstructionType::GetLiteral:
-    stack.push(instr.bytecodeArgs[0]);
+    pushResult(instr, instr.bytecodeArgs[0]);
     break;
   case InstructionType::Add:
   {
     // Block so we can declare vars
-    Value right = pop(), left = pop();
+    Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    Value result;
     if (left.type == ArgType::Integer && right.type == ArgType::Integer)
     {
       result = {
@@ -41,20 +53,21 @@ void Executor::execSingleInstruction(Instruction instr)
           .type = ArgType::Bool,
           .val = valToBool(left) || valToBool(right)};
     }
-    stack.push(result);
+
+    pushResult(instr, result);
     break;
   }
   case InstructionType::Subtract:
   {
     // Block so we can declare vars
-    Value right = pop(), left = pop();
+    Value left = instr.depArgs[0], right = instr.depArgs[1];
 
     if (left.type == ArgType::Integer && right.type == ArgType::Integer)
     {
-      Value result = {
+      result = {
           .type = ArgType::Integer,
           .val = std::get<int>(left.val) - std::get<int>(right.val)};
-      stack.push(result);
+      pushResult(instr, result);
     }
     else
       throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
@@ -64,14 +77,14 @@ void Executor::execSingleInstruction(Instruction instr)
   case InstructionType::Multiply:
   {
     // Block so we can declare vars
-    Value right = pop(), left = pop();
+    Value left = instr.depArgs[0], right = instr.depArgs[1];
 
     if (left.type == ArgType::Integer && right.type == ArgType::Integer)
     {
-      Value result = {
+      result = {
           .type = ArgType::Integer,
           .val = std::get<int>(left.val) * std::get<int>(right.val)};
-      stack.push(result);
+      pushResult(instr, result);
     }
     else
       throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
@@ -81,14 +94,14 @@ void Executor::execSingleInstruction(Instruction instr)
   case InstructionType::Divide:
   {
     // Block so we can declare vars
-    Value right = pop(), left = pop();
+    Value left = instr.depArgs[0], right = instr.depArgs[1];
 
     if (left.type == ArgType::Integer && right.type == ArgType::Integer)
     {
-      Value result = {
+      result = {
           .type = ArgType::Integer,
           .val = std::get<int>(left.val) / std::get<int>(right.val)};
-      stack.push(result);
+      pushResult(instr, result);
     }
     else
       throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
@@ -103,8 +116,7 @@ void Executor::execSingleInstruction(Instruction instr)
   // Clean up stack if at end of line
   if (instr.endsLine)
   {
-    log(LOCATION, "{}", valToStr(stack.top()));
-    stack = std::stack<Value>();
+    log(LOCATION, "{}", valToStr(result));
   }
 }
 
@@ -118,4 +130,4 @@ void Executor::execInstructions()
   log(LOCATION, "Done! Executed {} instructions.", instructions.size());
 }
 
-Executor::Executor(std::vector<Instruction> &instructions) : instructions(instructions), stack(std::stack<Value>()) {}
+Executor::Executor(std::vector<Instruction> &instructions) : instructions(instructions) {}
