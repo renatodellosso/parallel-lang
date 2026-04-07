@@ -4,12 +4,13 @@
 #include "../cliUtils.hpp"
 #include "../instruction.hpp"
 #include <vector>
-#include <stack>
+#include <queue>
 
 class Executor
 {
   const CliArgs &cliArgs;
   std::vector<Instruction> &instructions;
+  // std::queue<Instruction &> queue;
 
   void pushResult(Instruction instr, Value result);
   void execSingleInstruction(Instruction instr);
