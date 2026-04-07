@@ -10,11 +10,12 @@ Interpreter::Interpreter(const CliArgs &args) : args(args), instructions(std::ve
 
 ExitCode Interpreter::interpret(std::istream &stream)
 {
-  log(LOCATION, "Interpreting file '{}'...", args.target);
+  if (args.verbose)
+    log(LOCATION, "Interpreting file '{}'...", args.target);
 
   try
   {
-    BytecodeParser parser(instructions, stream);
+    BytecodeParser parser(args, instructions, stream);
     parser.buildInstructions();
   }
   catch (std::runtime_error err)
@@ -25,7 +26,7 @@ ExitCode Interpreter::interpret(std::istream &stream)
 
   try
   {
-    Executor executor(instructions);
+    Executor executor(args, instructions);
     executor.execInstructions();
   }
   catch (std::runtime_error err)

@@ -8,12 +8,13 @@
 
 class Executor
 {
+  const CliArgs &cliArgs;
   std::vector<Instruction> &instructions;
 
   void pushResult(Instruction instr, Value result);
   void execSingleInstruction(Instruction instr);
 
 public:
-  Executor(std::vector<Instruction> &instructions);
+  Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions);
   void execInstructions();
 };

@@ -130,7 +130,8 @@ void Executor::execInstructions()
     execSingleInstruction(instr);
   }
 
-  log(LOCATION, "Done! Executed {} instructions.", instructions.size());
+  if (cliArgs.verbose)
+    log(LOCATION, "Done! Executed {} instructions.", instructions.size());
 }
 
-Executor::Executor(std::vector<Instruction> &instructions) : instructions(instructions) {}
+Executor::Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions) : cliArgs(cliArgs), instructions(instructions) {}

@@ -8,6 +8,8 @@
 
 class BytecodeParser
 {
+  const CliArgs &cliArgs;
+
   std::vector<Instruction> &instructions;
   std::istream &stream;
 
@@ -17,6 +19,6 @@ class BytecodeParser
   void buildSingleInstruction();
 
 public:
-  BytecodeParser(std::vector<Instruction> &instructions, std::istream &stream);
+  BytecodeParser(const CliArgs &cliArgs, std::vector<Instruction> &instructions, std::istream &stream);
   void buildInstructions();
 };

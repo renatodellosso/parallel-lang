@@ -182,7 +182,8 @@ void BytecodeParser::buildInstructions()
     stream.get(); // Consume '\n'
   }
 
-  log(LOCATION, "Parsed {} instructions", instructions.size());
+  if (cliArgs.verbose)
+    log(LOCATION, "Parsed {} instructions", instructions.size());
 }
 
-BytecodeParser::BytecodeParser(std::vector<Instruction> &instructions, std::istream &stream) : instructions(instructions), stream(stream) {}
+BytecodeParser::BytecodeParser(const CliArgs &cliArgs, std::vector<Instruction> &instructions, std::istream &stream) : cliArgs(cliArgs), instructions(instructions), stream(stream) {}

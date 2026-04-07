@@ -16,7 +16,8 @@ const std::unordered_map<std::string, std::string> shortcuts = {
     {"-t", "--target"},
     {"-c", "--compile"},
     {"-i", "--interpret"},
-    {"-o", "--out"}};
+    {"-o", "--out"},
+    {"-e", "--verbose"}};
 
 #define OPTIONS_HANDLER_PARAMS CliArgs &args, int i, int count, char *argv[]
 
@@ -65,6 +66,12 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
                   }
 
                   args.mode = CliMode::Interpret;
+
+                  return 0;
+                }},
+               {"--verbose", [](OPTIONS_HANDLER_PARAMS) -> int
+                {
+                  args.verbose = true;
 
                   return 0;
                 }}};

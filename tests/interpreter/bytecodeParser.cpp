@@ -11,7 +11,7 @@ TEST(buildInstructions, buildsSingleInstruction)
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
-  BytecodeParser parser(instrs, stream);
+  BytecodeParser parser({}, instrs, stream);
   parser.buildInstructions();
 
   ASSERT_EQ(instrs.size(), 3);
@@ -59,7 +59,7 @@ TEST(buildInstructions, buildsMultipleInstructions)
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
-  BytecodeParser parser(instrs, stream);
+  BytecodeParser parser({}, instrs, stream);
   parser.buildInstructions();
 
   ASSERT_EQ(instrs.size(), 6);
@@ -104,7 +104,7 @@ TEST(buildInstructions, buildsCompoundInstructions)
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
-  BytecodeParser parser(instrs, stream);
+  BytecodeParser parser({}, instrs, stream);
   parser.buildInstructions();
 
   ASSERT_EQ(instrs.size(), 5);
