@@ -25,6 +25,9 @@ inline T ConcurrentQueue<T>::pop()
 {
   mutex.lock();
 
+  if (queue.size() == 0)
+    throw std::runtime_error("Tried to pop from empty queue!");
+
   auto t = queue.front();
   queue.pop();
 

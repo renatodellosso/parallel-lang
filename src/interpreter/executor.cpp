@@ -3,14 +3,15 @@
 
 #define LOCATION "Executor"
 
-void Executor::pushResult(Instruction instr, Value result)
+void Executor::updateDependency(InstrDependent dep, Value result)
 {
-  for (auto dep : instr.dependents)
-  {
-    if (!dep.argIndex.has_value())
-      continue;
+  auto &depInstr = instructions[dep.instrId];
+  depInstr.depsFulfilled++;
 
-    auto &depVec = instructions[dep.instrId].depArgs;
+  if (dep.argIndex.has_value())
+  {
+
+    auto &depVec = depInstr.depArgs;
     int i = dep.argIndex.value();
 
     // Ensure vector has an index i
@@ -19,16 +20,19 @@ void Executor::pushResult(Instruction instr, Value result)
 
     depVec[i] = result;
   }
+
+  if (depInstr.depsFulfilled == depInstr.depCount)
+    queue.push(depInstr);
 }
 
-void Executor::execSingleInstruction(Instruction instr)
+void Executor::execSingleInstruction(Instruction &instr)
 {
   Value result;
 
   switch (instr.type)
   {
   case InstructionType::GetLiteral:
-    pushResult(instr, instr.bytecodeArgs[0]);
+    result = instr.bytecodeArgs[0];
     break;
   case InstructionType::Add:
   {
@@ -53,8 +57,6 @@ void Executor::execSingleInstruction(Instruction instr)
           .type = ValueType::Bool,
           .val = valToBool(left) || valToBool(right)};
     }
-
-    pushResult(instr, result);
     break;
   }
   case InstructionType::Subtract:
@@ -67,7 +69,6 @@ void Executor::execSingleInstruction(Instruction instr)
       result = {
           .type = ValueType::Integer,
           .val = std::get<int>(left.val) - std::get<int>(right.val)};
-      pushResult(instr, result);
     }
     else
       throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
@@ -84,7 +85,6 @@ void Executor::execSingleInstruction(Instruction instr)
       result = {
           .type = ValueType::Integer,
           .val = std::get<int>(left.val) * std::get<int>(right.val)};
-      pushResult(instr, result);
     }
     else
       throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
@@ -101,7 +101,6 @@ void Executor::execSingleInstruction(Instruction instr)
       result = {
           .type = ValueType::Integer,
           .val = std::get<int>(left.val) / std::get<int>(right.val)};
-      pushResult(instr, result);
     }
     else
       throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
@@ -114,7 +113,9 @@ void Executor::execSingleInstruction(Instruction instr)
   }
 
   for (auto dep : instr.dependents)
-    instructions[dep.instrId].depsFulfilled++;
+    updateDependency(dep, result);
+
+  instr.executed = true;
 
   // Clean up stack if at end of line
   if (instr.endsLine)
@@ -123,12 +124,78 @@ void Executor::execSingleInstruction(Instruction instr)
   }
 }
 
-void Executor::execInstructions()
+void Executor::execWorker()
 {
-  for (auto instr : instructions)
+  try
   {
-    execSingleInstruction(instr);
+    while (!halt)
+    {
+      if (queue.size() == 0)
+        continue;
+      auto &instr = queue.pop().get();
+      execSingleInstruction(instr);
+    }
   }
+  catch (std::runtime_error err)
+  {
+    logError(LOCATION, "{}", err.what());
+    halt = true;
+  }
+}
+
+void Executor::supervisor()
+{
+  if (cliArgs.verbose)
+    log(LOCATION, "Started supervisor");
+
+  bool isDone = true;
+  do
+  {
+    isDone = true;
+
+    for (auto instr : instructions)
+    {
+      if (!instr.executed)
+      {
+        isDone = false;
+        break;
+      }
+    }
+  } while (!isDone && !halt);
+
+  halt = true;
+
+  if (cliArgs.verbose)
+    log(LOCATION, "Executor halted!");
+
+  for (int i = 0; i < workers.size(); i++)
+    workers[i].detach();
+}
+
+void Executor::initQueue()
+{
+  for (int i = 0; i < instructions.size(); i++)
+  {
+    auto &instr = instructions[i];
+    if (instr.depsFulfilled == instr.depCount)
+      queue.push(instr);
+  }
+
+  if (cliArgs.verbose)
+    log(LOCATION, "Pushed {} instructions onto the queue.", queue.size());
+}
+
+void Executor::startExecution()
+{
+  initQueue();
+
+  if (cliArgs.verbose)
+    log(LOCATION, "Starting {} execution workers...", cliArgs.threads);
+
+  for (int i = 0; i < cliArgs.threads; i++)
+    workers.emplace_back(&Executor::execWorker, this); // Can't just pass execWorker since it's a method
+
+  supervisor();
 
   if (cliArgs.verbose)
     log(LOCATION, "Done! Executed {} instructions.", instructions.size());

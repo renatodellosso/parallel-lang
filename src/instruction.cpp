@@ -78,6 +78,7 @@ InstrDependent::InstrDependent(int instrId) : InstrDependent(instrId, std::nullo
 Instruction::Instruction(int id) : id(id),
                                    endsLine(false),
                                    type((InstructionType)0),
+                                   executed(false),
                                    bytecodeArgs(std::vector<Value>()),
                                    depArgs(std::vector<Value>()),
                                    depCount(0),

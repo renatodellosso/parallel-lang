@@ -16,4 +16,5 @@ struct CliArgs
   std::optional<std::string> outputFile;
   CliMode mode;
   bool verbose;
+  int threads;
 };

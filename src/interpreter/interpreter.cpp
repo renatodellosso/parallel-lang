@@ -15,8 +15,10 @@ ExitCode Interpreter::interpret(std::istream &stream)
 
   try
   {
-    BytecodeParser parser(args, instructions, stream);
-    parser.buildInstructions();
+    BytecodeParser *parser = new BytecodeParser(args, instructions, stream);
+    parser->buildInstructions();
+
+    delete parser; // match new with free
   }
   catch (std::runtime_error err)
   {
@@ -26,8 +28,10 @@ ExitCode Interpreter::interpret(std::istream &stream)
 
   try
   {
-    Executor executor(args, instructions);
-    executor.execInstructions();
+    Executor *executor = new Executor(args, instructions);
+    executor->startExecution();
+
+    delete executor;
   }
   catch (std::runtime_error err)
   {

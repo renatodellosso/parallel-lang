@@ -22,32 +22,32 @@ std::vector<Instruction> getInstrs()
   return instrs;
 }
 
-TEST(execInstructions, doesntError)
+TEST(startExecution, doesntError)
 {
   auto instrs = getInstrs();
 
-  Executor executor({}, instrs);
-  executor.execInstructions();
+  Executor executor({.threads = 1}, instrs);
+  executor.startExecution();
 
-  EXPECT_NO_THROW(executor.execInstructions());
+  EXPECT_NO_THROW(executor.startExecution());
 }
 
-TEST(execInstructions, updatesDepsFulfilled)
+TEST(startExecution, updatesDepsFulfilled)
 {
   auto instrs = getInstrs();
 
-  Executor executor({}, instrs);
-  executor.execInstructions();
+  Executor executor({.threads = 1}, instrs);
+  executor.startExecution();
 
   EXPECT_EQ(instrs[2].depsFulfilled, 2);
 }
 
-TEST(execInstructions, populatesDepArgs)
+TEST(startExecution, populatesDepArgs)
 {
   auto instrs = getInstrs();
 
-  Executor executor({}, instrs);
-  executor.execInstructions();
+  Executor executor({.threads = 1}, instrs);
+  executor.startExecution();
 
   ASSERT_EQ(instrs[2].depArgs.size(), 2);
   EXPECT_EQ(instrs[2].depArgs[0].type, ValueType::Integer);

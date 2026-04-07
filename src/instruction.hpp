@@ -62,6 +62,8 @@ struct Instruction
 
   InstructionType type;
 
+  bool executed;
+
   // Args inherent to the instruction
   std::vector<Value> bytecodeArgs;
   // Args from previous instructions
