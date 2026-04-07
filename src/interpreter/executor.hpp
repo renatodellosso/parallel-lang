@@ -22,7 +22,7 @@ class Executor
   void execSingleInstruction(Instruction &instr);
 
   // Multithreaded worker that actually executes instructions
-  void execWorker();
+  void execWorker(int id);
   // Waits until all instructions have been executed and then halts workers
   void supervisor();
 

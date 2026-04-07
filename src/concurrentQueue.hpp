@@ -23,7 +23,7 @@ inline ConcurrentQueue<T>::ConcurrentQueue() {}
 template <class T>
 inline T ConcurrentQueue<T>::pop()
 {
-  mutex.lock();
+  const std::lock_guard<std::mutex> lock(mutex);
 
   if (queue.size() == 0)
     throw std::runtime_error("Tried to pop from empty queue!");
@@ -31,25 +31,21 @@ inline T ConcurrentQueue<T>::pop()
   auto t = queue.front();
   queue.pop();
 
-  mutex.unlock();
-
   return t;
 }
 
 template <class T>
 inline void ConcurrentQueue<T>::push(T val)
 {
-  mutex.lock();
+  const std::lock_guard<std::mutex> lock(mutex);
   queue.push(val);
-  mutex.unlock();
 }
 
 template <class T>
 inline int ConcurrentQueue<T>::size()
 {
-  mutex.lock();
+  const std::lock_guard<std::mutex> lock(mutex);
   auto size = queue.size();
-  mutex.unlock();
 
   return size;
 }

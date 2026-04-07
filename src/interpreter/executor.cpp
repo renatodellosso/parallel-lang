@@ -124,8 +124,12 @@ void Executor::execSingleInstruction(Instruction &instr)
   }
 }
 
-void Executor::execWorker()
+void Executor::execWorker(int id)
 {
+  std::string location = LOCATION + std::string(":worker") + std::to_string(id);
+  if (cliArgs.verbose)
+    log(location.c_str(), "Worker {} awake", id);
+
   try
   {
     while (!halt)
@@ -146,16 +150,16 @@ void Executor::execWorker()
 void Executor::supervisor()
 {
   if (cliArgs.verbose)
-    log(LOCATION, "Started supervisor");
+    log(LOCATION, "Supervisor awake");
 
   bool isDone = true;
   do
   {
     isDone = true;
 
-    for (auto instr : instructions)
+    for (int i = 0; i < instructions.size(); i++)
     {
-      if (!instr.executed)
+      if (!instructions[i].executed)
       {
         isDone = false;
         break;
@@ -193,7 +197,7 @@ void Executor::startExecution()
     log(LOCATION, "Starting {} execution workers...", cliArgs.threads);
 
   for (int i = 0; i < cliArgs.threads; i++)
-    workers.emplace_back(&Executor::execWorker, this); // Can't just pass execWorker since it's a method
+    workers.emplace_back(&Executor::execWorker, this, i); // Can't just pass execWorker since it's a method
 
   supervisor();
 
