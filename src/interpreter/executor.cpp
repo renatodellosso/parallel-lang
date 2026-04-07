@@ -6,10 +6,20 @@
 void Executor::updateDependency(InstrDependent dep, Value result)
 {
   auto &depInstr = instructions[dep.instrId];
-  depInstr.depsFulfilled++;
+
+  int fulfilled;
+
+  // Smaller scope so the lock guard is cleaned up
+  {
+    std::lock_guard<std::mutex> fulfilledLock(depsFulfilledMutexes[dep.instrId]);
+
+    depInstr.depsFulfilled++;
+    fulfilled = depInstr.depsFulfilled;
+  }
 
   if (dep.argIndex.has_value())
   {
+    std::lock_guard<std::mutex> argLock(depArgsMutexes[dep.instrId]);
 
     auto &depVec = depInstr.depArgs;
     int i = dep.argIndex.value();
@@ -21,7 +31,7 @@ void Executor::updateDependency(InstrDependent dep, Value result)
     depVec[i] = result;
   }
 
-  if (depInstr.depsFulfilled == depInstr.depCount)
+  if (fulfilled == depInstr.depCount)
     queue.push(depInstr);
 }
 
@@ -205,4 +215,10 @@ void Executor::startExecution()
     log(LOCATION, "Done! Executed {} instructions.", instructions.size());
 }
 
-Executor::Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions) : cliArgs(cliArgs), instructions(instructions) {}
+Executor::Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions)
+    : cliArgs(cliArgs),
+      instructions(instructions),
+      depArgsMutexes(std::vector<std::mutex>(instructions.size())),
+      depsFulfilledMutexes(std::vector<std::mutex>(instructions.size()))
+{
+}

@@ -6,6 +6,7 @@
 #include "../concurrentQueue.hpp"
 #include <vector>
 #include <thread>
+#include <mutex>
 
 class Executor
 {
@@ -13,6 +14,9 @@ class Executor
   std::vector<Instruction> &instructions;
   ConcurrentQueue<std::reference_wrapper<Instruction>> queue;
   std::vector<std::thread> workers;
+
+  // We have to put the mutexes in here since we can't move them
+  std::vector<std::mutex> depArgsMutexes, depsFulfilledMutexes;
 
   // Set to true to end workers
   bool halt;
