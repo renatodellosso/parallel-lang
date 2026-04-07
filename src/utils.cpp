@@ -14,7 +14,8 @@ bool isInteger(const std::string &s)
 std::string formatNs(std::chrono::nanoseconds time)
 {
   auto ns = time.count();
-  auto ms = ns / 1000;
+  auto micros = ns / 1000;
+  auto ms = micros / 1000;
   auto secs = ms / 1000;
   auto mins = secs / 1000;
 
@@ -26,6 +27,8 @@ std::string formatNs(std::chrono::nanoseconds time)
     msg += std::to_string(secs % 1000) + "s";
   if (ms > 0)
     msg += std::to_string(ms % 1000) + "ms";
+  if (micros > 0)
+    msg += std::to_string(micros % 1000) + "μs";
   if (ns > 0)
     msg += std::to_string(ns % 1000) + "ns";
 
