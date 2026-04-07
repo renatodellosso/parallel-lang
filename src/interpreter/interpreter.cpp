@@ -3,6 +3,7 @@
 #include "executor.hpp"
 #include "../utils.hpp"
 #include "../logging.hpp"
+#include <chrono>
 
 #define LOCATION "Interpreter"
 
@@ -10,6 +11,8 @@ Interpreter::Interpreter(const CliArgs &args) : args(args), instructions(std::ve
 
 ExitCode Interpreter::interpret(std::istream &stream)
 {
+  auto start = std::chrono::steady_clock::now();
+
   if (args.verbose)
     log(LOCATION, "Interpreting file '{}'...", args.target);
 
@@ -38,6 +41,12 @@ ExitCode Interpreter::interpret(std::istream &stream)
     logError(LOCATION, "Encountered error executing bytecode: {}", err.what());
     return ExitCode::ExecutionError;
   }
+
+  auto end = std::chrono::steady_clock::now();
+  auto duration = end - start;
+
+  if (args.verbose)
+    log(LOCATION, "Finished in {}", formatNs(end - start));
 
   return ExitCode::Ok;
 }

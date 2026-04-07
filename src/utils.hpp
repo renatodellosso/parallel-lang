@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <chrono>
 
 // strncmp is in cstring on Ubunuty
 #ifdef __unix__
@@ -9,3 +10,4 @@
 
 bool beginsWith(std::string str, std::string prefix);
 bool isInteger(const std::string &s);
+std::string formatNs(std::chrono::nanoseconds time);

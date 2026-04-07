@@ -10,3 +10,24 @@ bool isInteger(const std::string &s)
 {
   return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
+
+std::string formatNs(std::chrono::nanoseconds time)
+{
+  auto ns = time.count();
+  auto ms = ns / 1000;
+  auto secs = ms / 1000;
+  auto mins = secs / 1000;
+
+  std::string msg = "";
+
+  if (mins > 0)
+    msg += std::to_string(mins) + "m";
+  if (secs > 0)
+    msg += std::to_string(secs % 1000) + "s";
+  if (ms > 0)
+    msg += std::to_string(ms % 1000) + "ms";
+  if (ns > 0)
+    msg += std::to_string(ns % 1000) + "ns";
+
+  return msg;
+}
