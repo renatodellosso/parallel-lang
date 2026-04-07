@@ -113,6 +113,9 @@ void Executor::execSingleInstruction(Instruction instr)
     throw std::runtime_error(std::format("Unknown instruction type on instruction {}: {}", instr.id, (int)instr.type));
   }
 
+  for (auto dep : instr.dependents)
+    instructions[dep.instrId].depsFulfilled++;
+
   // Clean up stack if at end of line
   if (instr.endsLine)
   {
