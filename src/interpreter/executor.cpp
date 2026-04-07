@@ -35,22 +35,22 @@ void Executor::execSingleInstruction(Instruction instr)
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ArgType::Integer && right.type == ArgType::Integer)
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
     {
       result = {
-          .type = ArgType::Integer,
+          .type = ValueType::Integer,
           .val = std::get<int>(left.val) + std::get<int>(right.val)};
     }
-    else if (left.type == ArgType::String || right.type == ArgType::String)
+    else if (left.type == ValueType::String || right.type == ValueType::String)
     {
       result = {
-          .type = ArgType::String,
+          .type = ValueType::String,
           .val = valToStr(left) + valToStr(right)};
     }
-    else if (left.type == ArgType::Bool || right.type == ArgType::Bool)
+    else if (left.type == ValueType::Bool || right.type == ValueType::Bool)
     {
       result = {
-          .type = ArgType::Bool,
+          .type = ValueType::Bool,
           .val = valToBool(left) || valToBool(right)};
     }
 
@@ -62,10 +62,10 @@ void Executor::execSingleInstruction(Instruction instr)
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ArgType::Integer && right.type == ArgType::Integer)
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
     {
       result = {
-          .type = ArgType::Integer,
+          .type = ValueType::Integer,
           .val = std::get<int>(left.val) - std::get<int>(right.val)};
       pushResult(instr, result);
     }
@@ -79,10 +79,10 @@ void Executor::execSingleInstruction(Instruction instr)
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ArgType::Integer && right.type == ArgType::Integer)
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
     {
       result = {
-          .type = ArgType::Integer,
+          .type = ValueType::Integer,
           .val = std::get<int>(left.val) * std::get<int>(right.val)};
       pushResult(instr, result);
     }
@@ -96,10 +96,10 @@ void Executor::execSingleInstruction(Instruction instr)
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ArgType::Integer && right.type == ArgType::Integer)
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
     {
       result = {
-          .type = ArgType::Integer,
+          .type = ValueType::Integer,
           .val = std::get<int>(left.val) / std::get<int>(right.val)};
       pushResult(instr, result);
     }

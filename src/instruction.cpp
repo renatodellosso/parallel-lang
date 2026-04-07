@@ -46,11 +46,11 @@ std::string valToStr(Value val)
 {
   switch (val.type)
   {
-  case ArgType::Integer:
+  case ValueType::Integer:
     return std::to_string(std::get<int>(val.val));
-  case ArgType::Bool:
+  case ValueType::Bool:
     return std::to_string(std::get<bool>(val.val));
-  case ArgType::String:
+  case ValueType::String:
     return std::format("{}", std::get<std::string>(val.val));
 
   default:
@@ -60,11 +60,11 @@ std::string valToStr(Value val)
 
 bool valToBool(Value val)
 {
-  if (val.type == ArgType::Bool)
+  if (val.type == ValueType::Bool)
     return std::get<bool>(val.val);
-  if (val.type == ArgType::Integer)
+  if (val.type == ValueType::Integer)
     return std::get<int>(val.val) != 0;
-  if (val.type == ArgType::String)
+  if (val.type == ValueType::String)
     return std::get<std::string>(val.val).length() != 0;
   return false;
 }

@@ -27,7 +27,7 @@ enum class InstructionType
 
 std::string instructionTypeToString(InstructionType type);
 
-enum ArgType
+enum ValueType
 {
   String,
   Integer,
@@ -36,7 +36,7 @@ enum ArgType
 
 struct Value
 {
-  ArgType type;
+  ValueType type;
   std::variant<std::string, int, bool> val;
 };
 

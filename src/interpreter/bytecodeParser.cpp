@@ -42,25 +42,25 @@ Value BytecodeParser::buildArg()
   if (curr.at(0) == '"' && curr.at(curr.length() - 1) == '"')
   {
     // String
-    arg.type = ArgType::String,
+    arg.type = ValueType::String,
     arg.val = curr.substr(1, curr.length() - 2); // Remove ""
   }
   else if (curr == "true")
   {
     // bool (true)
-    arg.type = ArgType::Bool,
+    arg.type = ValueType::Bool,
     arg.val = true;
   }
   else if (curr == "false")
   {
     // bool (true)
-    arg.type = ArgType::Bool,
+    arg.type = ValueType::Bool,
     arg.val = false;
   }
   else if (isInteger(curr))
   {
     // int
-    arg.type = ArgType::Integer,
+    arg.type = ValueType::Integer,
     arg.val = std::atoi(curr.c_str());
   }
   else
