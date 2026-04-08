@@ -46,7 +46,7 @@ TEST(startExecution, populatesDepArgs)
 {
   auto instrs = getInstrs();
 
-  Executor executor({.threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, instrs);
   executor.startExecution();
 
   ASSERT_EQ(instrs[2].depArgs.size(), 2);
