@@ -132,10 +132,17 @@ void Executor::execWorker(int id) {
 
   try {
     while (!halt) {
-      if (queue.size() == 0)
+      if (queue.size() == 0) {
+        if (cliArgs.verbose)
+          log(location.c_str(), "Queue is empty. Halt?: {}", halt);
         continue;
+      }
       auto &instr = queue.pop().get();
+      if (cliArgs.verbose)
+        log(location.c_str(), "Executing instruction {}...", instr.id);
       execSingleInstruction(instr);
+      if (cliArgs.verbose)
+        log(location.c_str(), "Finished executing instruction {}", instr.id);
     }
   } catch (std::runtime_error err) {
     logError(location.c_str(), "{}", err.what());
@@ -162,16 +169,20 @@ void Executor::supervisor() {
     }
   } while (!isDone && !halt);
 
-  if (haltCause == "Unknown")
+  if (!halt)
     haltCause = "Executed all instructions";
+  halt = true;
 
   if (cliArgs.verbose)
     log(LOCATION, "Executor halted! Cause: {}", haltCause);
 
   for (int i = 0; i < workers.size(); i++) {
     // Can only detach from joinable threads
-    if (workers[i].joinable())
+    if (workers[i].joinable()) {
+      if (cliArgs.verbose)
+        log(LOCATION, "Joined worker {}", i);
       workers[i].join();
+    }
   }
 }
 
