@@ -157,7 +157,7 @@ void Executor::supervisor() {
         log(LOCATION, "Instruction {} done: {}", i, instructions[i].executed);
       if (!instructions[i].executed) {
         isDone = false;
-        break;
+        continue;
       }
     }
   } while (!isDone && !halt);
