@@ -134,11 +134,7 @@ void Executor::execWorker(int id) {
         continue;
       }
       auto &instr = queue.pop().get();
-      if (cliArgs.verbose)
-        log(location.c_str(), "Executing instruction {}...", instr.id);
       execSingleInstruction(instr);
-      if (cliArgs.verbose)
-        log(location.c_str(), "Finished executing instruction {}", instr.id);
     }
   } catch (std::runtime_error err) {
     logError(location.c_str(), "{}", err.what());
@@ -157,13 +153,12 @@ void Executor::supervisor() {
 
     for (int i = 0; i < instructions.size(); i++) {
       if (!instructions[i].executed) {
-        // if (cliArgs.verbose)
-        //   log(LOCATION, "Instruction {} is not done", i);
         isDone = false;
         break;
       }
     }
 
+    // Removing this breaks tests on Ubuntu. Not sure why, but it reduces the cycles used by the supervisor
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   } while (!isDone && !halt);
 
