@@ -163,7 +163,7 @@ void Executor::supervisor() {
   halt = true;
 
   if (cliArgs.verbose)
-    log(LOCATION, "Executor halted!");
+    log(LOCATION, "Executor halted! Success: {}", success);
 
   for (int i = 0; i < workers.size(); i++) {
     // Can only detach from joinable threads
