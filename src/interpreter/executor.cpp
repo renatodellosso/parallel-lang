@@ -136,9 +136,9 @@ void Executor::execWorker(int id) {
       execSingleInstruction(instr);
     }
   } catch (std::runtime_error err) {
-    logError(LOCATION, "{}", err.what());
-    halt = true;
+    logError(location.c_str(), "{}", err.what());
     success = false;
+    halt = true;
   }
 }
 
