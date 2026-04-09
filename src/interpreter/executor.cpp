@@ -122,10 +122,13 @@ void Executor::execSingleInstruction(Instruction &instr)
     throw std::runtime_error(std::format("Unknown instruction type on instruction {}: {}", instr.id, (int)instr.type));
   }
 
-  for (auto dep : instr.dependents)
+  for (auto dep : instr.dependents) {
+    log(LOCATION, "Updating dependency {} -> {}", instr.id, dep.instrId);
     updateDependency(dep, result);
+  }
 
   instr.executed = true;
+  log(LOCATION, "Executed instruction {}", instr.id);
 
   // Clean up stack if at end of line
   if (instr.endsLine)
