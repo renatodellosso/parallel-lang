@@ -175,6 +175,8 @@ void Executor::supervisor()
 
     for (int i = 0; i < instructions.size(); i++)
     {
+      if (cliArgs.verbose)
+        log(LOCATION, "Instruction {} done: {}", i, instructions[i].executed);
       if (!instructions[i].executed)
       {
         isDone = false;
