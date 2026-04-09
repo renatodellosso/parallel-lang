@@ -155,6 +155,8 @@ void Executor::supervisor() {
 
     for (int i = 0; i < instructions.size(); i++) {
       if (!instructions[i].executed) {
+        if (cliArgs.verbose)
+          log(LOCATION, "Instruction {} is not done", i);
         isDone = false;
         break;
       }
