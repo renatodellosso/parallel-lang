@@ -122,7 +122,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
 }
 
 void Executor::execWorker(int id) {
-  std::string location = LOCATION + std::string(":worker") + std::to_string(id);
+  auto location = LOCATION + std::string(":worker") + std::to_string(id);
   if (cliArgs.verbose)
     log(location.c_str(), "Worker {} awake", id);
 
@@ -132,7 +132,11 @@ void Executor::execWorker(int id) {
         continue;
       }
       auto &instr = queue.pop().get();
+      if (cliArgs.verbose)
+        log(location.c_str(), "Executing instruction {}...", instr.id);
       execSingleInstruction(instr);
+      if (cliArgs.verbose)
+        log(location.c_str(), "Finished executing instruction {}", instr.id);
     }
   } catch (std::runtime_error err) {
     logError(location.c_str(), "{}", err.what());
