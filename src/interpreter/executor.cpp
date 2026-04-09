@@ -157,7 +157,7 @@ void Executor::supervisor() {
         log(LOCATION, "Instruction {} done: {}", i, instructions[i].executed);
       if (!instructions[i].executed) {
         isDone = false;
-        continue;
+        break;
       }
     }
   } while (!isDone && !halt);
@@ -208,4 +208,4 @@ Executor::Executor(const CliArgs &cliArgs,
     : cliArgs(cliArgs), instructions(instructions),
       depArgsMutexes(std::vector<std::mutex>(instructions.size())),
       depsFulfilledMutexes(std::vector<std::mutex>(instructions.size())),
-      haltCause("Unknown") {}
+      halt(false), haltCause("Unknown") {}
