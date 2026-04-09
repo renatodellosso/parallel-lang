@@ -22,7 +22,7 @@ std::vector<Instruction> getInstrs() {
 TEST(startExecution, doesntError) {
   auto instrs = getInstrs();
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.threads = 1}, instrs);
   executor.startExecution();
 
   EXPECT_NO_THROW(executor.startExecution());
@@ -40,7 +40,7 @@ TEST(startExecution, updatesDepsFulfilled) {
 TEST(startExecution, populatesDepArgs) {
   auto instrs = getInstrs();
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.threads = 1}, instrs);
   executor.startExecution();
 
   ASSERT_EQ(instrs[2].depArgs.size(), 2);

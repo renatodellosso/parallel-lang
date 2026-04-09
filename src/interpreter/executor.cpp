@@ -110,14 +110,10 @@ void Executor::execSingleInstruction(Instruction &instr) {
   }
 
   for (auto dep : instr.dependents) {
-    if (cliArgs.verbose)
-      log(LOCATION, "Updating dependency {} -> {}", instr.id, dep.instrId);
     updateDependency(dep, result);
   }
 
   instr.executed = true;
-  if (cliArgs.verbose)
-    log(LOCATION, "Executed instruction {}", instr.id);
 
   // Clean up stack if at end of line
   if (instr.endsLine) {
@@ -133,16 +129,10 @@ void Executor::execWorker(int id) {
   try {
     while (!halt) {
       if (queue.size() == 0) {
-        if (cliArgs.verbose)
-          log(location.c_str(), "Queue is empty. Halt?: {}", halt);
         continue;
       }
       auto &instr = queue.pop().get();
-      if (cliArgs.verbose)
-        log(location.c_str(), "Executing instruction {}...", instr.id);
       execSingleInstruction(instr);
-      if (cliArgs.verbose)
-        log(location.c_str(), "Finished executing instruction {}", instr.id);
     }
   } catch (std::runtime_error err) {
     logError(location.c_str(), "{}", err.what());
@@ -160,8 +150,6 @@ void Executor::supervisor() {
     isDone = true;
 
     for (int i = 0; i < instructions.size(); i++) {
-      if (cliArgs.verbose)
-        log(LOCATION, "Instruction {} done: {}", i, instructions[i].executed);
       if (!instructions[i].executed) {
         isDone = false;
         break;
@@ -179,8 +167,6 @@ void Executor::supervisor() {
   for (int i = 0; i < workers.size(); i++) {
     // Can only detach from joinable threads
     if (workers[i].joinable()) {
-      if (cliArgs.verbose)
-        log(LOCATION, "Joined worker {}", i);
       workers[i].join();
     }
   }
