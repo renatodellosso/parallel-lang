@@ -1,5 +1,7 @@
 #include "executor.hpp"
 #include "../logging.hpp"
+#include <format>
+#include <optional>
 
 #define LOCATION "Executor"
 
@@ -137,7 +139,7 @@ void Executor::execWorker(int id) {
     }
   } catch (std::runtime_error err) {
     logError(location.c_str(), "{}", err.what());
-    success = false;
+    haltCause = std::format("Runtime Error in worker {}: {}", id, err.what());
     halt = true;
   }
 }
@@ -160,10 +162,11 @@ void Executor::supervisor() {
     }
   } while (!isDone && !halt);
 
-  halt = true;
+  if (haltCause == "Unknown")
+    haltCause = "Executed all instructions";
 
   if (cliArgs.verbose)
-    log(LOCATION, "Executor halted! Success: {}", success);
+    log(LOCATION, "Executor halted! Cause: {}", haltCause);
 
   for (int i = 0; i < workers.size(); i++) {
     // Can only detach from joinable threads
@@ -195,11 +198,9 @@ void Executor::startExecution() {
 
   supervisor();
 
-  if (success && cliArgs.verbose)
-    log(LOCATION, "Done! Executed {} instructions.", instructions.size());
-
-  if (!success)
-    logError(LOCATION, "Encountered error during execution.");
+  if (cliArgs.verbose)
+    log(LOCATION, "Done! Executed {} instructions. Halt cause: {}",
+        instructions.size(), haltCause);
 }
 
 Executor::Executor(const CliArgs &cliArgs,
@@ -207,4 +208,4 @@ Executor::Executor(const CliArgs &cliArgs,
     : cliArgs(cliArgs), instructions(instructions),
       depArgsMutexes(std::vector<std::mutex>(instructions.size())),
       depsFulfilledMutexes(std::vector<std::mutex>(instructions.size())),
-      success(true) {}
+      haltCause("Unknown") {}

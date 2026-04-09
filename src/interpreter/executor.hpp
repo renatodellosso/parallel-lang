@@ -17,7 +17,8 @@ class Executor {
   std::vector<std::mutex> depArgsMutexes, depsFulfilledMutexes;
 
   // Set to true to end workers
-  bool halt, success;
+  bool halt;
+  std::string haltCause;
 
   // Increment depsFulfilled and, if relevant, sets depArgs[i]
   void updateDependency(InstrDependent dep, Value result);
