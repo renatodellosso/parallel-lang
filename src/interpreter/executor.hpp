@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../exitCode.hpp"
 #include "../cliUtils.hpp"
 #include "../instruction.hpp"
 #include "../concurrentQueue.hpp"
@@ -19,7 +18,7 @@ class Executor
   std::vector<std::mutex> depArgsMutexes, depsFulfilledMutexes;
 
   // Set to true to end workers
-  bool halt;
+  bool halt, success;
 
   // Increment depsFulfilled and, if relevant, sets depArgs[i]
   void updateDependency(InstrDependent dep, Value result);

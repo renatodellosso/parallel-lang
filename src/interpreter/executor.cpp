@@ -159,6 +159,7 @@ void Executor::execWorker(int id)
   {
     logError(LOCATION, "{}", err.what());
     halt = true;
+    success = false;
   }
 }
 
@@ -220,14 +221,18 @@ void Executor::startExecution()
 
   supervisor();
 
-  if (cliArgs.verbose)
+  if (success && cliArgs.verbose)
     log(LOCATION, "Done! Executed {} instructions.", instructions.size());
+
+  if (!success)
+    logError(LOCATION, "Encountered error during execution.");
 }
 
 Executor::Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions)
     : cliArgs(cliArgs),
       instructions(instructions),
       depArgsMutexes(std::vector<std::mutex>(instructions.size())),
-      depsFulfilledMutexes(std::vector<std::mutex>(instructions.size()))
+      depsFulfilledMutexes(std::vector<std::mutex>(instructions.size())),
+      success(true)
 {
 }
