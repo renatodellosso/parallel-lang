@@ -123,12 +123,14 @@ void Executor::execSingleInstruction(Instruction &instr)
   }
 
   for (auto dep : instr.dependents) {
-    log(LOCATION, "Updating dependency {} -> {}", instr.id, dep.instrId);
+    if (cliArgs.verbose)
+      log(LOCATION, "Updating dependency {} -> {}", instr.id, dep.instrId);
     updateDependency(dep, result);
   }
 
   instr.executed = true;
-  log(LOCATION, "Executed instruction {}", instr.id);
+  if (cliArgs.verbose)
+    log(LOCATION, "Executed instruction {}", instr.id);
 
   // Clean up stack if at end of line
   if (instr.endsLine)
