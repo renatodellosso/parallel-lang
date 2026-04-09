@@ -1,7 +1,9 @@
 #include "executor.hpp"
 #include "../logging.hpp"
+#include <chrono>
 #include <format>
 #include <optional>
+#include <thread>
 
 #define LOCATION "Executor"
 
@@ -161,6 +163,8 @@ void Executor::supervisor() {
         break;
       }
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
   } while (!isDone && !halt);
 
   if (!halt)
