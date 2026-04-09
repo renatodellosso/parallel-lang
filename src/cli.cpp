@@ -1,34 +1,31 @@
 #include "cli.hpp"
-#include "logging.hpp"
 #include "compiler/compiler.hpp"
 #include "interpreter/interpreter.hpp"
-#include <map>
-#include <functional>
+#include "logging.hpp"
 #include <filesystem>
-#include <string>
-#include <optional>
-#include <fstream>
 #include <format>
+#include <fstream>
+#include <functional>
+#include <map>
+#include <optional>
+#include <string>
 
 const char *LOCATION = "CLI";
 
 const std::unordered_map<std::string, std::string> shortcuts = {
-    {"-t", "--target"},
-    {"-c", "--compile"},
-    {"-i", "--interpret"},
-    {"-o", "--out"},
-    {"-e", "--verbose"},
-    {"-h", "--threads"}};
+    {"-t", "--target"}, {"-c", "--compile"}, {"-i", "--interpret"},
+    {"-o", "--out"},    {"-e", "--verbose"}, {"-h", "--threads"}};
 
 #define OPTIONS_HANDLER_PARAMS CliArgs &args, int i, int count, char *argv[]
 
-// key(options struct, current arg index, arg count, args) => extra args consumed
-const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, char *[])>>
+// key(options struct, current arg index, arg count, args) => extra args
+// consumed
+const std::unordered_map<std::string,
+                         std::function<int(CliArgs &, int, int, char *[])>>
     options = {
-        {"--target", [](OPTIONS_HANDLER_PARAMS) -> int
-         {
-           if (i == count - 1)
-           {
+        {"--target",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
+           if (i == count - 1) {
              logError(LOCATION, "Missing value for --target");
              return 0;
            }
@@ -37,10 +34,9 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
 
            return 1;
          }},
-        {"--out", [](OPTIONS_HANDLER_PARAMS) -> int
-         {
-           if (i == count - 1)
-           {
+        {"--out",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
+           if (i == count - 1) {
              logError(LOCATION, "Missing value for --out");
              return 0;
            }
@@ -49,10 +45,9 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
 
            return 1;
          }},
-        {"--compile", [](OPTIONS_HANDLER_PARAMS) -> int
-         {
-           if (args.mode != CliMode::Unset)
-           {
+        {"--compile",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
+           if (args.mode != CliMode::Unset) {
              logWarning(LOCATION, "CLI mode was set twice!");
            }
 
@@ -60,10 +55,9 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
 
            return 0;
          }},
-        {"--interpret", [](OPTIONS_HANDLER_PARAMS) -> int
-         {
-           if (args.mode != CliMode::Unset)
-           {
+        {"--interpret",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
+           if (args.mode != CliMode::Unset) {
              logWarning(LOCATION, "CLI mode was set twice!");
            }
 
@@ -71,16 +65,15 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
 
            return 0;
          }},
-        {"--verbose", [](OPTIONS_HANDLER_PARAMS) -> int
-         {
+        {"--verbose",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
            args.verbose = true;
 
            return 0;
          }},
-        {"--threads", [](OPTIONS_HANDLER_PARAMS) -> int
-         {
-           if (i == count - 1)
-           {
+        {"--threads",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
+           if (i == count - 1) {
              logError(LOCATION, "Missing value for --out");
              return 0;
            }
@@ -94,30 +87,24 @@ const std::unordered_map<std::string, std::function<int(CliArgs &, int, int, cha
 /**
  * If key is a shortcut, returns the expanded key. Otherwise, returns key.
  */
-std::string resolveShortcuts(std::string key)
-{
+std::string resolveShortcuts(std::string key) {
   auto shortcut = shortcuts.find(key);
   if (shortcut != shortcuts.end())
     return shortcut->second;
   return key;
 }
 
-CliArgs parseArgs(int argc, char *argv[])
-{
+CliArgs parseArgs(int argc, char *argv[]) {
   std::unordered_map<std::string, std::string> argMap;
   CliArgs args = {
-      .outputFile = std::nullopt,
-      .mode = CliMode::Unset,
-      .threads = 1};
+      .outputFile = std::nullopt, .mode = CliMode::Unset, .threads = 1};
 
   // argv[0] is the executable path
-  for (int i = 1; i < argc; i++)
-  {
+  for (int i = 1; i < argc; i++) {
     std::string key = resolveShortcuts(std::string(argv[i]));
 
     auto handler = options.find(key);
-    if (handler == options.end())
-    {
+    if (handler == options.end()) {
       logError(LOCATION, "Unknown CLI argument: {:s}", key);
       continue;
     }
@@ -129,46 +116,43 @@ CliArgs parseArgs(int argc, char *argv[])
   return args;
 }
 
-bool validateArgs(const CliArgs &args)
-{
+bool validateArgs(const CliArgs &args) {
   bool valid = true;
 
-  if (args.mode == CliMode::Unset)
-  {
+  if (args.mode == CliMode::Unset) {
     logError(LOCATION, "CLI mode was not set to either compile or interpret!");
     valid = false;
   }
 
-  if (args.target.length() == 0)
-  {
+  if (args.target.length() == 0) {
     logError(LOCATION, "Target was not set!");
     valid = false;
   }
 
-  if (!std::filesystem::exists(args.target))
-  {
+  if (!std::filesystem::exists(args.target)) {
     logError(LOCATION, "Target file does not exist!");
     valid = false;
   }
 
-  if (args.mode == CliMode::Compile && args.outputFile == std::nullopt)
-  {
-    logError(LOCATION, "Must specify an output file location using --out when compiling!");
+  if (args.mode == CliMode::Compile && args.outputFile == std::nullopt) {
+    logError(
+        LOCATION,
+        "Must specify an output file location using --out when compiling!");
     valid = false;
   }
 
   return valid;
 }
 
-std::optional<std::string> writeFile(const CliArgs &args, std::string text)
-{
+std::optional<std::string> writeFile(const CliArgs &args, std::string text) {
   if (!args.outputFile.has_value())
     return std::make_optional("No output file specified!");
 
   std::ofstream file(args.outputFile.value());
 
   if (!file.is_open())
-    return std::make_optional(std::format("Could not open file '{}'", args.outputFile.value()));
+    return std::make_optional(
+        std::format("Could not open file '{}'", args.outputFile.value()));
 
   file.clear();
   file << text;
@@ -177,16 +161,13 @@ std::optional<std::string> writeFile(const CliArgs &args, std::string text)
   return std::nullopt;
 }
 
-ExitCode executeCommand(const CliArgs &args)
-{
-  if (args.mode == CliMode::Compile)
-  {
+ExitCode executeCommand(const CliArgs &args) {
+  if (args.mode == CliMode::Compile) {
     std::ifstream stream(args.target);
-    return compile(args, stream, [args](std::string text)
-                   { return writeFile(args, text); });
+    return compile(args, stream,
+                   [args](std::string text) { return writeFile(args, text); });
   }
-  if (args.mode == CliMode::Interpret)
-  {
+  if (args.mode == CliMode::Interpret) {
     std::ifstream stream(args.target);
     Interpreter interpreter(args);
     interpreter.interpret(stream);
@@ -195,12 +176,10 @@ ExitCode executeCommand(const CliArgs &args)
   return ExitCode::InvalidCli;
 }
 
-ExitCode runCli(int argc, char *argv[])
-{
+ExitCode runCli(int argc, char *argv[]) {
   CliArgs args = parseArgs(argc, argv);
 
-  if (!validateArgs(args))
-  {
+  if (!validateArgs(args)) {
     logError(LOCATION, "CLI arguments are invalid!");
     return ExitCode::InvalidCli;
   }

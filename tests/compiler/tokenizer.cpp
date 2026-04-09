@@ -1,14 +1,13 @@
-#include <gtest/gtest.h>
 #include "../../src/compiler/tokenizer.hpp"
+#include <gtest/gtest.h>
 
 std::vector<TokenType> singleCharTypes = {
-    TokenType::Semicolon, TokenType::LeftBrace, TokenType::RightBrace,
+    TokenType::Semicolon, TokenType::LeftBrace,  TokenType::RightBrace,
     TokenType::LeftParen, TokenType::RightParen, TokenType::Plus,
-    TokenType::Minus, TokenType::Star, TokenType::Slash, TokenType::Equals,
-    TokenType::LessThan, TokenType::GreaterThan};
+    TokenType::Minus,     TokenType::Star,       TokenType::Slash,
+    TokenType::Equals,    TokenType::LessThan,   TokenType::GreaterThan};
 
-TEST(Tokenizer, identifiesSingleCharTokenTypes)
-{
+TEST(Tokenizer, identifiesSingleCharTokenTypes) {
   std::string text(";{}()+-*/=<>");
 
   std::istringstream stream(text);
@@ -18,8 +17,7 @@ TEST(Tokenizer, identifiesSingleCharTokenTypes)
   auto tokens = *(tokenizer->close().get());
 
   ASSERT_EQ(tokens.size(), singleCharTypes.size());
-  for (int i = 0; i < tokens.size(); i++)
-  {
+  for (int i = 0; i < tokens.size(); i++) {
     EXPECT_EQ(tokens[i].type, singleCharTypes[i]);
   }
 
@@ -27,8 +25,7 @@ TEST(Tokenizer, identifiesSingleCharTokenTypes)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesSingleCharTokenTypesWithWhitespace)
-{
+TEST(Tokenizer, identifiesSingleCharTokenTypesWithWhitespace) {
   std::string text(" ;\n{}\t()\r+  -*/=<>");
 
   std::istringstream stream(text);
@@ -38,8 +35,7 @@ TEST(Tokenizer, identifiesSingleCharTokenTypesWithWhitespace)
   auto tokens = *(tokenizer->close().get());
 
   ASSERT_EQ(tokens.size(), singleCharTypes.size());
-  for (int i = 0; i < tokens.size(); i++)
-  {
+  for (int i = 0; i < tokens.size(); i++) {
     EXPECT_EQ(tokens[i].type, singleCharTypes[i]);
   }
 
@@ -47,8 +43,7 @@ TEST(Tokenizer, identifiesSingleCharTokenTypesWithWhitespace)
   delete tokenizer;
 }
 
-TEST(Tokenizer, tracksLineNumbers)
-{
+TEST(Tokenizer, tracksLineNumbers) {
   std::string text(";\n;;\r;");
 
   std::istringstream stream(text);
@@ -67,8 +62,7 @@ TEST(Tokenizer, tracksLineNumbers)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesStrings)
-{
+TEST(Tokenizer, identifiesStrings) {
   std::string text("\"abc\"");
 
   std::istringstream stream(text);
@@ -86,8 +80,7 @@ TEST(Tokenizer, identifiesStrings)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesStringsMixedWithOtherTypes)
-{
+TEST(Tokenizer, identifiesStringsMixedWithOtherTypes) {
   std::string text(";\"abc\",");
 
   std::istringstream stream(text);
@@ -105,8 +98,7 @@ TEST(Tokenizer, identifiesStringsMixedWithOtherTypes)
   delete tokenizer;
 }
 
-TEST(Tokenizer, handlesWhitespaceInsideStrings)
-{
+TEST(Tokenizer, handlesWhitespaceInsideStrings) {
   std::string text("\"a b\nc\r\"");
 
   std::istringstream stream(text);
@@ -124,10 +116,8 @@ TEST(Tokenizer, handlesWhitespaceInsideStrings)
   delete tokenizer;
 }
 
-TEST(Tokenizer, tracksLineNumbersInMultilineStrings)
-{
-  char *rawText = new char[]{
-      '"', '\n', '"', ' ', '"', 'a', '"', '\0'};
+TEST(Tokenizer, tracksLineNumbersInMultilineStrings) {
+  char *rawText = new char[]{'"', '\n', '"', ' ', '"', 'a', '"', '\0'};
   std::string text(rawText);
 
   std::istringstream stream(text);
@@ -144,8 +134,7 @@ TEST(Tokenizer, tracksLineNumbersInMultilineStrings)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesNumbers)
-{
+TEST(Tokenizer, identifiesNumbers) {
   std::string text("123");
 
   std::istringstream stream(text);
@@ -163,8 +152,7 @@ TEST(Tokenizer, identifiesNumbers)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesNumbersMixedWithOtherTypes)
-{
+TEST(Tokenizer, identifiesNumbersMixedWithOtherTypes) {
   std::string text(";123)");
 
   std::istringstream stream(text);
@@ -182,8 +170,7 @@ TEST(Tokenizer, identifiesNumbersMixedWithOtherTypes)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesBooleans)
-{
+TEST(Tokenizer, identifiesBooleans) {
   std::string text("false");
 
   std::istringstream stream(text);
@@ -201,8 +188,7 @@ TEST(Tokenizer, identifiesBooleans)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesBooleanssMixedWithOtherTypes)
-{
+TEST(Tokenizer, identifiesBooleanssMixedWithOtherTypes) {
   std::string text(";false)");
 
   std::istringstream stream(text);
@@ -220,8 +206,7 @@ TEST(Tokenizer, identifiesBooleanssMixedWithOtherTypes)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesIdentifiers)
-{
+TEST(Tokenizer, identifiesIdentifiers) {
   std::string text("abc");
 
   std::istringstream stream(text);
@@ -238,13 +223,12 @@ TEST(Tokenizer, identifiesIdentifiers)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesMixOfTypes)
-{
+TEST(Tokenizer, identifiesMixOfTypes) {
   std::string text("int abc(1, \"test\");true");
   std::vector<TokenType> expected = {
-      TokenType::Identifier, TokenType::Identifier,
-      TokenType::LeftParen, TokenType::Literal, TokenType::Comma,
-      TokenType::Literal, TokenType::RightParen, TokenType::Semicolon, TokenType::Literal};
+      TokenType::Identifier, TokenType::Identifier, TokenType::LeftParen,
+      TokenType::Literal,    TokenType::Comma,      TokenType::Literal,
+      TokenType::RightParen, TokenType::Semicolon,  TokenType::Literal};
 
   std::istringstream stream(text);
   Tokenizer *tokenizer = new Tokenizer(stream);
@@ -253,8 +237,7 @@ TEST(Tokenizer, identifiesMixOfTypes)
   auto tokens = *(tokenizer->close().get());
 
   ASSERT_EQ(tokens.size(), expected.size());
-  for (int i = 0; i < tokens.size(); i++)
-  {
+  for (int i = 0; i < tokens.size(); i++) {
     EXPECT_EQ(tokens[i].type, expected[i]);
   }
 
@@ -262,13 +245,12 @@ TEST(Tokenizer, identifiesMixOfTypes)
   delete tokenizer;
 }
 
-TEST(Tokenizer, identifiesMixOfTypesWithWhitespace)
-{
+TEST(Tokenizer, identifiesMixOfTypesWithWhitespace) {
   std::string text("int abc\r(1\n, \"test\");true");
   std::vector<TokenType> expected = {
-      TokenType::Identifier, TokenType::Identifier,
-      TokenType::LeftParen, TokenType::Literal, TokenType::Comma,
-      TokenType::Literal, TokenType::RightParen, TokenType::Semicolon, TokenType::Literal};
+      TokenType::Identifier, TokenType::Identifier, TokenType::LeftParen,
+      TokenType::Literal,    TokenType::Comma,      TokenType::Literal,
+      TokenType::RightParen, TokenType::Semicolon,  TokenType::Literal};
 
   std::istringstream stream(text);
   Tokenizer *tokenizer = new Tokenizer(stream);
@@ -277,8 +259,7 @@ TEST(Tokenizer, identifiesMixOfTypesWithWhitespace)
   auto tokens = *(tokenizer->close().get());
 
   ASSERT_EQ(tokens.size(), expected.size());
-  for (int i = 0; i < tokens.size(); i++)
-  {
+  for (int i = 0; i < tokens.size(); i++) {
     EXPECT_EQ(tokens[i].type, expected[i]);
   }
 

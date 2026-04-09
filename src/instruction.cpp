@@ -1,10 +1,8 @@
 #include "instruction.hpp"
 #include <format>
 
-std::string instructionTypeToString(InstructionType type)
-{
-  switch (type)
-  {
+std::string instructionTypeToString(InstructionType type) {
+  switch (type) {
   case InstructionType::Block:
     return "Block";
   case InstructionType::GetLiteral:
@@ -42,10 +40,8 @@ std::string instructionTypeToString(InstructionType type)
   }
 }
 
-std::string valToStr(Value val)
-{
-  switch (val.type)
-  {
+std::string valToStr(Value val) {
+  switch (val.type) {
   case ValueType::Integer:
     return std::to_string(std::get<int>(val.val));
   case ValueType::Bool:
@@ -58,8 +54,7 @@ std::string valToStr(Value val)
   }
 }
 
-bool valToBool(Value val)
-{
+bool valToBool(Value val) {
   if (val.type == ValueType::Bool)
     return std::get<bool>(val.val);
   if (val.type == ValueType::Integer)
@@ -69,27 +64,25 @@ bool valToBool(Value val)
   return false;
 }
 
-InstrDependent::InstrDependent(int instrId, std::optional<int> argIndex) : instrId(instrId), argIndex(argIndex) {}
+InstrDependent::InstrDependent(int instrId, std::optional<int> argIndex)
+    : instrId(instrId), argIndex(argIndex) {}
 
-InstrDependent::InstrDependent(int instrId, int argIndex) : InstrDependent(instrId, std::make_optional(argIndex)) {}
+InstrDependent::InstrDependent(int instrId, int argIndex)
+    : InstrDependent(instrId, std::make_optional(argIndex)) {}
 
-InstrDependent::InstrDependent(int instrId) : InstrDependent(instrId, std::nullopt) {}
+InstrDependent::InstrDependent(int instrId)
+    : InstrDependent(instrId, std::nullopt) {}
 
-Instruction::Instruction(int id) : id(id),
-                                   endsLine(false),
-                                   type((InstructionType)0),
-                                   executed(false),
-                                   bytecodeArgs(std::vector<Value>()),
-                                   depArgs(std::vector<Value>()),
-                                   depCount(0),
-                                   depsFulfilled(0),
-                                   dependents(std::vector<InstrDependent>())
-{
+Instruction::Instruction(int id)
+    : id(id), endsLine(false), type((InstructionType)0), executed(false),
+      bytecodeArgs(std::vector<Value>()), depArgs(std::vector<Value>()),
+      depCount(0), depsFulfilled(0), dependents(std::vector<InstrDependent>()) {
 }
 
-std::string Instruction::toString()
-{
-  std::string str = std::format("{}: {}(endsLine: {}, dependencies: {}/{}, bytecode args: [", id, instructionTypeToString(type), endsLine, depsFulfilled, depCount);
+std::string Instruction::toString() {
+  std::string str = std::format(
+      "{}: {}(endsLine: {}, dependencies: {}/{}, bytecode args: [", id,
+      instructionTypeToString(type), endsLine, depsFulfilled, depCount);
 
   for (auto arg : bytecodeArgs)
     str += valToStr(arg) + ", ";
@@ -103,8 +96,7 @@ std::string Instruction::toString()
     str = str.substr(0, str.length() - 2);
   str += "], dependents: [";
 
-  for (auto dep : dependents)
-  {
+  for (auto dep : dependents) {
     str += std::to_string(dep.instrId);
     if (dep.argIndex.has_value())
       str += "." + std::to_string(dep.argIndex.value());

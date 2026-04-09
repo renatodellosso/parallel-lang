@@ -1,7 +1,7 @@
 #pragma once
 
-#include "exitCode.hpp"
 #include "cliUtils.hpp"
+#include "exitCode.hpp"
 
 CliArgs parseArgs(int argc, char *argv[]);
 /**

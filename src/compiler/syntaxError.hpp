@@ -2,8 +2,7 @@
 
 #include <string>
 
-struct SyntaxError
-{
+struct SyntaxError {
   int line;
   std::string msg;
 

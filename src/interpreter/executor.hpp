@@ -1,14 +1,13 @@
 #pragma once
 
 #include "../cliUtils.hpp"
-#include "../instruction.hpp"
 #include "../concurrentQueue.hpp"
-#include <vector>
-#include <thread>
+#include "../instruction.hpp"
 #include <mutex>
+#include <thread>
+#include <vector>
 
-class Executor
-{
+class Executor {
   const CliArgs &cliArgs;
   std::vector<Instruction> &instructions;
   ConcurrentQueue<std::reference_wrapper<Instruction>> queue;

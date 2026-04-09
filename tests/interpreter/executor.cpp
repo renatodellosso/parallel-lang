@@ -1,12 +1,9 @@
 #include "../../src/interpreter/executor.hpp"
 #include <gtest/gtest.h>
 
-std::vector<Instruction> getInstrs()
-{
-  std::vector<Instruction> instrs = {
-      Instruction(0),
-      Instruction(1),
-      Instruction(2)};
+std::vector<Instruction> getInstrs() {
+  std::vector<Instruction> instrs = {Instruction(0), Instruction(1),
+                                     Instruction(2)};
 
   instrs[0].type = InstructionType::GetLiteral;
   instrs[0].bytecodeArgs.push_back({.type = ValueType::Integer, .val = 1});
@@ -22,8 +19,7 @@ std::vector<Instruction> getInstrs()
   return instrs;
 }
 
-TEST(startExecution, doesntError)
-{
+TEST(startExecution, doesntError) {
   auto instrs = getInstrs();
 
   Executor executor({.threads = 1}, instrs);
@@ -32,8 +28,7 @@ TEST(startExecution, doesntError)
   EXPECT_NO_THROW(executor.startExecution());
 }
 
-TEST(startExecution, updatesDepsFulfilled)
-{
+TEST(startExecution, updatesDepsFulfilled) {
   auto instrs = getInstrs();
 
   Executor executor({.threads = 1}, instrs);
@@ -42,8 +37,7 @@ TEST(startExecution, updatesDepsFulfilled)
   EXPECT_EQ(instrs[2].depsFulfilled, 2);
 }
 
-TEST(startExecution, populatesDepArgs)
-{
+TEST(startExecution, populatesDepArgs) {
   auto instrs = getInstrs();
 
   Executor executor({.verbose = true, .threads = 1}, instrs);

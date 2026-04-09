@@ -1,10 +1,9 @@
 #include "../src/cli.hpp"
 #include "testUtils.hpp"
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-TEST(parseArgs, parsesCliMode)
-{
+TEST(parseArgs, parsesCliMode) {
   int argc = 2;
 
   char *argv[] = {(char *)"exec", (char *)"--compile"};
@@ -17,8 +16,7 @@ TEST(parseArgs, parsesCliMode)
   EXPECT_EQ(res.mode, CliMode::Interpret);
 }
 
-TEST(parseArgs, parsesTarget)
-{
+TEST(parseArgs, parsesTarget) {
   int argc = 3;
 
   char *argv[] = {(char *)"exec", (char *)"--target", (char *)"test"};
@@ -31,8 +29,7 @@ TEST(parseArgs, parsesTarget)
   EXPECT_EQ(res.target, "test");
 }
 
-TEST(parseArgs, handlesUnknownArgs)
-{
+TEST(parseArgs, handlesUnknownArgs) {
   int argc = 2;
 
   char *argv[] = {(char *)"exec", (char *)"--ofiuhiudoaiwdoais"};
@@ -44,11 +41,11 @@ TEST(parseArgs, handlesUnknownArgs)
   EXPECT_THAT(out, testing::HasSubstr("Unknown CLI argument"));
 }
 
-TEST(parseArgs, handlesKnownAndUnknownArgs)
-{
+TEST(parseArgs, handlesKnownAndUnknownArgs) {
   int argc = 3;
 
-  char *argv[] = {(char *)"exec", (char *)"--ofiuhiudoaiwdoais", (char *)"--compile"};
+  char *argv[] = {(char *)"exec", (char *)"--ofiuhiudoaiwdoais",
+                  (char *)"--compile"};
 
   auto redirect = redirectCout();
   auto res = parseArgs(argc, argv);
@@ -58,8 +55,7 @@ TEST(parseArgs, handlesKnownAndUnknownArgs)
   EXPECT_THAT(out, testing::HasSubstr("Unknown CLI argument"));
 }
 
-TEST(parseArgs, parsesShortcuts)
-{
+TEST(parseArgs, parsesShortcuts) {
   int argc = 2;
 
   char *argv[] = {(char *)"exec", (char *)"-c"};
@@ -68,30 +64,23 @@ TEST(parseArgs, parsesShortcuts)
   EXPECT_EQ(res.mode, CliMode::Compile);
 }
 
-TEST(validateArgs, returnsTrueForValidArgs)
-{
+TEST(validateArgs, returnsTrueForValidArgs) {
   CliArgs args = {
-      .target = "DESIGN.md",
-      .outputFile = "out.out",
-      .mode = CliMode::Compile};
+      .target = "DESIGN.md", .outputFile = "out.out", .mode = CliMode::Compile};
 
   EXPECT_TRUE(validateArgs(args));
 }
 
-TEST(validateArgs, returnsFalseForInvalidArgs)
-{
+TEST(validateArgs, returnsFalseForInvalidArgs) {
   DISABLE_COUT
 
-  CliArgs args = {
-      .mode = CliMode::Compile};
+  CliArgs args = {.mode = CliMode::Compile};
   EXPECT_FALSE(validateArgs(args));
 
-  args = {
-      .target = "DESIGN.md"};
+  args = {.target = "DESIGN.md"};
   EXPECT_FALSE(validateArgs(args));
 
-  args = {
-      .target = "DOESNT_EXIST.md"};
+  args = {.target = "DOESNT_EXIST.md"};
   EXPECT_FALSE(validateArgs(args));
 
   REENABLE_COUT

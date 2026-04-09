@@ -1,10 +1,9 @@
 #include "../src/logging.hpp"
 #include "testUtils.hpp"
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-TEST(logBase, printsWithNoArgs)
-{
+TEST(logBase, printsWithNoArgs) {
   auto redirect = redirectCout();
 
   logBase("type", "where", "msg");
@@ -16,8 +15,7 @@ TEST(logBase, printsWithNoArgs)
   EXPECT_THAT(str, testing::HasSubstr("msg"));
 }
 
-TEST(logBase, printsArgs)
-{
+TEST(logBase, printsArgs) {
   auto redirect = redirectCout();
 
   logBase("type", "where", "msg {:d}", 123);

@@ -1,14 +1,15 @@
 #include "compiler.hpp"
-#include "tokenizer.hpp"
+#include "../logging.hpp"
 #include "astBuilder.hpp"
 #include "graphLinker.hpp"
-#include "../logging.hpp"
+#include "tokenizer.hpp"
 #include <fstream>
 
 #define LOCATION "compiler"
 
-ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<std::optional<std::string>(std::string)> writeOutput)
-{
+ExitCode
+compile(const CliArgs &args, std::istream &inputStream,
+        std::function<std::optional<std::string>(std::string)> writeOutput) {
   Tokenizer *tokenizer = new Tokenizer(inputStream);
 
   tokenizer->parse();
@@ -21,11 +22,10 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
   astBuilder.build();
 
   auto errors = astBuilder.getErrors();
-  if (!errors->empty())
-  {
-    logError(LOCATION, "Found {} syntax errors while building AST", errors->size());
-    for (auto error : *errors.get())
-    {
+  if (!errors->empty()) {
+    logError(LOCATION, "Found {} syntax errors while building AST",
+             errors->size());
+    for (auto error : *errors.get()) {
       logError(LOCATION, "{}", error.toString());
     }
 
@@ -38,11 +38,10 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
   graphLinker.linkGraph();
 
   errors = graphLinker.getErrors();
-  if (!errors->empty())
-  {
-    logError(LOCATION, "Found {} syntax errors while linking graph", errors->size());
-    for (auto error : *errors.get())
-    {
+  if (!errors->empty()) {
+    logError(LOCATION, "Found {} syntax errors while linking graph",
+             errors->size());
+    for (auto error : *errors.get()) {
       logError(LOCATION, "{}", error.toString());
     }
 
@@ -57,8 +56,7 @@ ExitCode compile(const CliArgs &args, std::istream &inputStream, std::function<s
   auto bytecode = astBuilder.getRoot()->toByteCode();
   auto result = writeOutput(bytecode);
 
-  if (result.has_value())
-  {
+  if (result.has_value()) {
     logError(LOCATION, "Failed to write bytecode to file: {}", result.value());
     return ExitCode::FailedToWriteFile;
   }

@@ -1,12 +1,10 @@
 #pragma once
 
-#include <queue>
 #include <mutex>
+#include <queue>
 #include <stdexcept>
 
-template <class T>
-class ConcurrentQueue
-{
+template <class T> class ConcurrentQueue {
   std::queue<T> queue;
   std::mutex mutex;
 
@@ -18,12 +16,9 @@ public:
   int size();
 };
 
-template <class T>
-inline ConcurrentQueue<T>::ConcurrentQueue() {}
+template <class T> inline ConcurrentQueue<T>::ConcurrentQueue() {}
 
-template <class T>
-inline T ConcurrentQueue<T>::pop()
-{
+template <class T> inline T ConcurrentQueue<T>::pop() {
   const std::lock_guard<std::mutex> lock(mutex);
 
   if (queue.size() == 0)
@@ -35,16 +30,12 @@ inline T ConcurrentQueue<T>::pop()
   return t;
 }
 
-template <class T>
-inline void ConcurrentQueue<T>::push(T val)
-{
+template <class T> inline void ConcurrentQueue<T>::push(T val) {
   const std::lock_guard<std::mutex> lock(mutex);
   queue.push(val);
 }
 
-template <class T>
-inline int ConcurrentQueue<T>::size()
-{
+template <class T> inline int ConcurrentQueue<T>::size() {
   const std::lock_guard<std::mutex> lock(mutex);
   auto size = queue.size();
 

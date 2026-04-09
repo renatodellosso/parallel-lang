@@ -1,12 +1,11 @@
 #pragma once
 
 #include "token.hpp"
+#include <fstream>
 #include <memory>
 #include <vector>
-#include <fstream>
 
-class Tokenizer
-{
+class Tokenizer {
 private:
   std::istream &stream;
   std::unique_ptr<std::vector<Token>> tokens;
@@ -16,7 +15,9 @@ private:
   void parseToken();
 
 public:
-  Tokenizer(std::istream &stream) : stream(stream), tokens(std::make_unique<std::vector<Token>>()), line(1) {}
+  Tokenizer(std::istream &stream)
+      : stream(stream), tokens(std::make_unique<std::vector<Token>>()),
+        line(1) {}
   /**
    * Parses everything from the stream
    */

@@ -1,17 +1,11 @@
 #pragma once
 
-#include <string>
 #include <optional>
+#include <string>
 
-enum class CliMode
-{
-  Unset,
-  Compile,
-  Interpret
-};
+enum class CliMode { Unset, Compile, Interpret };
 
-struct CliArgs
-{
+struct CliArgs {
   std::string target;
   std::optional<std::string> outputFile;
   CliMode mode;

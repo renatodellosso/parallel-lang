@@ -1,13 +1,14 @@
 #include "../../src/interpreter/bytecodeParser.hpp"
 #include "../testUtils.hpp"
-#include <gtest/gtest.h>
 #include <format>
+#include <gtest/gtest.h>
 
-TEST(buildInstructions, buildsSingleInstruction)
-{
+TEST(buildInstructions, buildsSingleInstruction) {
   DISABLE_COUT
 
-  std::string text(std::format("0 2.0 {} 1\n0 2.1 {} 2\n2  {};", (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add));
+  std::string text(std::format(
+      "0 2.0 {} 1\n0 2.1 {} 2\n2  {};", (int)InstructionType::GetLiteral,
+      (int)InstructionType::GetLiteral, (int)InstructionType::Add));
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
@@ -49,13 +50,14 @@ TEST(buildInstructions, buildsSingleInstruction)
   REENABLE_COUT
 }
 
-TEST(buildInstructions, buildsMultipleInstructions)
-{
+TEST(buildInstructions, buildsMultipleInstructions) {
   DISABLE_COUT
 
-  std::string text(std::format("0 2.0 {} 1\n0 2.1 {} 2\n2  {};\n0 5.0 {} 3\n0 5.1 {} 4\n2  {};",
-                               (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add,
-                               (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add));
+  std::string text(std::format(
+      "0 2.0 {} 1\n0 2.1 {} 2\n2  {};\n0 5.0 {} 3\n0 5.1 {} 4\n2  {};",
+      (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral,
+      (int)InstructionType::Add, (int)InstructionType::GetLiteral,
+      (int)InstructionType::GetLiteral, (int)InstructionType::Add));
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();
@@ -94,13 +96,14 @@ TEST(buildInstructions, buildsMultipleInstructions)
   REENABLE_COUT
 }
 
-TEST(buildInstructions, buildsCompoundInstructions)
-{
+TEST(buildInstructions, buildsCompoundInstructions) {
   DISABLE_COUT
 
-  std::string text(std::format("0 2.0 {} 1\n0 2.1 {} 2\n2 4.0 {}\n0 4.1 {} 3\n2  {};",
-                               (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral, (int)InstructionType::Add,
-                               (int)InstructionType::GetLiteral, (int)InstructionType::Subtract));
+  std::string text(std::format(
+      "0 2.0 {} 1\n0 2.1 {} 2\n2 4.0 {}\n0 4.1 {} 3\n2  {};",
+      (int)InstructionType::GetLiteral, (int)InstructionType::GetLiteral,
+      (int)InstructionType::Add, (int)InstructionType::GetLiteral,
+      (int)InstructionType::Subtract));
   std::istringstream stream(text);
 
   auto instrs = std::vector<Instruction>();

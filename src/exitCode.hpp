@@ -1,7 +1,6 @@
 #pragma once
 
-enum class ExitCode
-{
+enum class ExitCode {
   Ok,
   InvalidCli,
   SyntaxErrors,

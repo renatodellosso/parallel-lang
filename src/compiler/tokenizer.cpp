@@ -1,38 +1,28 @@
 #include "tokenizer.hpp"
 #include <iostream>
 
-static bool isWhitespace(char c)
-{
+static bool isWhitespace(char c) {
   return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
-static bool isAlpha(char c)
-{
+static bool isAlpha(char c) {
   return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-static bool isNumber(char c)
-{
-  return c >= '0' && c <= '9';
-}
+static bool isNumber(char c) { return c >= '0' && c <= '9'; }
 
-static bool isAlphanumeric(char c)
-{
-  return isAlpha(c) || isNumber(c);
-}
+static bool isAlphanumeric(char c) { return isAlpha(c) || isNumber(c); }
 
-void Tokenizer::skipWhitespace()
-{
-  for (char c = stream.peek(); !stream.eof() && isWhitespace(c); c = stream.peek())
-  {
+void Tokenizer::skipWhitespace() {
+  for (char c = stream.peek(); !stream.eof() && isWhitespace(c);
+       c = stream.peek()) {
     stream.get(); // We know it's whitespace, so we read the character
     if (c == '\n' || c == '\r')
       line++;
   }
 }
 
-void Tokenizer::parseToken()
-{
+void Tokenizer::parseToken() {
   skipWhitespace();
 
   char c = stream.get();
@@ -42,11 +32,11 @@ void Tokenizer::parseToken()
   std::string raw;
   raw += c;
 
-  Token token{.type = TokenType::Error, .subtype = TokenSubtype::None, .line = line};
+  Token token{
+      .type = TokenType::Error, .subtype = TokenSubtype::None, .line = line};
 
   // Single-char tokens
-  switch (c)
-  {
+  switch (c) {
   case ';':
     token.type = TokenType::Semicolon;
     break;
@@ -91,8 +81,7 @@ void Tokenizer::parseToken()
     break;
   }
 
-  if (token.type != TokenType::Error)
-  {
+  if (token.type != TokenType::Error) {
     token.raw = raw;
     tokens.get()->push_back(token);
     return;
@@ -100,11 +89,12 @@ void Tokenizer::parseToken()
 
   // Multi-char tokens
 
-  if (c == '"')
-  {
+  if (c == '"') {
     // String
-    for (c = stream.peek(); raw.size() < 3 || raw.at(raw.size() - 1) != '"' && raw.at(raw.size() - 2) != '\\'; c = stream.peek())
-    {
+    for (c = stream.peek();
+         raw.size() < 3 ||
+         raw.at(raw.size() - 1) != '"' && raw.at(raw.size() - 2) != '\\';
+         c = stream.peek()) {
       stream.get();
 
       raw += c;
@@ -118,12 +108,9 @@ void Tokenizer::parseToken()
 
     token.type = TokenType::Literal;
     token.subtype = TokenSubtype::String;
-  }
-  else if (isNumber(c))
-  {
+  } else if (isNumber(c)) {
     // Number
-    for (c = stream.peek(); isNumber(c); c = stream.peek())
-    {
+    for (c = stream.peek(); isNumber(c); c = stream.peek()) {
       stream.get();
 
       raw += c;
@@ -134,12 +121,9 @@ void Tokenizer::parseToken()
 
     token.type = TokenType::Literal;
     token.subtype = TokenSubtype::Integer;
-  }
-  else
-  {
+  } else {
     // Identifier
-    for (c = stream.peek(); isAlphanumeric(c); c = stream.peek())
-    {
+    for (c = stream.peek(); isAlphanumeric(c); c = stream.peek()) {
       stream.get();
 
       raw += c;
@@ -148,12 +132,10 @@ void Tokenizer::parseToken()
         break;
     }
 
-    if (raw == "false" || raw == "true")
-    {
+    if (raw == "false" || raw == "true") {
       token.type = TokenType::Literal;
       token.subtype = TokenSubtype::Bool;
-    }
-    else
+    } else
       token.type = TokenType::Identifier;
   }
 
@@ -162,15 +144,12 @@ void Tokenizer::parseToken()
   tokens.get()->push_back(token);
 }
 
-void Tokenizer::parse()
-{
-  while (!stream.eof())
-  {
+void Tokenizer::parse() {
+  while (!stream.eof()) {
     parseToken();
   }
 }
 
-std::unique_ptr<std::vector<Token>> Tokenizer::close()
-{
+std::unique_ptr<std::vector<Token>> Tokenizer::close() {
   return std::move(tokens);
 }

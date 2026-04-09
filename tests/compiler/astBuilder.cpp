@@ -1,14 +1,10 @@
-#include <gtest/gtest.h>
 #include "../../src/compiler/astBuilder.hpp"
 #include "../testUtils.hpp"
+#include <gtest/gtest.h>
 
-TEST(AstBuilder, buildsLiteralExpressions)
-{
+TEST(AstBuilder, buildsLiteralExpressions) {
   std::vector<Token> tokens = {
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "1",
-       1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -18,7 +14,8 @@ TEST(AstBuilder, buildsLiteralExpressions)
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
   auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(), 1); // Assert to avoid segfault if no expressions
+  ASSERT_EQ(root.get()->expressions.size(),
+            1); // Assert to avoid segfault if no expressions
 
   auto expr = root.get()->expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::GetLiteral);
@@ -29,21 +26,11 @@ TEST(AstBuilder, buildsLiteralExpressions)
   EXPECT_TOKEN_EQ(rootExpr->token, tokens[0]);
 }
 
-TEST(AstBuilder, buildsBinaryExpressions)
-{
+TEST(AstBuilder, buildsBinaryExpressions) {
   std::vector<Token> tokens = {
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "1",
-       1},
-      {TokenType::Plus,
-       TokenSubtype::None,
-       "+",
-       1},
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "2",
-       1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Plus, TokenSubtype::None, "+", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -53,7 +40,8 @@ TEST(AstBuilder, buildsBinaryExpressions)
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
   auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(), 1); // Assert to avoid segfault if no expressions
+  ASSERT_EQ(root.get()->expressions.size(),
+            1); // Assert to avoid segfault if no expressions
 
   auto expr = root.get()->expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Add);
@@ -68,17 +56,10 @@ TEST(AstBuilder, buildsBinaryExpressions)
   EXPECT_TOKEN_EQ(right->token, tokens[2]);
 }
 
-TEST(AstBuilder, buildsDeclarations)
-{
+TEST(AstBuilder, buildsDeclarations) {
   std::vector<Token> tokens = {
-      {TokenType::Identifier,
-       TokenSubtype::None,
-       "int",
-       1},
-      {TokenType::Identifier,
-       TokenSubtype::None,
-       "var",
-       1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Identifier, TokenSubtype::None, "var", 1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -88,7 +69,8 @@ TEST(AstBuilder, buildsDeclarations)
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
   auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(), 1); // Assert to avoid segfault if no expressions
+  ASSERT_EQ(root.get()->expressions.size(),
+            1); // Assert to avoid segfault if no expressions
 
   auto expr = root.get()->expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Declare);
@@ -103,21 +85,11 @@ TEST(AstBuilder, buildsDeclarations)
   EXPECT_TOKEN_EQ(right->token, tokens[1]);
 }
 
-TEST(AstBuilder, buildsSets)
-{
+TEST(AstBuilder, buildsSets) {
   std::vector<Token> tokens = {
-      {TokenType::Identifier,
-       TokenSubtype::None,
-       "int",
-       1},
-      {TokenType::Equals,
-       TokenSubtype::None,
-       "=",
-       1},
-      {TokenType::Identifier,
-       TokenSubtype::None,
-       "int",
-       1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Equals, TokenSubtype::None, "=", 1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -127,7 +99,8 @@ TEST(AstBuilder, buildsSets)
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
   auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(), 1); // Assert to avoid segfault if no expressions
+  ASSERT_EQ(root.get()->expressions.size(),
+            1); // Assert to avoid segfault if no expressions
 
   auto expr = root.get()->expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Set);
@@ -142,34 +115,15 @@ TEST(AstBuilder, buildsSets)
   EXPECT_TOKEN_EQ(right->token, tokens[2]);
 }
 
-TEST(AstBuilder, buildsMultipleLines)
-{
+TEST(AstBuilder, buildsMultipleLines) {
   std::vector<Token> tokens = {
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "1",
-       1},
-      {TokenType::Plus,
-       TokenSubtype::None,
-       "+",
-       1},
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "2",
-       1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Plus, TokenSubtype::None, "+", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 1},
       {TokenType::Semicolon, TokenSubtype::None, ";", 1},
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "2",
-       2},
-      {TokenType::Minus,
-       TokenSubtype::None,
-       "-",
-       2},
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "3",
-       2},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 2},
+      {TokenType::Minus, TokenSubtype::None, "-", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "3", 2},
       {TokenType::Semicolon, TokenSubtype::None, ";", 2}};
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -179,7 +133,8 @@ TEST(AstBuilder, buildsMultipleLines)
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
   auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(), 2); // Assert to avoid segfault if no expressions
+  ASSERT_EQ(root.get()->expressions.size(),
+            2); // Assert to avoid segfault if no expressions
 
   auto expr = root.get()->expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Add);
@@ -188,13 +143,9 @@ TEST(AstBuilder, buildsMultipleLines)
   EXPECT_EQ(expr->type, InstructionType::Subtract);
 }
 
-TEST(AstBuilder, errorsOnInvalidToken)
-{
+TEST(AstBuilder, errorsOnInvalidToken) {
   std::vector<Token> tokens = {
-      {TokenType::Error,
-       TokenSubtype::Integer,
-       "1",
-       1},
+      {TokenType::Error, TokenSubtype::Integer, "1", 1},
   };
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -205,21 +156,11 @@ TEST(AstBuilder, errorsOnInvalidToken)
   EXPECT_EQ(builder.getRoot().get()->expressions.size(), 0);
 }
 
-TEST(AstBuilder, errorsOnPartialBinaryExpression)
-{
+TEST(AstBuilder, errorsOnPartialBinaryExpression) {
   std::vector<Token> tokens = {
-      {TokenType::Literal,
-       TokenSubtype::Integer,
-       "1",
-       1},
-      {TokenType::Plus,
-       TokenSubtype::None,
-       "+",
-       1},
-      {TokenType::Semicolon,
-       TokenSubtype::None,
-       ";",
-       1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Plus, TokenSubtype::None, "+", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
   };
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -230,17 +171,10 @@ TEST(AstBuilder, errorsOnPartialBinaryExpression)
   EXPECT_EQ(builder.getRoot().get()->expressions.size(), 0);
 }
 
-TEST(AstBuilder, errorsOnLeadingBinaryExpression)
-{
+TEST(AstBuilder, errorsOnLeadingBinaryExpression) {
   std::vector<Token> tokens = {
-      {TokenType::Plus,
-       TokenSubtype::None,
-       "+",
-       1},
-      {TokenType::Semicolon,
-       TokenSubtype::None,
-       ";",
-       1},
+      {TokenType::Plus, TokenSubtype::None, "+", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
   };
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));

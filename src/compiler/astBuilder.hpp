@@ -1,13 +1,12 @@
 #pragma once
 
-#include "token.hpp"
-#include "syntaxError.hpp"
 #include "expression.hpp"
-#include <vector>
+#include "syntaxError.hpp"
+#include "token.hpp"
 #include <memory>
+#include <vector>
 
-class AstBuilder
-{
+class AstBuilder {
 private:
   std::shared_ptr<std::vector<SyntaxError>> errors;
   std::unique_ptr<std::vector<Token>> tokens;
@@ -22,17 +21,20 @@ private:
   Token next();
   Token peek();
   /**
-   * Returns true if the next token has the specified type. NOTE: Returns false if there is no next token.
-   * Does not consume the token.
+   * Returns true if the next token has the specified type. NOTE: Returns false
+   * if there is no next token. Does not consume the token.
    */
-  bool match(TokenType type, std::optional<TokenSubtype> subtype = std::nullopt);
+  bool match(TokenType type,
+             std::optional<TokenSubtype> subtype = std::nullopt);
 
   // Building methods
 
   // Adds (usually) one token to the expression
   std::optional<std::unique_ptr<Expression>> parseLeadingExpression();
-  std::optional<std::unique_ptr<Expression>> parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev);
-  std::optional<std::unique_ptr<Expression>> extendExpression(std::optional<std::unique_ptr<Expression>> prev);
+  std::optional<std::unique_ptr<Expression>>
+  parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev);
+  std::optional<std::unique_ptr<Expression>>
+  extendExpression(std::optional<std::unique_ptr<Expression>> prev);
   std::optional<std::unique_ptr<Expression>> buildLine();
   BlockExpression buildBlock();
 

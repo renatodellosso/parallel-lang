@@ -5,8 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-class GraphLinker
-{
+class GraphLinker {
   std::shared_ptr<std::vector<SyntaxError>> errors;
   std::unordered_map<std::string, Resource> resources;
   std::shared_ptr<BlockExpression> root;

@@ -2,8 +2,7 @@
 
 #include <string>
 
-enum class TokenType
-{
+enum class TokenType {
   Error,
   Semicolon,
   LeftParen,
@@ -23,16 +22,9 @@ enum class TokenType
   Identifier
 };
 
-enum class TokenSubtype
-{
-  None,
-  String,
-  Integer,
-  Bool
-};
+enum class TokenSubtype { None, String, Integer, Bool };
 
-struct Token
-{
+struct Token {
   TokenType type;
   TokenSubtype subtype;
   std::string raw;

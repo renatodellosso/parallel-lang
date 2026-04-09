@@ -2,11 +2,10 @@
 
 #include <optional>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 
-enum class InstructionType
-{
+enum class InstructionType {
   Block,
   GetLiteral,
   GetIdentifier,
@@ -27,15 +26,9 @@ enum class InstructionType
 
 std::string instructionTypeToString(InstructionType type);
 
-enum ValueType
-{
-  String,
-  Integer,
-  Bool
-};
+enum ValueType { String, Integer, Bool };
 
-struct Value
-{
+struct Value {
   ValueType type;
   std::variant<std::string, int, bool> val;
 };
@@ -45,8 +38,7 @@ bool valToBool(Value val);
 
 struct Instruction;
 
-struct InstrDependent
-{
+struct InstrDependent {
   int instrId;
   std::optional<int> argIndex;
 
@@ -55,8 +47,7 @@ struct InstrDependent
   InstrDependent(int instrId);
 };
 
-struct Instruction
-{
+struct Instruction {
   int id;
   bool endsLine;
 

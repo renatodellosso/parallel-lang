@@ -1,9 +1,9 @@
 #include "../../src/compiler/graphLinker.hpp"
 #include <gtest/gtest.h>
 
-TEST(constructor, createsDefaultResources)
-{
-  GraphLinker *linker = new GraphLinker(std::make_shared<BlockExpression>(BlockExpression()));
+TEST(constructor, createsDefaultResources) {
+  GraphLinker *linker =
+      new GraphLinker(std::make_shared<BlockExpression>(BlockExpression()));
 
   auto resources = linker->getResources();
   EXPECT_EQ(resources.size(), 3);
@@ -12,11 +12,15 @@ TEST(constructor, createsDefaultResources)
   EXPECT_NE(resources.find("string"), resources.end());
 }
 
-TEST(linkGraph, createsResources)
-{
-  auto type = std::make_shared<RootExpression>(RootExpression(InstructionType::GetIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "int", 1}));
-  auto name = std::make_shared<RootExpression>(RootExpression(InstructionType::ReferenceIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "var", 1}));
-  auto declaration = std::make_shared<BinaryExpression>(BinaryExpression(InstructionType::Declare, 0, type, name));
+TEST(linkGraph, createsResources) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto name = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, name));
   auto root = std::make_shared<BlockExpression>(BlockExpression());
   root.get()->expressions.push_back(declaration);
 
@@ -37,13 +41,19 @@ TEST(linkGraph, createsResources)
   EXPECT_EQ(&var->second.currAccesses[0].get(), declaration.get());
 }
 
-TEST(linkGraph, readsResources)
-{
-  auto type = std::make_shared<RootExpression>(RootExpression(InstructionType::GetIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "int", 1}));
-  auto declareName = std::make_shared<RootExpression>(RootExpression(InstructionType::ReferenceIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "var", 1}));
-  auto declaration = std::make_shared<BinaryExpression>(BinaryExpression(InstructionType::Declare, 0, type, declareName));
+TEST(linkGraph, readsResources) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
 
-  auto refName = std::make_shared<RootExpression>(RootExpression(InstructionType::GetIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto refName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
 
   auto root = std::make_shared<BlockExpression>(BlockExpression());
   root.get()->expressions.push_back(declaration);
@@ -71,15 +81,24 @@ TEST(linkGraph, readsResources)
   EXPECT_EQ(&var->second.currAccesses[1].get(), refName.get());
 }
 
-TEST(linkGraph, writesResources)
-{
-  auto type = std::make_shared<RootExpression>(RootExpression(InstructionType::GetIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "int", 1}));
-  auto declareName = std::make_shared<RootExpression>(RootExpression(InstructionType::ReferenceIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "var", 1}));
-  auto declaration = std::make_shared<BinaryExpression>(BinaryExpression(InstructionType::Declare, 0, type, declareName));
+TEST(linkGraph, writesResources) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
 
-  auto refName = std::make_shared<RootExpression>(RootExpression(InstructionType::ReferenceIdentifier, 0, {TokenType::Identifier, TokenSubtype::None, "var", 1}));
-  auto literal = std::make_shared<RootExpression>(RootExpression(InstructionType::GetLiteral, 0, {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
-  auto set = std::make_shared<BinaryExpression>(BinaryExpression(InstructionType::Set, 0, refName, literal));
+  auto refName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto literal = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 0, refName, literal));
 
   auto root = std::make_shared<BlockExpression>(BlockExpression());
   root.get()->expressions.push_back(declaration);
@@ -110,11 +129,15 @@ TEST(linkGraph, writesResources)
   EXPECT_EQ(&declaration.get()->dependents[0].expr.get(), set.get());
 }
 
-TEST(linkGraph, linksInternally)
-{
-  auto left = std::make_shared<RootExpression>(RootExpression(InstructionType::GetLiteral, 0, {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
-  auto right = std::make_shared<RootExpression>(RootExpression(InstructionType::GetLiteral, 0, {TokenType::Literal, TokenSubtype::Integer, "2", 1}));
-  auto binary = std::make_shared<BinaryExpression>(BinaryExpression(InstructionType::Add, 0, left, right));
+TEST(linkGraph, linksInternally) {
+  auto left = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto right = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Literal, TokenSubtype::Integer, "2", 1}));
+  auto binary = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Add, 0, left, right));
 
   auto root = std::make_shared<BlockExpression>(BlockExpression());
   root.get()->expressions.push_back(binary);

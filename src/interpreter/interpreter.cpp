@@ -1,43 +1,37 @@
 #include "interpreter.hpp"
+#include "../logging.hpp"
+#include "../utils.hpp"
 #include "bytecodeParser.hpp"
 #include "executor.hpp"
-#include "../utils.hpp"
-#include "../logging.hpp"
 #include <chrono>
 
 #define LOCATION "Interpreter"
 
-Interpreter::Interpreter(const CliArgs &args) : args(args), instructions(std::vector<Instruction>()) {}
+Interpreter::Interpreter(const CliArgs &args)
+    : args(args), instructions(std::vector<Instruction>()) {}
 
-ExitCode Interpreter::interpret(std::istream &stream)
-{
+ExitCode Interpreter::interpret(std::istream &stream) {
   auto start = std::chrono::steady_clock::now();
 
   if (args.verbose)
     log(LOCATION, "Interpreting file '{}'...", args.target);
 
-  try
-  {
+  try {
     BytecodeParser *parser = new BytecodeParser(args, instructions, stream);
     parser->buildInstructions();
 
     delete parser; // match new with free
-  }
-  catch (std::runtime_error err)
-  {
+  } catch (std::runtime_error err) {
     logError(LOCATION, "Encountered error parsing bytecode: {}", err.what());
     return ExitCode::BytecodeParseError;
   }
 
-  try
-  {
+  try {
     Executor *executor = new Executor(args, instructions);
     executor->startExecution();
 
     delete executor;
-  }
-  catch (std::runtime_error err)
-  {
+  } catch (std::runtime_error err) {
     logError(LOCATION, "Encountered error executing bytecode: {}", err.what());
     return ExitCode::ExecutionError;
   }

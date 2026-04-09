@@ -3,22 +3,21 @@
 
 #define LOCATION "Executor"
 
-void Executor::updateDependency(InstrDependent dep, Value result)
-{
+void Executor::updateDependency(InstrDependent dep, Value result) {
   auto &depInstr = instructions[dep.instrId];
 
   int fulfilled;
 
   // Smaller scope so the lock guard is cleaned up
   {
-    std::lock_guard<std::mutex> fulfilledLock(depsFulfilledMutexes[dep.instrId]);
+    std::lock_guard<std::mutex> fulfilledLock(
+        depsFulfilledMutexes[dep.instrId]);
 
     depInstr.depsFulfilled++;
     fulfilled = depInstr.depsFulfilled;
   }
 
-  if (dep.argIndex.has_value())
-  {
+  if (dep.argIndex.has_value()) {
     std::lock_guard<std::mutex> argLock(depArgsMutexes[dep.instrId]);
 
     auto &depVec = depInstr.depArgs;
@@ -35,91 +34,77 @@ void Executor::updateDependency(InstrDependent dep, Value result)
     queue.push(depInstr);
 }
 
-void Executor::execSingleInstruction(Instruction &instr)
-{
+void Executor::execSingleInstruction(Instruction &instr) {
   Value result;
 
-  switch (instr.type)
-  {
+  switch (instr.type) {
   case InstructionType::GetLiteral:
     result = instr.bytecodeArgs[0];
     break;
-  case InstructionType::Add:
-  {
+  case InstructionType::Add: {
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
-    {
-      result = {
-          .type = ValueType::Integer,
-          .val = std::get<int>(left.val) + std::get<int>(right.val)};
-    }
-    else if (left.type == ValueType::String || right.type == ValueType::String)
-    {
-      result = {
-          .type = ValueType::String,
-          .val = valToStr(left) + valToStr(right)};
-    }
-    else if (left.type == ValueType::Bool || right.type == ValueType::Bool)
-    {
-      result = {
-          .type = ValueType::Bool,
-          .val = valToBool(left) || valToBool(right)};
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
+      result = {.type = ValueType::Integer,
+                .val = std::get<int>(left.val) + std::get<int>(right.val)};
+    } else if (left.type == ValueType::String ||
+               right.type == ValueType::String) {
+      result = {.type = ValueType::String,
+                .val = valToStr(left) + valToStr(right)};
+    } else if (left.type == ValueType::Bool || right.type == ValueType::Bool) {
+      result = {.type = ValueType::Bool,
+                .val = valToBool(left) || valToBool(right)};
     }
     break;
   }
-  case InstructionType::Subtract:
-  {
+  case InstructionType::Subtract: {
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
-    {
-      result = {
-          .type = ValueType::Integer,
-          .val = std::get<int>(left.val) - std::get<int>(right.val)};
-    }
-    else
-      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
+      result = {.type = ValueType::Integer,
+                .val = std::get<int>(left.val) - std::get<int>(right.val)};
+    } else
+      throw std::runtime_error(
+          std::format("Invalid arg types on instruction {}: {}", instr.id,
+                      (int)left.type, (int)right.type));
 
     break;
   }
-  case InstructionType::Multiply:
-  {
+  case InstructionType::Multiply: {
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
-    {
-      result = {
-          .type = ValueType::Integer,
-          .val = std::get<int>(left.val) * std::get<int>(right.val)};
-    }
-    else
-      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
+      result = {.type = ValueType::Integer,
+                .val = std::get<int>(left.val) * std::get<int>(right.val)};
+    } else
+      throw std::runtime_error(
+          std::format("Invalid arg types on instruction {}: {}", instr.id,
+                      (int)left.type, (int)right.type));
 
     break;
   }
-  case InstructionType::Divide:
-  {
+  case InstructionType::Divide: {
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer)
-    {
-      result = {
-          .type = ValueType::Integer,
-          .val = std::get<int>(left.val) / std::get<int>(right.val)};
-    }
-    else
-      throw std::runtime_error(std::format("Invalid arg types on instruction {}: {}", instr.id, (int)left.type, (int)right.type));
+    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
+      result = {.type = ValueType::Integer,
+                .val = std::get<int>(left.val) / std::get<int>(right.val)};
+    } else
+      throw std::runtime_error(
+          std::format("Invalid arg types on instruction {}: {}", instr.id,
+                      (int)left.type, (int)right.type));
 
     break;
   }
 
   default:
-    throw std::runtime_error(std::format("Unknown instruction type on instruction {}: {}", instr.id, (int)instr.type));
+    throw std::runtime_error(
+        std::format("Unknown instruction type on instruction {}: {}", instr.id,
+                    (int)instr.type));
   }
 
   for (auto dep : instr.dependents) {
@@ -133,52 +118,42 @@ void Executor::execSingleInstruction(Instruction &instr)
     log(LOCATION, "Executed instruction {}", instr.id);
 
   // Clean up stack if at end of line
-  if (instr.endsLine)
-  {
+  if (instr.endsLine) {
     log(LOCATION, "{}", valToStr(result));
   }
 }
 
-void Executor::execWorker(int id)
-{
+void Executor::execWorker(int id) {
   std::string location = LOCATION + std::string(":worker") + std::to_string(id);
   if (cliArgs.verbose)
     log(location.c_str(), "Worker {} awake", id);
 
-  try
-  {
-    while (!halt)
-    {
+  try {
+    while (!halt) {
       if (queue.size() == 0)
         continue;
       auto &instr = queue.pop().get();
       execSingleInstruction(instr);
     }
-  }
-  catch (std::runtime_error err)
-  {
+  } catch (std::runtime_error err) {
     logError(LOCATION, "{}", err.what());
     halt = true;
     success = false;
   }
 }
 
-void Executor::supervisor()
-{
+void Executor::supervisor() {
   if (cliArgs.verbose)
     log(LOCATION, "Supervisor awake");
 
   bool isDone = true;
-  do
-  {
+  do {
     isDone = true;
 
-    for (int i = 0; i < instructions.size(); i++)
-    {
+    for (int i = 0; i < instructions.size(); i++) {
       if (cliArgs.verbose)
         log(LOCATION, "Instruction {} done: {}", i, instructions[i].executed);
-      if (!instructions[i].executed)
-      {
+      if (!instructions[i].executed) {
         isDone = false;
         break;
       }
@@ -190,18 +165,15 @@ void Executor::supervisor()
   if (cliArgs.verbose)
     log(LOCATION, "Executor halted!");
 
-  for (int i = 0; i < workers.size(); i++)
-  {
+  for (int i = 0; i < workers.size(); i++) {
     // Can only detach from joinable threads
     if (workers[i].joinable())
       workers[i].join();
   }
 }
 
-void Executor::initQueue()
-{
-  for (int i = 0; i < instructions.size(); i++)
-  {
+void Executor::initQueue() {
+  for (int i = 0; i < instructions.size(); i++) {
     auto &instr = instructions[i];
     if (instr.depsFulfilled == instr.depCount)
       queue.push(instr);
@@ -211,15 +183,15 @@ void Executor::initQueue()
     log(LOCATION, "Pushed {} instructions onto the queue.", queue.size());
 }
 
-void Executor::startExecution()
-{
+void Executor::startExecution() {
   initQueue();
 
   if (cliArgs.verbose)
     log(LOCATION, "Starting {} execution workers...", cliArgs.threads);
 
   for (int i = 0; i < cliArgs.threads; i++)
-    workers.emplace_back(&Executor::execWorker, this, i); // Can't just pass execWorker since it's a method
+    workers.emplace_back(&Executor::execWorker, this,
+                         i); // Can't just pass execWorker since it's a method
 
   supervisor();
 
@@ -230,11 +202,9 @@ void Executor::startExecution()
     logError(LOCATION, "Encountered error during execution.");
 }
 
-Executor::Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions)
-    : cliArgs(cliArgs),
-      instructions(instructions),
+Executor::Executor(const CliArgs &cliArgs,
+                   std::vector<Instruction> &instructions)
+    : cliArgs(cliArgs), instructions(instructions),
       depArgsMutexes(std::vector<std::mutex>(instructions.size())),
       depsFulfilledMutexes(std::vector<std::mutex>(instructions.size())),
-      success(true)
-{
-}
+      success(true) {}

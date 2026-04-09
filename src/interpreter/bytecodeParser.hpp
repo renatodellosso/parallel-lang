@@ -1,24 +1,25 @@
 #pragma once
 
-#include "../exitCode.hpp"
 #include "../cliUtils.hpp"
+#include "../exitCode.hpp"
 #include "../instruction.hpp"
-#include <vector>
 #include <fstream>
+#include <vector>
 
-class BytecodeParser
-{
+class BytecodeParser {
   const CliArgs &cliArgs;
 
   std::vector<Instruction> &instructions;
   std::istream &stream;
 
-  // Does not consume whatever char signifies the end of the arg (' ' or ';' for example)
+  // Does not consume whatever char signifies the end of the arg (' ' or ';' for
+  // example)
   Value buildArg();
   std::vector<InstrDependent> buildDependents();
   void buildSingleInstruction();
 
 public:
-  BytecodeParser(const CliArgs &cliArgs, std::vector<Instruction> &instructions, std::istream &stream);
+  BytecodeParser(const CliArgs &cliArgs, std::vector<Instruction> &instructions,
+                 std::istream &stream);
   void buildInstructions();
 };

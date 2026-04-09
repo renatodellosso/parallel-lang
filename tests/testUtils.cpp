@@ -1,9 +1,8 @@
 #include "testUtils.hpp"
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-std::unique_ptr<CoutRedirect> redirectCout()
-{
+std::unique_ptr<CoutRedirect> redirectCout() {
   auto res = std::make_unique<CoutRedirect>();
 
   // Get old cout
@@ -14,16 +13,14 @@ std::unique_ptr<CoutRedirect> redirectCout()
   return std::move(res);
 }
 
-std::string restoreCout(std::unique_ptr<CoutRedirect> redirect)
-{
+std::string restoreCout(std::unique_ptr<CoutRedirect> redirect) {
   // Restore cout
   std::cout.rdbuf(redirect.get()->coutBuf);
 
   return redirect.get()->oss.str();
 }
 
-TEST(redirect, redirectsCout)
-{
+TEST(redirect, redirectsCout) {
   auto redirect = redirectCout();
 
   std::cout << "Hello world";

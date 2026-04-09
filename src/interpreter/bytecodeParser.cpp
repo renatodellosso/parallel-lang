@@ -1,36 +1,30 @@
 #include "bytecodeParser.hpp"
-#include "../utils.hpp"
 #include "../logging.hpp"
+#include "../utils.hpp"
 
 #define LOCATION "BytecodeParser"
 
-Value BytecodeParser::buildArg()
-{
+Value BytecodeParser::buildArg() {
   std::string curr = "";
 
   // Consume spaces
-  while (stream.peek() == ' ')
-  {
+  while (stream.peek() == ' ') {
     stream.get();
   }
 
   bool inStr = false;
   bool endInstr = false;
-  for (char c = stream.peek(); true; c = stream.peek())
-  {
-    if (c == '"')
-    {
+  for (char c = stream.peek(); true; c = stream.peek()) {
+    if (c == '"') {
       if (!inStr)
         inStr = true;
-      else
-      {
+      else {
         stream.get();
         curr += c;
         break;
       }
     }
-    if (!inStr && (c == ' ' || c == '\n' || c == '\r' || c == ';'))
-    {
+    if (!inStr && (c == ' ' || c == '\n' || c == '\r' || c == ';')) {
       break;
     }
 
@@ -39,44 +33,32 @@ Value BytecodeParser::buildArg()
   }
 
   Value arg;
-  if (curr.at(0) == '"' && curr.at(curr.length() - 1) == '"')
-  {
+  if (curr.at(0) == '"' && curr.at(curr.length() - 1) == '"') {
     // String
     arg.type = ValueType::String,
     arg.val = curr.substr(1, curr.length() - 2); // Remove ""
-  }
-  else if (curr == "true")
-  {
+  } else if (curr == "true") {
     // bool (true)
-    arg.type = ValueType::Bool,
-    arg.val = true;
-  }
-  else if (curr == "false")
-  {
+    arg.type = ValueType::Bool, arg.val = true;
+  } else if (curr == "false") {
     // bool (true)
-    arg.type = ValueType::Bool,
-    arg.val = false;
-  }
-  else if (isInteger(curr))
-  {
+    arg.type = ValueType::Bool, arg.val = false;
+  } else if (isInteger(curr)) {
     // int
-    arg.type = ValueType::Integer,
-    arg.val = std::atoi(curr.c_str());
-  }
-  else
-  {
-    throw std::runtime_error(std::format("Unknown argument format on instruction {}: '{}'", instructions.size(), curr));
+    arg.type = ValueType::Integer, arg.val = std::atoi(curr.c_str());
+  } else {
+    throw std::runtime_error(
+        std::format("Unknown argument format on instruction {}: '{}'",
+                    instructions.size(), curr));
   }
 
   return arg;
 }
 
-std::vector<InstrDependent> BytecodeParser::buildDependents()
-{
+std::vector<InstrDependent> BytecodeParser::buildDependents() {
   // Build overall string
   std::string depStr = "";
-  for (char c = stream.peek(); c != ' '; c = stream.peek())
-  {
+  for (char c = stream.peek(); c != ' '; c = stream.peek()) {
     depStr += c;
     stream.get();
   }
@@ -84,12 +66,10 @@ std::vector<InstrDependent> BytecodeParser::buildDependents()
   // Split string into dependents
   std::vector<std::string> rawDeps;
   std::string curr = "";
-  for (auto c : depStr)
-  {
+  for (auto c : depStr) {
     if (c != ',')
       curr += c;
-    else
-    {
+    else {
       rawDeps.push_back(curr);
       curr = "";
     }
@@ -100,15 +80,12 @@ std::vector<InstrDependent> BytecodeParser::buildDependents()
 
   // Convert strings to Dependents
   std::vector<InstrDependent> deps;
-  for (auto str : rawDeps)
-  {
+  for (auto str : rawDeps) {
     std::string id = "", index = "", curr = "";
-    for (auto c : str)
-    {
+    for (auto c : str) {
       if (c != '.')
         curr += c;
-      else
-      {
+      else {
         id = curr;
         curr = "";
       }
@@ -119,20 +96,21 @@ std::vector<InstrDependent> BytecodeParser::buildDependents()
     else if (id == "")
       id = curr;
 
-    deps.emplace_back(std::atoi(id.c_str()), index != "" ? std::make_optional(std::atoi(index.c_str())) : std::nullopt);
+    deps.emplace_back(std::atoi(id.c_str()),
+                      index != "" ? std::make_optional(std::atoi(index.c_str()))
+                                  : std::nullopt);
   }
 
   return deps;
 }
 
-void BytecodeParser::buildSingleInstruction()
-{
+void BytecodeParser::buildSingleInstruction() {
   Instruction instr((int)instructions.size());
 
   // Parse depCount
   std::string curr = "";
-  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r'; c = stream.peek())
-  {
+  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r';
+       c = stream.peek()) {
     stream.get();
     curr += c;
   }
@@ -148,8 +126,8 @@ void BytecodeParser::buildSingleInstruction()
 
   // Parse type
   curr = "";
-  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r'; c = stream.peek())
-  {
+  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r';
+       c = stream.peek()) {
     stream.get();
     curr += c;
   }
@@ -157,14 +135,13 @@ void BytecodeParser::buildSingleInstruction()
   instr.type = (InstructionType)std::atoi(curr.c_str());
 
   // Parse args
-  while (stream.peek() != ';' && stream.peek() != '\n' && stream.peek() != '\r' && !stream.eof())
-  {
+  while (stream.peek() != ';' && stream.peek() != '\n' &&
+         stream.peek() != '\r' && !stream.eof()) {
     Value arg = buildArg();
     instr.bytecodeArgs.push_back(arg);
   }
 
-  if (stream.peek() == ';')
-  {
+  if (stream.peek() == ';') {
     instr.endsLine = true;
     stream.get();
   }
@@ -173,10 +150,8 @@ void BytecodeParser::buildSingleInstruction()
   return;
 }
 
-void BytecodeParser::buildInstructions()
-{
-  while (!stream.eof())
-  {
+void BytecodeParser::buildInstructions() {
+  while (!stream.eof()) {
     buildSingleInstruction();
 
     stream.get(); // Consume '\n'
@@ -186,4 +161,7 @@ void BytecodeParser::buildInstructions()
     log(LOCATION, "Parsed {} instructions", instructions.size());
 }
 
-BytecodeParser::BytecodeParser(const CliArgs &cliArgs, std::vector<Instruction> &instructions, std::istream &stream) : cliArgs(cliArgs), instructions(instructions), stream(stream) {}
+BytecodeParser::BytecodeParser(const CliArgs &cliArgs,
+                               std::vector<Instruction> &instructions,
+                               std::istream &stream)
+    : cliArgs(cliArgs), instructions(instructions), stream(stream) {}

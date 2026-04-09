@@ -1,26 +1,22 @@
 #include "../src/concurrentQueue.hpp"
 #include <gtest/gtest.h>
 
-TEST(size, sizeStartAtZero)
-{
+TEST(size, sizeStartAtZero) {
   ConcurrentQueue<int> queue;
 
   EXPECT_EQ(queue.size(), 0);
 }
 
-TEST(push, incrementsSize)
-{
+TEST(push, incrementsSize) {
   ConcurrentQueue<int> queue;
 
-  for (int i = 1; i <= 10; i++)
-  {
+  for (int i = 1; i <= 10; i++) {
     queue.push(i);
     EXPECT_EQ(queue.size(), i);
   }
 }
 
-TEST(pushPop, pushesToBack)
-{
+TEST(pushPop, pushesToBack) {
   ConcurrentQueue<int> queue;
 
   queue.push(1);

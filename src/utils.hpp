@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <chrono>
+#include <string>
 
 // strncmp is in cstring on Ubunuty
 #ifdef __unix__

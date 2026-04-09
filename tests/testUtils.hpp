@@ -2,15 +2,14 @@
 
 #include "../src/compiler/token.hpp"
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <memory>
 
 #define DISABLE_COUT auto macro_coutRedirect = redirectCout();
 #define REENABLE_COUT restoreCout(std::move(macro_coutRedirect));
 
-struct CoutRedirect
-{
+struct CoutRedirect {
   std::ostringstream oss;
   std::streambuf *coutBuf;
 };
@@ -26,8 +25,8 @@ std::unique_ptr<CoutRedirect> redirectCout();
  */
 std::string restoreCout(std::unique_ptr<CoutRedirect> redirect);
 
-#define EXPECT_TOKEN_EQ(lhs, rhs)      \
-  EXPECT_EQ(lhs.type, rhs.type);       \
-  EXPECT_EQ(lhs.subtype, rhs.subtype); \
-  EXPECT_EQ(lhs.line, rhs.line);       \
+#define EXPECT_TOKEN_EQ(lhs, rhs)                                              \
+  EXPECT_EQ(lhs.type, rhs.type);                                               \
+  EXPECT_EQ(lhs.subtype, rhs.subtype);                                         \
+  EXPECT_EQ(lhs.line, rhs.line);                                               \
   EXPECT_EQ(lhs.raw, rhs.raw);
