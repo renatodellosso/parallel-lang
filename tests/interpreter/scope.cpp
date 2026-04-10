@@ -66,3 +66,40 @@ TEST(get, returnsValPtrIfFoundInBaseAndEnclosing) {
   auto found = scope.get("found");
   EXPECT_EQ(found, vars["found"]);
 }
+
+TEST(alloc, returnsPtr) {
+  Scope scope;
+
+  auto ptr = scope.alloc("key");
+
+  EXPECT_NE(ptr, nullptr);
+}
+
+TEST(alloc, returnsValue) {
+  Scope scope;
+
+  auto ptr = scope.alloc("key", {.type = ValueType::Integer, .val = 2});
+
+  EXPECT_EQ(ptr->type, ValueType::Integer);
+  EXPECT_EQ(std::get<int>(ptr->val), 2);
+}
+
+TEST(alloc, valueCanBeGotten) {
+  Scope scope;
+
+  auto ptr = scope.alloc("key", {.type = ValueType::Integer, .val = 2});
+
+  EXPECT_EQ(scope.get("key"), ptr);
+}
+
+TEST(alloc, canShadowEnclosingVar) {
+  std::unordered_map<std::string, std::shared_ptr<Value>> vars;
+  vars["key"] = std::make_shared<Value>();
+
+  auto enclosing = std::make_shared<Scope>(vars);
+  Scope scope(enclosing);
+
+  auto ptr = scope.alloc("key", {.type = ValueType::Integer, .val = 2});
+
+  EXPECT_EQ(scope.get("key"), ptr);
+}
