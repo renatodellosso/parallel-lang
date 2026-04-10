@@ -2,7 +2,9 @@
 #include "../logging.hpp"
 #include <chrono>
 #include <format>
+#include <memory>
 #include <optional>
+#include <stdexcept>
 #include <thread>
 
 #define LOCATION "Executor"
@@ -45,6 +47,20 @@ void Executor::execSingleInstruction(Instruction &instr) {
   case InstructionType::GetLiteral:
     result = instr.bytecodeArgs[0];
     break;
+  case InstructionType::GetIdentifier: {
+    auto ptr =
+        instr.scope->get(std::get<std::string>(instr.bytecodeArgs[0].val));
+    if (!ptr)
+      throw std::runtime_error(std::format(
+          "Attempted to read identifier '{}', but it did not exist!",
+          std::get<std::string>(instr.bytecodeArgs[0].val)));
+    result = *ptr;
+    break;
+  }
+  case InstructionType::Declare: {
+    // instr.scope->alloc(instr.bytecodeArgs[0].val);
+    break;
+  }
   case InstructionType::Add: {
     // Block so we can declare vars
     Value left = instr.depArgs[0], right = instr.depArgs[1];
@@ -158,7 +174,8 @@ void Executor::supervisor() {
       }
     }
 
-    // Removing this breaks tests on Ubuntu. Not sure why, but it reduces the cycles used by the supervisor
+    // Removing this breaks tests on Ubuntu. Not sure why, but it reduces the
+    // cycles used by the supervisor
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   } while (!isDone && !halt);
 
@@ -188,7 +205,20 @@ void Executor::initQueue() {
     log(LOCATION, "Pushed {} instructions onto the queue.", queue.size());
 }
 
+void Executor::initScopes() {
+  std::shared_ptr<Scope> global = std::make_shared<Scope>();
+
+  for (int i = 0; i < instructions.size(); i++) {
+    auto &instr = instructions[i];
+    instr.scope = global;
+  }
+
+  if (cliArgs.verbose)
+    log(LOCATION, "Initialized scopes.");
+}
+
 void Executor::startExecution() {
+  initScopes();
   initQueue();
 
   if (cliArgs.verbose)

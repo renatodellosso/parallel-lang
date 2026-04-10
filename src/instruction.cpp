@@ -49,11 +49,11 @@ InstrDependent::InstrDependent(int instrId, int argIndex)
 InstrDependent::InstrDependent(int instrId)
     : InstrDependent(instrId, std::nullopt) {}
 
-Instruction::Instruction(int id)
+Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
     : id(id), endsLine(false), type((InstructionType)0), executed(false),
       bytecodeArgs(std::vector<Value>()), depArgs(std::vector<Value>()),
-      depCount(0), depsFulfilled(0), dependents(std::vector<InstrDependent>()) {
-}
+      depCount(0), depsFulfilled(0), dependents(std::vector<InstrDependent>()),
+      scope(scope) {}
 
 std::string Instruction::toString() {
   std::string str = std::format(

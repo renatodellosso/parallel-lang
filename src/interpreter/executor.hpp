@@ -31,6 +31,7 @@ class Executor {
 
   // Reads instructions and pushes everything that's ready onto the queue
   void initQueue();
+  void initScopes();
 
 public:
   Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions);
