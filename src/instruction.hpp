@@ -1,8 +1,8 @@
 #pragma once
 
+#include "value.hpp"
 #include <optional>
 #include <string>
-#include <variant>
 #include <vector>
 
 enum class InstructionType {
@@ -25,16 +25,6 @@ enum class InstructionType {
 };
 
 std::string instructionTypeToString(InstructionType type);
-
-enum ValueType { String, Integer, Bool };
-
-struct Value {
-  ValueType type;
-  std::variant<std::string, int, bool> val;
-};
-
-std::string valToStr(Value val);
-bool valToBool(Value val);
 
 struct Instruction;
 

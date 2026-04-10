@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../instruction.hpp"
+#include "../value.hpp"
 #include <memory>
 #include <shared_mutex>
 #include <unordered_map>
