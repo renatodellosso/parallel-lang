@@ -6,7 +6,6 @@
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "C_Cpp.default.cStandard": "c17",
-  "clangd.path": "",
   "[cpp]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },
