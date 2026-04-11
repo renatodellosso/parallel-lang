@@ -1,4 +1,5 @@
 #include "../../src/interpreter/executor.hpp"
+#include "../testUtils.hpp"
 #include <gtest/gtest.h>
 
 std::vector<Instruction> getInstrs() {
@@ -38,14 +39,18 @@ TEST(startExecution, updatesDepsFulfilled) {
 }
 
 TEST(startExecution, populatesDepArgs) {
+  DISABLE_COUT
+
   auto instrs = getInstrs();
 
   Executor executor({.verbose = true, .threads = 1}, instrs);
   executor.startExecution();
 
   ASSERT_EQ(instrs[2].depArgs.size(), 2);
-  EXPECT_EQ(instrs[2].depArgs[0].type, ValueType::Integer);
-  EXPECT_EQ(instrs[2].depArgs[0].val, instrs[0].bytecodeArgs[0].val);
-  EXPECT_EQ(instrs[2].depArgs[1].type, ValueType::Integer);
-  EXPECT_EQ(instrs[2].depArgs[1].val, instrs[1].bytecodeArgs[0].val);
+  EXPECT_EQ(instrs[2].depArgs[0]->type, ValueType::Integer);
+  EXPECT_EQ(instrs[2].depArgs[0]->val, instrs[0].bytecodeArgs[0].val);
+  EXPECT_EQ(instrs[2].depArgs[1]->type, ValueType::Integer);
+  EXPECT_EQ(instrs[2].depArgs[1]->val, instrs[1].bytecodeArgs[0].val);
+
+  REENABLE_COUT
 }

@@ -1,5 +1,6 @@
 #include "instruction.hpp"
 #include <format>
+#include <memory>
 
 std::string instructionTypeToString(InstructionType type) {
   switch (type) {
@@ -9,8 +10,6 @@ std::string instructionTypeToString(InstructionType type) {
     return "GetLiteral";
   case InstructionType::GetIdentifier:
     return "GetIdentifier";
-  case InstructionType::ReferenceIdentifier:
-    return "ReferenceIdentifier";
   case InstructionType::Declare:
     return "Declare";
   case InstructionType::Set:
@@ -51,8 +50,9 @@ InstrDependent::InstrDependent(int instrId)
 
 Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
     : id(id), endsLine(false), type((InstructionType)0), executed(false),
-      bytecodeArgs(std::vector<Value>()), depArgs(std::vector<Value>()),
-      depCount(0), depsFulfilled(0), dependents(std::vector<InstrDependent>()),
+      bytecodeArgs(std::vector<Value>()),
+      depArgs(std::vector<std::shared_ptr<Value>>()), depCount(0),
+      depsFulfilled(0), dependents(std::vector<InstrDependent>()),
       scope(scope) {}
 
 std::string Instruction::toString() {
@@ -67,7 +67,7 @@ std::string Instruction::toString() {
   str += "], dep args: [";
 
   for (auto arg : depArgs)
-    str += valToStr(arg) + ", ";
+    str += valToStr(*arg) + ", ";
   if (depArgs.size() > 0)
     str = str.substr(0, str.length() - 2);
   str += "], dependents: [";

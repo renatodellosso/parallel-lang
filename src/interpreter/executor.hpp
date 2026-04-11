@@ -21,7 +21,7 @@ class Executor {
   std::string haltCause;
 
   // Increment depsFulfilled and, if relevant, sets depArgs[i]
-  void updateDependency(InstrDependent dep, Value result);
+  void updateDependency(InstrDependent dep, std::shared_ptr<Value> result);
   void execSingleInstruction(Instruction &instr);
 
   // Multithreaded worker that actually executes instructions

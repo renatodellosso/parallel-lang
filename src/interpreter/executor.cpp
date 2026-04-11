@@ -9,7 +9,7 @@
 
 #define LOCATION "Executor"
 
-void Executor::updateDependency(InstrDependent dep, Value result) {
+void Executor::updateDependency(InstrDependent dep, std::shared_ptr<Value> result) {
   auto &depInstr = instructions[dep.instrId];
 
   int fulfilled;
@@ -41,11 +41,11 @@ void Executor::updateDependency(InstrDependent dep, Value result) {
 }
 
 void Executor::execSingleInstruction(Instruction &instr) {
-  Value result;
+  std::shared_ptr<Value> result;
 
   switch (instr.type) {
   case InstructionType::GetLiteral:
-    result = instr.bytecodeArgs[0];
+    result = std::make_shared<Value>(instr.bytecodeArgs[0]);
     break;
   case InstructionType::GetIdentifier: {
     auto ptr =
@@ -54,69 +54,75 @@ void Executor::execSingleInstruction(Instruction &instr) {
       throw std::runtime_error(std::format(
           "Attempted to read identifier '{}', but it did not exist!",
           std::get<std::string>(instr.bytecodeArgs[0].val)));
-    result = *ptr;
+    result = ptr;
     break;
   }
   case InstructionType::Declare: {
-    // instr.scope->alloc(instr.bytecodeArgs[0].val);
+    instr.scope->alloc(std::get<std::string>(instr.bytecodeArgs[0].val));
     break;
   }
   case InstructionType::Add: {
     // Block so we can declare vars
-    Value left = instr.depArgs[0], right = instr.depArgs[1];
+    std::shared_ptr<Value> left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
-      result = {.type = ValueType::Integer,
-                .val = std::get<int>(left.val) + std::get<int>(right.val)};
-    } else if (left.type == ValueType::String ||
-               right.type == ValueType::String) {
-      result = {.type = ValueType::String,
-                .val = valToStr(left) + valToStr(right)};
-    } else if (left.type == ValueType::Bool || right.type == ValueType::Bool) {
-      result = {.type = ValueType::Bool,
-                .val = valToBool(left) || valToBool(right)};
+    if (left->type == ValueType::Integer && right->type == ValueType::Integer) {
+      result = std::make_shared<Value>(ValueType::Integer,
+                                       std::get<int>(left->val) +
+                                           std::get<int>(right->val));
+    } else if (left->type == ValueType::String ||
+               right->type == ValueType::String) {
+      result = std::make_shared<Value>(ValueType::String,
+                                       valToStr(*left) + valToStr(*right));
+
+    } else if (left->type == ValueType::Bool ||
+               right->type == ValueType::Bool) {
+      result = std::make_shared<Value>(ValueType::Bool,
+                                       valToBool(*left) || valToBool(*right));
     }
     break;
   }
   case InstructionType::Subtract: {
     // Block so we can declare vars
-    Value left = instr.depArgs[0], right = instr.depArgs[1];
+    std::shared_ptr<Value> left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
-      result = {.type = ValueType::Integer,
-                .val = std::get<int>(left.val) - std::get<int>(right.val)};
+    if (left->type == ValueType::Integer && right->type == ValueType::Integer) {
+      result = std::make_shared<Value>(ValueType::Integer,
+                                       std::get<int>(left->val) -
+                                           std::get<int>(right->val));
     } else
       throw std::runtime_error(
           std::format("Invalid arg types on instruction {}: {}", instr.id,
-                      (int)left.type, (int)right.type));
+                      (int)left->type, (int)right->type));
 
     break;
   }
   case InstructionType::Multiply: {
     // Block so we can declare vars
-    Value left = instr.depArgs[0], right = instr.depArgs[1];
+    std::shared_ptr<Value> left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
-      result = {.type = ValueType::Integer,
-                .val = std::get<int>(left.val) * std::get<int>(right.val)};
+    if (left->type == ValueType::Integer && right->type == ValueType::Integer) {
+      result = std::make_shared<Value>(ValueType::Integer,
+                                       std::get<int>(left->val) *
+                                           std::get<int>(right->val));
     } else
       throw std::runtime_error(
           std::format("Invalid arg types on instruction {}: {}", instr.id,
-                      (int)left.type, (int)right.type));
+                      (int)left->type, (int)right->type));
 
     break;
   }
   case InstructionType::Divide: {
     // Block so we can declare vars
-    Value left = instr.depArgs[0], right = instr.depArgs[1];
+    std::shared_ptr<Value> left = instr.depArgs[0], right = instr.depArgs[1];
 
-    if (left.type == ValueType::Integer && right.type == ValueType::Integer) {
-      result = {.type = ValueType::Integer,
-                .val = std::get<int>(left.val) / std::get<int>(right.val)};
+    if (left->type == ValueType::Integer && right->type == ValueType::Integer) {
+      result = std::make_shared<Value>(ValueType::Integer,
+                                       std::get<int>(left->val) /
+                                           std::get<int>(right->val));
     } else
       throw std::runtime_error(
           std::format("Invalid arg types on instruction {}: {}", instr.id,
-                      (int)left.type, (int)right.type));
+                      (int)left->type, (int)right->type));
 
     break;
   }
@@ -135,7 +141,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
   // Clean up stack if at end of line
   if (instr.endsLine) {
-    log(LOCATION, "{}", valToStr(result));
+    log(LOCATION, "{}", valToStr(*result));
   }
 }
 

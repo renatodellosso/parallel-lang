@@ -11,7 +11,6 @@ enum class InstructionType {
   Block,
   GetLiteral,
   GetIdentifier,
-  ReferenceIdentifier,
   Declare,
   Set,
   Add,
@@ -50,7 +49,7 @@ struct Instruction {
   // Args inherent to the instruction
   std::vector<Value> bytecodeArgs;
   // Args from previous instructions
-  std::vector<Value> depArgs;
+  std::vector<std::shared_ptr<Value>> depArgs;
 
   int depCount, depsFulfilled;
   std::vector<InstrDependent> dependents;

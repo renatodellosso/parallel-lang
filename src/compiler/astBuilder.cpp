@@ -92,7 +92,9 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
     if (name.type != TokenType::Identifier)
       throw std::runtime_error(std::format(
           "Expected identifer when naming declaration. Got: '{}'", name.raw));
-    RootExpression nameExpr(InstructionType::ReferenceIdentifier, line, name);
+    // Use GetLiteral instead of ReferenceIdentifier to get the name so we can
+    // allocate it
+    RootExpression nameExpr(InstructionType::GetLiteral, line, name);
 
     return std::make_optional(std::make_unique<BinaryExpression>(
         BinaryExpression(InstructionType::Declare, line,
@@ -101,7 +103,6 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
   }
   case TokenType::Equals:
     type = InstructionType::Set;
-    prev.value().get()->type = InstructionType::ReferenceIdentifier;
     break;
 
   default:
