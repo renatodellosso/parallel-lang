@@ -12,23 +12,21 @@
 
 void Executor::updateDependency(InstrDependent dep,
                                 std::shared_ptr<Value> result) {
-  auto &depInstr = instructions[dep.instrId];
-
   int fulfilled;
 
   // Smaller scope so the lock guard is cleaned up
   {
     std::lock_guard<std::mutex> fulfilledLock(
-        depsFulfilledMutexes[dep.instrId]);
+        depsFulfilledMutexes[dep.instr->id]);
 
-    depInstr.depsFulfilled++;
-    fulfilled = depInstr.depsFulfilled;
+    dep.instr->depsFulfilled++;
+    fulfilled = dep.instr->depsFulfilled;
   }
 
   if (dep.argIndex.has_value()) {
-    std::lock_guard<std::mutex> argLock(depArgsMutexes[dep.instrId]);
+    std::lock_guard<std::mutex> argLock(depArgsMutexes[dep.instr->id]);
 
-    auto &depVec = depInstr.depArgs;
+    auto &depVec = dep.instr->depArgs;
     int i = dep.argIndex.value();
 
     // Ensure vector has an index i
@@ -38,8 +36,8 @@ void Executor::updateDependency(InstrDependent dep,
     depVec[i] = result;
   }
 
-  if (fulfilled == depInstr.depCount)
-    queue.push(depInstr);
+  if (fulfilled == dep.instr->depCount)
+    queue.push(*dep.instr);
 }
 
 void Executor::execSingleInstruction(Instruction &instr) {

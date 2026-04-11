@@ -8,11 +8,11 @@ std::vector<Instruction> getInstrs() {
 
   instrs[0].type = InstructionType::GetLiteral;
   instrs[0].bytecodeArgs.push_back({.type = ValueType::Integer, .val = 1});
-  instrs[0].dependents.push_back(InstrDependent(2, 0));
+  instrs[0].dependents.push_back(InstrDependent(&instrs[2], 0));
 
   instrs[1].type = InstructionType::GetLiteral;
   instrs[1].bytecodeArgs.push_back({.type = ValueType::Integer, .val = 2});
-  instrs[1].dependents.push_back(InstrDependent(2, 1));
+  instrs[1].dependents.push_back(InstrDependent(&instrs[2], 1));
 
   instrs[2].type = InstructionType::Add;
   instrs[2].depCount = 2;

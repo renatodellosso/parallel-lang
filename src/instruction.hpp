@@ -30,12 +30,12 @@ std::string instructionTypeToString(InstructionType type);
 struct Instruction;
 
 struct InstrDependent {
-  int instrId;
+  Instruction* instr;
   std::optional<int> argIndex;
 
-  InstrDependent(int instrId, std::optional<int> argIndex);
-  InstrDependent(int instrId, int argIndex);
-  InstrDependent(int instrId);
+  InstrDependent(Instruction *instr, std::optional<int> argIndex);
+  InstrDependent(Instruction *instr, int argIndex);
+  InstrDependent(Instruction *instr);
 };
 
 struct Instruction {

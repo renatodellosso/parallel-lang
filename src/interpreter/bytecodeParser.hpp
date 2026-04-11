@@ -10,12 +10,14 @@ class BytecodeParser {
   const CliArgs &cliArgs;
 
   std::vector<Instruction> &instructions;
+  std::vector<std::string> depStrs;
   std::istream &stream;
 
   // Does not consume whatever char signifies the end of the arg (' ' or ';' for
   // example)
   Value buildArg();
-  std::vector<InstrDependent> buildDependents();
+  std::string buildDepStr();
+  std::vector<InstrDependent> buildDependents(std::string depStr);
   void buildSingleInstruction();
 
 public:

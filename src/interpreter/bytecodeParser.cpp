@@ -57,13 +57,18 @@ Value BytecodeParser::buildArg() {
   return arg;
 }
 
-std::vector<InstrDependent> BytecodeParser::buildDependents() {
-  // Build overall string
+std::string BytecodeParser::buildDepStr() {
   std::string depStr = "";
   for (char c = stream.peek(); c != ' '; c = stream.peek()) {
     depStr += c;
     stream.get();
   }
+
+  return depStr;
+}
+
+std::vector<InstrDependent>
+BytecodeParser::buildDependents(std::string depStr) {
 
   // Split string into dependents
   std::vector<std::string> rawDeps;
@@ -98,7 +103,8 @@ std::vector<InstrDependent> BytecodeParser::buildDependents() {
     else if (id == "")
       id = curr;
 
-    deps.emplace_back(std::atoi(id.c_str()),
+    int idNum = std::atoi(id.c_str());
+    deps.emplace_back(&instructions[idNum],
                       index != "" ? std::make_optional(std::atoi(index.c_str()))
                                   : std::nullopt);
   }
@@ -123,7 +129,7 @@ void BytecodeParser::buildSingleInstruction() {
 
   instr.depCount = std::atoi(curr.c_str());
 
-  instr.dependents = buildDependents();
+  depStrs.push_back(buildDepStr());
   stream.get(); // Consume ' '
 
   // Parse type
@@ -157,6 +163,10 @@ void BytecodeParser::buildInstructions() {
     buildSingleInstruction();
 
     stream.get(); // Consume '\n'
+  }
+
+  for (int i = 0; i < instructions.size(); i++) {
+    instructions[i].dependents = buildDependents(depStrs[i]);
   }
 
   if (cliArgs.verbose)

@@ -39,14 +39,14 @@ std::string instructionTypeToString(InstructionType type) {
   }
 }
 
-InstrDependent::InstrDependent(int instrId, std::optional<int> argIndex)
-    : instrId(instrId), argIndex(argIndex) {}
+InstrDependent::InstrDependent(Instruction *instr, std::optional<int> argIndex)
+    : instr(instr), argIndex(argIndex) {}
 
-InstrDependent::InstrDependent(int instrId, int argIndex)
-    : InstrDependent(instrId, std::make_optional(argIndex)) {}
+InstrDependent::InstrDependent(Instruction *instr, int argIndex)
+    : InstrDependent(instr, std::make_optional(argIndex)) {}
 
-InstrDependent::InstrDependent(int instrId)
-    : InstrDependent(instrId, std::nullopt) {}
+InstrDependent::InstrDependent(Instruction *instr)
+    : InstrDependent(instr, std::nullopt) {}
 
 Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
     : id(id), endsLine(false), type((InstructionType)0), executed(false),
@@ -73,7 +73,7 @@ std::string Instruction::toString() {
   str += "], dependents: [";
 
   for (auto dep : dependents) {
-    str += std::to_string(dep.instrId);
+    str += std::to_string(dep.instr->id);
     if (dep.argIndex.has_value())
       str += "." + std::to_string(dep.argIndex.value());
     str += ", ";

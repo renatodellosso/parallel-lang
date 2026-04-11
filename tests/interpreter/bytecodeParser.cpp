@@ -24,7 +24,7 @@ TEST(buildInstructions, buildsSingleInstruction) {
   EXPECT_EQ(instr.id, 0);
   EXPECT_EQ(instr.depCount, 0);
   ASSERT_EQ(instr.dependents.size(), 1);
-  EXPECT_EQ(instr.dependents[0].instrId, instrs[2].id);
+  EXPECT_EQ(instr.dependents[0].instr, &instrs[2]);
   ASSERT_TRUE(instr.dependents[0].argIndex.has_value());
   EXPECT_EQ(instr.dependents[0].argIndex.value(), 0);
 
@@ -35,7 +35,7 @@ TEST(buildInstructions, buildsSingleInstruction) {
   EXPECT_EQ(instr.id, 1);
   EXPECT_EQ(instr.depCount, 0);
   ASSERT_EQ(instr.dependents.size(), 1);
-  EXPECT_EQ(instr.dependents[0].instrId, instrs[2].id);
+  EXPECT_EQ(instr.dependents[0].instr, &instrs[2]);
   ASSERT_TRUE(instr.dependents[0].argIndex.has_value());
   EXPECT_EQ(instr.dependents[0].argIndex.value(), 1);
 
@@ -73,7 +73,7 @@ TEST(buildInstructions, buildsMultipleInstructions) {
   EXPECT_EQ(instr.id, 0);
   EXPECT_EQ(instr.depCount, 0);
   ASSERT_EQ(instr.dependents.size(), 1);
-  EXPECT_EQ(instr.dependents[0].instrId, instrs[2].id);
+  EXPECT_EQ(instr.dependents[0].instr, &instrs[2]);
   ASSERT_TRUE(instr.dependents[0].argIndex.has_value());
   EXPECT_EQ(instr.dependents[0].argIndex.value(), 0);
 
@@ -131,7 +131,7 @@ TEST(buildInstructions, buildsCompoundInstructions) {
   EXPECT_EQ(instr.id, 2);
   EXPECT_EQ(instr.depCount, 2);
   ASSERT_EQ(instr.dependents.size(), 1);
-  EXPECT_EQ(instr.dependents[0].instrId, instrs[4].id);
+  EXPECT_EQ(instr.dependents[0].instr, &instrs[4]);
 
   instr = instrs[3];
   EXPECT_EQ(instr.type, InstructionType::GetLiteral);
