@@ -1,5 +1,7 @@
 #include "astBuilder.hpp"
+#include "token.hpp"
 #include <format>
+#include <iostream>
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens) {
   errors = std::make_shared<std::vector<SyntaxError>>();
@@ -129,15 +131,18 @@ std::optional<std::unique_ptr<Expression>>
 AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev) {
   if (!prev.has_value()) {
     // No previous value
-    return parseLeadingExpression();
+    prev = parseLeadingExpression();
   }
 
-  // Binary operators
-  if (!hasNext())
-    throw std::runtime_error("Could not parse line: No matching instruction "
-                             "type as there is no next token");
+  while (!match(TokenType::Semicolon)) {
+    if (!hasNext())
+      throw std::runtime_error("Could not parse line: No matching instruction "
+                               "type as there is no next token");
 
-  return parseCompoundExpression(std::move(prev));
+    prev = parseCompoundExpression(std::move(prev));
+  }
+
+  return prev;
 }
 
 std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine() {
@@ -153,6 +158,8 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine() {
     }
 
     next(); // Consume semicolon
+
+    std::cout << "Built line: " << curr->get()->toString() << "\n";
   } catch (const std::runtime_error &e) {
     syntaxError(e.what());
     return std::nullopt;

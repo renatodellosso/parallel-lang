@@ -60,14 +60,14 @@ void Executor::execSingleInstruction(Instruction &instr) {
     break;
   }
   case InstructionType::Declare: {
-    instr.scope->alloc(std::get<std::string>(instr.depArgs[1]->val));
+    result = instr.scope->alloc(std::get<std::string>(instr.depArgs[1]->val));
     break;
   }
   case InstructionType::Set: {
-    auto ptr = instr.depArgs[0];
+    result = instr.depArgs[0];
     auto val = instr.depArgs[1];
-    ptr->type = val->type;
-    ptr->val = val->val;
+    result->type = val->type;
+    result->val = val->val;
     break;
   }
   case InstructionType::Add: {
