@@ -150,7 +150,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
   // Clean up stack if at end of line
   if (instr.endsLine) {
-    log(LOCATION, "{}", result ? valToStr(*result) : "<no result>");
+    log(LOCATION, "[instruction {}]: {}", instr.id,
+        result ? valToStr(*result) : "<no result>");
   }
 }
 

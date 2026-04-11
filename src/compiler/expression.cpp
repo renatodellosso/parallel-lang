@@ -1,5 +1,6 @@
 #include "expression.hpp"
 #include <algorithm>
+#include <format>
 #include <iterator>
 
 void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
@@ -9,7 +10,7 @@ void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
 }
 
 std::string Expression::toString() const {
-  return instructionTypeToString(type);
+  return std::format("({}){}", id, instructionTypeToString(type));
 }
 
 std::string Expression::toByteCode() const {

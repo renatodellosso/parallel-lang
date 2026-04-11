@@ -1,6 +1,29 @@
 #include "graphLinker.hpp"
 #include "expression.hpp"
+#include <algorithm>
 #include <format>
+#include <optional>
+
+static void deduplicateDependenciesForSet(BinaryExpression &set,
+                                          RootExpression &identifier) {
+  // Deduplicate dependency
+  for (auto it = set.dependencies.begin(); it != set.dependencies.end(); it++) {
+    if (&it->get() == &identifier) {
+      set.dependencies.erase(it);
+
+      // Remove duplicate dependent
+      for (auto dIt = it->get().dependents.begin();
+           dIt != it->get().dependents.end(); dIt++) {
+        if (&dIt->expr.get() == &set && dIt->argIndex == std::nullopt) {
+          it->get().dependents.erase(dIt);
+          break;
+        }
+      }
+
+      break;
+    }
+  }
+}
 
 GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root)
     : root(root), errors(std::make_shared<std::vector<SyntaxError>>(
@@ -94,16 +117,9 @@ void GraphLinker::processExpression(Expression &expr) {
         BinaryExpression &set = dynamic_cast<BinaryExpression &>(expr);
         RootExpression &identifier =
             dynamic_cast<RootExpression &>(*set.left.get());
-        useResource(set, identifier.token.raw, true);
 
-        // Deduplicate dependency on identifier
-        for (auto it = set.dependencies.begin(); it != set.dependencies.end();
-             it++) {
-          if (&it->get() == &identifier) {
-            set.dependencies.erase(it);
-            break;
-          }
-        }
+        useResource(set, identifier.token.raw, true);
+        deduplicateDependenciesForSet(set, identifier);
       } catch (const std::bad_cast &err) {
         throw std::runtime_error(
             std::format("Attempted to write resource, but expression was not a "

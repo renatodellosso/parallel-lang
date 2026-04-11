@@ -3,7 +3,6 @@
 #include "astBuilder.hpp"
 #include "graphLinker.hpp"
 #include "tokenizer.hpp"
-#include <fstream>
 
 #define LOCATION "compiler"
 
@@ -34,6 +33,9 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   log(LOCATION, "Built AST");
 
+  astBuilder.getRoot().get()->numberExpressions(0);
+  log(LOCATION, "Numbered expressions");
+
   GraphLinker graphLinker(astBuilder.getRoot());
   graphLinker.linkGraph();
 
@@ -49,9 +51,6 @@ compile(const CliArgs &args, std::istream &inputStream,
   }
 
   log(LOCATION, "Linked graph");
-
-  astBuilder.getRoot().get()->numberExpressions(0);
-  log(LOCATION, "Numbered expressions");
 
   auto bytecode = astBuilder.getRoot()->toByteCode();
   auto result = writeOutput(bytecode);
