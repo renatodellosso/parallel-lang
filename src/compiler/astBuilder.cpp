@@ -1,7 +1,7 @@
 #include "astBuilder.hpp"
 #include "token.hpp"
 #include <format>
-#include <iostream>
+#include <optional>
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens) {
   errors = std::make_shared<std::vector<SyntaxError>>();
@@ -48,9 +48,9 @@ bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype) {
 }
 
 std::optional<std::unique_ptr<Expression>>
-AstBuilder::parseLeadingExpression() { // Specify RootExpression as type to
-                                       // make_unique to ensure it doesn't
-                                       // become just an Expression
+AstBuilder::parseLeadingExpression() {
+  // Specify RootExpression as type to make_unique to ensure it doesn't become
+  // just an Expression
   if (match(TokenType::Identifier))
     return std::optional(std::make_unique<RootExpression>(
         RootExpression(InstructionType::GetIdentifier, line, next())));
@@ -129,12 +129,15 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
 
 std::optional<std::unique_ptr<Expression>>
 AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev) {
+  if (match(TokenType::Semicolon))
+    return std::nullopt;
+
   if (!prev.has_value()) {
     // No previous value
     prev = parseLeadingExpression();
   }
 
-  while (!match(TokenType::Semicolon)) {
+  if (!match(TokenType::Semicolon)) {
     if (!hasNext())
       throw std::runtime_error("Could not parse line: No matching instruction "
                                "type as there is no next token");
@@ -147,25 +150,18 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev) {
 
 std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine() {
   // Reset current expression
-  std::optional<std::unique_ptr<Expression>> curr = std::nullopt;
 
-  // Continually add onto expression
   try {
-    while (!match(TokenType::Semicolon)) {
-      curr = extendExpression(std::move(curr));
-      if (!curr.has_value())
-        break;
-    }
+    std::optional<std::unique_ptr<Expression>> curr =
+        extendExpression(std::nullopt);
 
     next(); // Consume semicolon
 
-    std::cout << "Built line: " << curr->get()->toString() << "\n";
+    return curr;
   } catch (const std::runtime_error &e) {
     syntaxError(e.what());
     return std::nullopt;
   }
-
-  return curr;
 }
 
 BlockExpression AstBuilder::buildBlock() {

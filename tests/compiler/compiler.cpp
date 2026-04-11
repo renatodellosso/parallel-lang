@@ -45,10 +45,10 @@ TEST(compile, compilesMultilineProgram) {
 
 TEST(compile, compilesCompoundExpressions) {
   auto out = testCompile("1+1+1;");
-  EXPECT_EQ(
-      out,
-      std::format("0 2.0 {} 1\n0 2.1 {} 1\n2 4.0 {}\n0 4.1 {} 1\n2  {};",
-                  (int)InstructionType::GetLiteral,
-                  (int)InstructionType::GetLiteral, (int)InstructionType::Add,
-                  (int)InstructionType::GetLiteral, (int)InstructionType::Add));
+  EXPECT_EQ(out,
+            std::format("0 4.0 {} 1\n0 3.0 {} 1\n0 3.1 {} 1\n2 4.1 {}\n2  {};",
+                        (int)InstructionType::GetLiteral,
+                        (int)InstructionType::GetLiteral,
+                        (int)InstructionType::GetLiteral,
+                        (int)InstructionType::Add, (int)InstructionType::Add));
 }
