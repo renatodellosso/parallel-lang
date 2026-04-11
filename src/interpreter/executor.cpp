@@ -1,5 +1,6 @@
 #include "executor.hpp"
 #include "../logging.hpp"
+#include "scope.hpp"
 #include <chrono>
 #include <format>
 #include <memory>
@@ -9,7 +10,8 @@
 
 #define LOCATION "Executor"
 
-void Executor::updateDependency(InstrDependent dep, std::shared_ptr<Value> result) {
+void Executor::updateDependency(InstrDependent dep,
+                                std::shared_ptr<Value> result) {
   auto &depInstr = instructions[dep.instrId];
 
   int fulfilled;
@@ -58,7 +60,14 @@ void Executor::execSingleInstruction(Instruction &instr) {
     break;
   }
   case InstructionType::Declare: {
-    instr.scope->alloc(std::get<std::string>(instr.bytecodeArgs[0].val));
+    instr.scope->alloc(std::get<std::string>(instr.depArgs[1]->val));
+    break;
+  }
+  case InstructionType::Set: {
+    auto ptr = instr.depArgs[0];
+    auto val = instr.depArgs[1];
+    ptr->type = val->type;
+    ptr->val = val->val;
     break;
   }
   case InstructionType::Add: {
@@ -141,7 +150,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
   // Clean up stack if at end of line
   if (instr.endsLine) {
-    log(LOCATION, "{}", valToStr(*result));
+    log(LOCATION, "{}", result ? valToStr(*result) : "<no result>");
   }
 }
 
@@ -150,18 +159,19 @@ void Executor::execWorker(int id) {
   if (cliArgs.verbose)
     log(location.c_str(), "Worker {} awake", id);
 
-  try {
-    while (!halt) {
-      if (queue.size() == 0) {
-        continue;
-      }
-      auto &instr = queue.pop().get();
-      execSingleInstruction(instr);
+  while (!halt) {
+    if (queue.size() == 0) {
+      continue;
     }
-  } catch (std::runtime_error err) {
-    logError(location.c_str(), "{}", err.what());
-    haltCause = std::format("Runtime Error in worker {}: {}", id, err.what());
-    halt = true;
+    auto &instr = queue.pop().get();
+    try {
+      execSingleInstruction(instr);
+    } catch (std::runtime_error err) {
+      logError(location.c_str(), "[instruction {}] {}", instr.id, err.what());
+      haltCause = std::format("Runtime Error in worker {} [instruction {}]: {}",
+                              id, instr.id, err.what());
+      halt = true;
+    }
   }
 }
 
@@ -212,12 +222,18 @@ void Executor::initQueue() {
 }
 
 void Executor::initScopes() {
-  std::shared_ptr<Scope> global = std::make_shared<Scope>();
+  std::shared_ptr<Scope> root = std::make_shared<Scope>();
+  std::shared_ptr<Scope> global = std::make_shared<Scope>(root);
 
   for (int i = 0; i < instructions.size(); i++) {
     auto &instr = instructions[i];
     instr.scope = global;
   }
+
+  // Init default vars
+  root->alloc("int");
+  root->alloc("bool");
+  root->alloc("string");
 
   if (cliArgs.verbose)
     log(LOCATION, "Initialized scopes.");

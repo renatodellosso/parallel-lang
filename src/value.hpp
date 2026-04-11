@@ -3,7 +3,7 @@
 #include <string>
 #include <variant>
 
-enum ValueType { String, Integer, Bool };
+enum ValueType { String, Integer, Bool, Identifier };
 
 struct Value {
   ValueType type;

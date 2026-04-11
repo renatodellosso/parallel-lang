@@ -35,21 +35,23 @@ Value BytecodeParser::buildArg() {
   Value arg;
   if (curr.at(0) == '"' && curr.at(curr.length() - 1) == '"') {
     // String
-    arg.type = ValueType::String,
+    arg.type = ValueType::String;
     arg.val = curr.substr(1, curr.length() - 2); // Remove ""
   } else if (curr == "true") {
     // bool (true)
-    arg.type = ValueType::Bool, arg.val = true;
+    arg.type = ValueType::Bool;
+    arg.val = true;
   } else if (curr == "false") {
     // bool (true)
-    arg.type = ValueType::Bool, arg.val = false;
+    arg.type = ValueType::Bool;
+    arg.val = false;
   } else if (isInteger(curr)) {
     // int
-    arg.type = ValueType::Integer, arg.val = std::atoi(curr.c_str());
+    arg.type = ValueType::Integer;
+    arg.val = std::atoi(curr.c_str());
   } else {
-    throw std::runtime_error(
-        std::format("Unknown argument format on instruction {}: '{}'",
-                    instructions.size(), curr));
+    arg.type = ValueType::Identifier;
+    arg.val = curr;
   }
 
   return arg;
