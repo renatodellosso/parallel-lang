@@ -1,6 +1,6 @@
 #include "graphLinker.hpp"
+#include "expression.hpp"
 #include <format>
-#include <iostream>
 
 GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root)
     : root(root), errors(std::make_shared<std::vector<SyntaxError>>(
@@ -26,6 +26,7 @@ Resource &GraphLinker::createResource(std::string name) {
 void GraphLinker::createResource(Expression &expr) {
   try {
     BinaryExpression &binary = dynamic_cast<BinaryExpression &>(expr);
+    Expression *type = binary.left.get();
     RootExpression *name = dynamic_cast<RootExpression *>(binary.right.get());
 
     auto &resource = createResource(name->token.raw);
@@ -94,6 +95,15 @@ void GraphLinker::processExpression(Expression &expr) {
         RootExpression &identifier =
             dynamic_cast<RootExpression &>(*set.left.get());
         useResource(set, identifier.token.raw, true);
+
+        // Deduplicate dependency on identifier
+        for (auto it = set.dependencies.begin(); it != set.dependencies.end();
+             it++) {
+          if (&it.base()->get() == &identifier) {
+            set.dependencies.erase(it);
+            break;
+          }
+        }
       } catch (const std::bad_cast &err) {
         throw std::runtime_error(
             std::format("Attempted to write resource, but expression was not a "

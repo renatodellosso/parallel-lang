@@ -17,7 +17,7 @@ TEST(linkGraph, createsResources) {
       RootExpression(InstructionType::GetIdentifier, 0,
                      {TokenType::Identifier, TokenSubtype::None, "int", 1}));
   auto name = std::make_shared<RootExpression>(
-      RootExpression(InstructionType::ReferenceIdentifier, 0,
+      RootExpression(InstructionType::GetLiteral, 0,
                      {TokenType::Identifier, TokenSubtype::None, "var", 1}));
   auto declaration = std::make_shared<BinaryExpression>(
       BinaryExpression(InstructionType::Declare, 0, type, name));
@@ -46,7 +46,7 @@ TEST(linkGraph, readsResources) {
       RootExpression(InstructionType::GetIdentifier, 0,
                      {TokenType::Identifier, TokenSubtype::None, "int", 1}));
   auto declareName = std::make_shared<RootExpression>(
-      RootExpression(InstructionType::ReferenceIdentifier, 0,
+      RootExpression(InstructionType::GetLiteral, 0,
                      {TokenType::Identifier, TokenSubtype::None, "var", 1}));
   auto declaration = std::make_shared<BinaryExpression>(
       BinaryExpression(InstructionType::Declare, 0, type, declareName));
@@ -86,13 +86,13 @@ TEST(linkGraph, writesResources) {
       RootExpression(InstructionType::GetIdentifier, 0,
                      {TokenType::Identifier, TokenSubtype::None, "int", 1}));
   auto declareName = std::make_shared<RootExpression>(
-      RootExpression(InstructionType::ReferenceIdentifier, 0,
+      RootExpression(InstructionType::GetLiteral, 0,
                      {TokenType::Identifier, TokenSubtype::None, "var", 1}));
   auto declaration = std::make_shared<BinaryExpression>(
       BinaryExpression(InstructionType::Declare, 0, type, declareName));
 
   auto refName = std::make_shared<RootExpression>(
-      RootExpression(InstructionType::ReferenceIdentifier, 0,
+      RootExpression(InstructionType::GetIdentifier, 0,
                      {TokenType::Identifier, TokenSubtype::None, "var", 1}));
   auto literal = std::make_shared<RootExpression>(
       RootExpression(InstructionType::GetLiteral, 0,
@@ -124,9 +124,10 @@ TEST(linkGraph, writesResources) {
 
   // Check that set depends on declaration
   ASSERT_EQ(set.get()->dependencies.size(), 3);
-  ASSERT_EQ(declaration.get()->dependents.size(), 1);
+  ASSERT_EQ(declaration.get()->dependents.size(), 2);
   EXPECT_EQ(&set.get()->dependencies[0].get(), declaration.get());
-  EXPECT_EQ(&declaration.get()->dependents[0].expr.get(), set.get());
+  EXPECT_EQ(&declaration.get()->dependents[0].expr.get(), refName.get());
+  EXPECT_EQ(&declaration.get()->dependents[1].expr.get(), set.get());
 }
 
 TEST(linkGraph, linksInternally) {
