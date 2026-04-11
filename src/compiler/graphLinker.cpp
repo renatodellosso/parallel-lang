@@ -99,7 +99,7 @@ void GraphLinker::processExpression(Expression &expr) {
         // Deduplicate dependency on identifier
         for (auto it = set.dependencies.begin(); it != set.dependencies.end();
              it++) {
-          if (&it.base()->get() == &identifier) {
+          if (&it->get() == &identifier) {
             set.dependencies.erase(it);
             break;
           }
