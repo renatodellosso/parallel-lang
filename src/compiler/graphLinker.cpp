@@ -8,20 +8,21 @@ static void deduplicateDependenciesForSet(BinaryExpression &set,
                                           RootExpression &identifier) {
   // Deduplicate dependency
   for (auto it = set.dependencies.begin(); it != set.dependencies.end(); it++) {
-    if (&it->get() == &identifier) {
-      set.dependencies.erase(it);
+    if (&it->get() != &identifier)
+      continue;
 
-      // Remove duplicate dependent
-      for (auto dIt = it->get().dependents.begin();
-           dIt != it->get().dependents.end(); dIt++) {
-        if (&dIt->expr.get() == &set && dIt->argIndex == std::nullopt) {
-          it->get().dependents.erase(dIt);
-          break;
-        }
+    // Remove duplicate dependent
+    for (auto dIt = it->get().dependents.begin();
+         dIt != it->get().dependents.end(); dIt++) {
+      if (&dIt->expr.get() == &set && dIt->argIndex == std::nullopt) {
+        it->get().dependents.erase(dIt);
+        break;
       }
-
-      break;
     }
+
+    set.dependencies.erase(it);
+
+    break;
   }
 }
 
