@@ -49,16 +49,15 @@ InstrDependent::InstrDependent(Instruction *instr)
     : InstrDependent(instr, std::nullopt) {}
 
 Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
-    : id(id), endsLine(false), type((InstructionType)0),
-      bytecodeArgs(std::vector<Value>()),
+    : id(id), type((InstructionType)0), bytecodeArgs(std::vector<Value>()),
       depArgs(std::vector<std::shared_ptr<Value>>()), depCount(0),
       depsFulfilled(0), dependents(std::vector<InstrDependent>()),
       scope(scope) {}
 
 std::string Instruction::toString() {
-  std::string str = std::format(
-      "{}: {}(endsLine: {}, dependencies: {}/{}, bytecode args: [", id,
-      instructionTypeToString(type), endsLine, depsFulfilled, depCount);
+  std::string str =
+      std::format("{}: {}(dependencies: {}/{}, bytecode args: [", id,
+                  instructionTypeToString(type), depsFulfilled, depCount);
 
   for (auto arg : bytecodeArgs)
     str += valToStr(arg) + ", ";

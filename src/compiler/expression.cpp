@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <format>
 #include <iterator>
+#include <string>
 
 void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
   expr.dependencies.push_back(dependsOn);
@@ -48,6 +49,8 @@ int Expression::numberExpressions(int startWith) {
   return startWith + 1;
 }
 
+int Expression::countInstructions() const { return 1; }
+
 std::string RootExpression::toString() const {
   return Expression::toString() + "(" + token.raw + ")";
 }
@@ -80,6 +83,10 @@ void UnaryExpression::linkInternally() { addDependency(*this, *root.get(), 0); }
 int UnaryExpression::numberExpressions(int startWith) {
   startWith = root.get()->numberExpressions(startWith);
   return Expression::numberExpressions(startWith);
+}
+
+int UnaryExpression::countInstructions() const {
+  return 1 + root->countInstructions();
 }
 
 std::string BinaryExpression::toString() const {
@@ -118,6 +125,10 @@ int BinaryExpression::numberExpressions(int startWith) {
   return Expression::numberExpressions(startWith);
 }
 
+int BinaryExpression::countInstructions() const {
+  return 1 + left->countInstructions() + right->countInstructions();
+}
+
 std::string BlockExpression::toString() const {
   auto str = Expression::toString() + " {\n";
 
@@ -130,11 +141,13 @@ std::string BlockExpression::toString() const {
 }
 
 std::string BlockExpression::toByteCode() const {
-  std::string str;
+  // Subtract 1 from count to exclude this instruction
+  std::string str = Expression::toByteCode() + " " +
+                    std::to_string(countInstructions() - 1) + "\n";
 
   // Use references
   for (auto &line : expressions) {
-    str += line->toByteCode() + ";\n";
+    str += line->toByteCode() + "\n";
   }
 
   return str.erase(str.length() - 1); // Erase trailing \n
@@ -162,6 +175,13 @@ int BlockExpression::numberExpressions(int startWith) {
   }
 
   return startWith;
+}
+
+int BlockExpression::countInstructions() const {
+  int count = 1;
+  for (auto expr : expressions)
+    count += expr->countInstructions();
+  return count;
 }
 
 ExprDependent::ExprDependent(Expression &expr, std::optional<int> argIndex)

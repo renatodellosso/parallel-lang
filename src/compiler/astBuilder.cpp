@@ -1,6 +1,8 @@
 #include "astBuilder.hpp"
+#include "expression.hpp"
 #include "token.hpp"
 #include <format>
+#include <memory>
 #include <optional>
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens) {
@@ -57,6 +59,9 @@ AstBuilder::parseLeadingExpression() {
   if (match(TokenType::Literal))
     return std::optional(std::make_unique<RootExpression>(
         RootExpression(InstructionType::GetLiteral, line, next())));
+  if (match(TokenType::LeftBrace)) {
+    return parseBlock();
+  }
 
   throw std::runtime_error(std::format(
       "Could not parse line: No valid starting expression for token '{}'",
@@ -127,6 +132,27 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
       type, line, std::move(prev.value()), std::move(nextExpr.value()))));
 }
 
+std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
+  BlockExpression block(line);
+
+  next(); // Consume '{'
+
+  while (!match(TokenType::RightBrace)) {
+    auto expr = buildLine();
+    if (!expr.has_value())
+      break;
+    // Use move to convert unique to shared (other way around doesn't work
+    // though)
+    block.expressions.push_back(std::move(expr.value()));
+  }
+
+  next(); // Consume '}'
+
+  if (block.expressions.size())
+    return std::make_optional(std::make_unique<BlockExpression>(block));
+  return std::nullopt;
+}
+
 std::optional<std::unique_ptr<Expression>>
 AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev) {
   if (match(TokenType::Semicolon))
@@ -137,11 +163,7 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev) {
     prev = parseLeadingExpression();
   }
 
-  if (!match(TokenType::Semicolon)) {
-    if (!hasNext())
-      throw std::runtime_error("Could not parse line: No matching instruction "
-                               "type as there is no next token");
-
+  if (!match(TokenType::Semicolon) && hasNext()) {
     prev = parseCompoundExpression(std::move(prev));
   }
 
@@ -155,7 +177,8 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine() {
     std::optional<std::unique_ptr<Expression>> curr =
         extendExpression(std::nullopt);
 
-    next(); // Consume semicolon
+    if (hasNext())
+      next(); // Consume semicolon
 
     return curr;
   } catch (const std::runtime_error &e) {
@@ -164,7 +187,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine() {
   }
 }
 
-BlockExpression AstBuilder::buildBlock() {
+BlockExpression AstBuilder::buildRoot() {
   BlockExpression block;
   block.lineNumber = line;
 
@@ -179,7 +202,7 @@ BlockExpression AstBuilder::buildBlock() {
 }
 
 void AstBuilder::build() {
-  root = std::make_unique<BlockExpression>(buildBlock());
+  root = std::make_unique<BlockExpression>(buildRoot());
 }
 
 void AstBuilder::syntaxError(std::string msg) {

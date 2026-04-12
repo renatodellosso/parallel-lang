@@ -134,8 +134,8 @@ void BytecodeParser::buildSingleInstruction() {
 
   // Parse type
   curr = "";
-  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r';
-       c = stream.peek()) {
+  for (char c = stream.peek();
+       c != ' ' && c != '\n' && c != '\r' && !stream.eof(); c = stream.peek()) {
     stream.get();
     curr += c;
   }
@@ -143,15 +143,9 @@ void BytecodeParser::buildSingleInstruction() {
   instr.type = (InstructionType)std::atoi(curr.c_str());
 
   // Parse args
-  while (stream.peek() != ';' && stream.peek() != '\n' &&
-         stream.peek() != '\r' && !stream.eof()) {
+  while (stream.peek() != '\n' && stream.peek() != '\r' && !stream.eof()) {
     Value arg = buildArg();
     instr.bytecodeArgs.push_back(arg);
-  }
-
-  if (stream.peek() == ';') {
-    instr.endsLine = true;
-    stream.get();
   }
 
   instructions.push_back(instr);

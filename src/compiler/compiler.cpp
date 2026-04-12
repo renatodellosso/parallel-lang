@@ -54,7 +54,7 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   std::string bytecode = "";
   for (auto expr : astBuilder.getRoot()->expressions) {
-    bytecode += expr->toByteCode() + ";\n";
+    bytecode += expr->toByteCode() + "\n";
   }
   bytecode = bytecode.substr(0, bytecode.length() - 1); // Remove trailing '\n'
   auto result = writeOutput(bytecode);

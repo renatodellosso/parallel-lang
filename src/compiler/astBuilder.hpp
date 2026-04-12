@@ -33,10 +33,13 @@ private:
   std::optional<std::unique_ptr<Expression>> parseLeadingExpression();
   std::optional<std::unique_ptr<Expression>>
   parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev);
+  // Parses a block, including the { }
+  std::optional<std::unique_ptr<BlockExpression>> parseBlock();
+
   std::optional<std::unique_ptr<Expression>>
   extendExpression(std::optional<std::unique_ptr<Expression>> prev);
   std::optional<std::unique_ptr<Expression>> buildLine();
-  BlockExpression buildBlock();
+  BlockExpression buildRoot();
 
   void syntaxError(std::string msg);
 

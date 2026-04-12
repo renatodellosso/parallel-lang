@@ -40,7 +40,6 @@ struct InstrDependent {
 
 struct Instruction {
   int id;
-  bool endsLine;
 
   InstructionType type;
 

@@ -47,6 +47,7 @@ struct Expression {
    * bytecode. Returns the next ID to use.
    */
   virtual int numberExpressions(int startWith);
+  virtual int countInstructions() const;
 };
 
 struct RootExpression : public Expression {
@@ -72,6 +73,7 @@ struct UnaryExpression : public Expression {
   getWithSubExpressions() const override;
   void linkInternally() override;
   int numberExpressions(int startWith) override;
+  int countInstructions() const override;
 };
 
 struct BinaryExpression : public Expression {
@@ -88,6 +90,7 @@ struct BinaryExpression : public Expression {
   getWithSubExpressions() const override;
   void linkInternally() override;
   int numberExpressions(int startWith) override;
+  int countInstructions() const override;
 };
 
 struct BlockExpression : public Expression {
@@ -99,10 +102,14 @@ struct BlockExpression : public Expression {
                   int lineNumber)
       : Expression(InstructionType::Block, lineNumber),
         expressions(std::move(expressions)) {}
+  BlockExpression(int lineNumber)
+      : BlockExpression(std::vector<std::shared_ptr<Expression>>(),
+                        lineNumber) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   int numberExpressions(int startWith) override;
+  int countInstructions() const override;
 };

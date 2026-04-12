@@ -145,11 +145,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
     updateDependency(dep, result);
   }
 
-  // Clean up stack if at end of line
-  if (instr.endsLine) {
-    log(LOCATION, "[instruction {}]: {}", instr.id,
-        result ? valToStr(*result) : "<no result>");
-  }
+  log(LOCATION, "[instruction {}]: {}", instr.id,
+      result ? valToStr(*result) : "<no result>");
 }
 
 void Executor::execWorker(int id) {
