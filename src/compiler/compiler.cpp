@@ -52,7 +52,11 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   log(LOCATION, "Linked graph");
 
-  auto bytecode = astBuilder.getRoot()->toByteCode();
+  std::string bytecode = "";
+  for (auto expr : astBuilder.getRoot()->expressions) {
+    bytecode += expr->toByteCode() + ";\n";
+  }
+  bytecode = bytecode.substr(0, bytecode.length() - 1); // Remove trailing '\n'
   auto result = writeOutput(bytecode);
 
   if (result.has_value()) {
