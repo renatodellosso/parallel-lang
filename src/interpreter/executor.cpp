@@ -4,6 +4,7 @@
 #include <chrono>
 #include <format>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <thread>
@@ -42,9 +43,13 @@ void Executor::updateDependency(InstrDependent dep,
 }
 
 void Executor::execSingleInstruction(Instruction &instr) {
+  if (cliArgs.verbose)
+    log(LOCATION, "Executing instruction: {}", instr.toString());
   std::shared_ptr<Value> result;
 
   switch (instr.type) {
+  case InstructionType::Block:
+    break;
   case InstructionType::GetLiteral:
     result = std::make_shared<Value>(instr.bytecodeArgs[0]);
     break;
@@ -177,11 +182,11 @@ void Executor::supervisor() {
   if (cliArgs.verbose)
     log(LOCATION, "Supervisor awake");
 
-  bool isDone = true;
+  bool isDone;
   do {
     isDone = true;
 
-    for (bool stall : stalls) {
+    for (auto stall : stalls) {
       if (!stall) {
         isDone = false;
         break;
@@ -194,7 +199,7 @@ void Executor::supervisor() {
   } while (!isDone && !halt);
 
   if (!halt)
-    haltCause = "Executed all instructions";
+    haltCause = "All workers stalled";
   halt = true;
 
   if (cliArgs.verbose)

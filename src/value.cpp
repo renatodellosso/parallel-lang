@@ -9,6 +9,8 @@ std::string valToStr(Value val) {
     return std::to_string(std::get<bool>(val.val));
   case ValueType::String:
     return std::format("{}", std::get<std::string>(val.val));
+  case ValueType::Identifier:
+    return std::format("<identifier {}>", std::get<std::string>(val.val));
 
   default:
     return std::format("<unknown type: {}>", (int)val.type);

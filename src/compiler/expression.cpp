@@ -170,6 +170,9 @@ BlockExpression::getWithSubExpressions() const {
 }
 
 int BlockExpression::numberExpressions(int startWith) {
+  id = startWith;
+  startWith++;
+
   for (auto &line : expressions) {
     startWith = line.get()->numberExpressions(startWith);
   }

@@ -33,7 +33,10 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   log(LOCATION, "Built AST");
 
-  astBuilder.getRoot().get()->numberExpressions(0);
+  int exprId = 0;
+  for (auto expr : astBuilder.getRoot()->expressions) {
+    exprId = expr->numberExpressions(exprId);
+  }
   log(LOCATION, "Numbered expressions");
 
   GraphLinker graphLinker(astBuilder.getRoot());

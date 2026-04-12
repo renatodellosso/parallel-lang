@@ -56,7 +56,7 @@ Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
 
 std::string Instruction::toString() {
   std::string str =
-      std::format("{}: {}(dependencies: {}/{}, bytecode args: [", id,
+      std::format("({}){}(dependencies: {}/{}, bytecode args: [", id,
                   instructionTypeToString(type), depsFulfilled, depCount);
 
   for (auto arg : bytecodeArgs)

@@ -24,7 +24,7 @@ Value BytecodeParser::buildArg() {
         break;
       }
     }
-    if (!inStr && (c == ' ' || c == '\n' || c == '\r' || c == ';')) {
+    if (!inStr && (c == ' ' || c == '\n' || c == '\r' || stream.eof())) {
       break;
     }
 
@@ -117,8 +117,8 @@ void BytecodeParser::buildSingleInstruction() {
 
   // Parse depCount
   std::string curr = "";
-  for (char c = stream.peek(); c != ' ' && c != ';' && c != '\n' && c != '\r';
-       c = stream.peek()) {
+  for (char c = stream.peek();
+       c != ' ' && c != '\n' && c != '\r' && !stream.eof(); c = stream.peek()) {
     stream.get();
     curr += c;
   }
@@ -147,6 +147,9 @@ void BytecodeParser::buildSingleInstruction() {
     Value arg = buildArg();
     instr.bytecodeArgs.push_back(arg);
   }
+
+  if (cliArgs.verbose)
+    log(LOCATION, "Built instruction: {}", instr.toString());
 
   instructions.push_back(instr);
   return;
