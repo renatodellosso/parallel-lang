@@ -30,7 +30,7 @@ std::string instructionTypeToString(InstructionType type);
 struct Instruction;
 
 struct InstrDependent {
-  Instruction* instr;
+  Instruction *instr;
   std::optional<int> argIndex;
 
   InstrDependent(Instruction *instr, std::optional<int> argIndex);
@@ -43,8 +43,6 @@ struct Instruction {
   bool endsLine;
 
   InstructionType type;
-
-  bool executed;
 
   // Args inherent to the instruction
   std::vector<Value> bytecodeArgs;

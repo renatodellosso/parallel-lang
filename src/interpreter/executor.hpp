@@ -12,6 +12,7 @@ class Executor {
   std::vector<Instruction> &instructions;
   ConcurrentQueue<std::reference_wrapper<Instruction>> queue;
   std::vector<std::thread> workers;
+  std::vector<bool> stalls;
 
   // We have to put the mutexes in here since we can't move them
   std::vector<std::mutex> depArgsMutexes, depsFulfilledMutexes;

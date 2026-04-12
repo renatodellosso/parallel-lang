@@ -7,6 +7,7 @@
 #include <optional>
 #include <stdexcept>
 #include <thread>
+#include <vector>
 
 #define LOCATION "Executor"
 
@@ -144,8 +145,6 @@ void Executor::execSingleInstruction(Instruction &instr) {
     updateDependency(dep, result);
   }
 
-  instr.executed = true;
-
   // Clean up stack if at end of line
   if (instr.endsLine) {
     log(LOCATION, "[instruction {}]: {}", instr.id,
@@ -160,8 +159,11 @@ void Executor::execWorker(int id) {
 
   while (!halt) {
     if (queue.size() == 0) {
+      stalls[id] = true;
       continue;
     }
+    stalls[id] = false;
+
     auto &instr = queue.pop().get();
     try {
       execSingleInstruction(instr);
@@ -182,8 +184,8 @@ void Executor::supervisor() {
   do {
     isDone = true;
 
-    for (int i = 0; i < instructions.size(); i++) {
-      if (!instructions[i].executed) {
+    for (bool stall : stalls) {
+      if (!stall) {
         isDone = false;
         break;
       }
@@ -259,6 +261,7 @@ void Executor::startExecution() {
 Executor::Executor(const CliArgs &cliArgs,
                    std::vector<Instruction> &instructions)
     : cliArgs(cliArgs), instructions(instructions),
+      stalls(std::vector<bool>(cliArgs.threads)),
       depArgsMutexes(std::vector<std::mutex>(instructions.size())),
       depsFulfilledMutexes(std::vector<std::mutex>(instructions.size())),
       halt(false), haltCause("Unknown") {}
