@@ -34,8 +34,10 @@ std::string instructionTypeToString(InstructionType type) {
     return "CompareGreaterThan";
   case InstructionType::CompareGreaterThanEquals:
     return "CompareGreaterThanEquals";
+  case InstructionType::If:
+    return "If";
   default:
-    return "Unknown Expression Type";
+    return "UnknownInstructionType";
   }
 }
 

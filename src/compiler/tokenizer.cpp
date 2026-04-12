@@ -135,6 +135,8 @@ void Tokenizer::parseToken() {
     if (raw == "false" || raw == "true") {
       token.type = TokenType::Literal;
       token.subtype = TokenSubtype::Bool;
+    } else if (raw == "if") {
+      token.type = TokenType::If;
     } else
       token.type = TokenType::Identifier;
   }

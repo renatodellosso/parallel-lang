@@ -32,13 +32,15 @@ private:
   // Adds (usually) one token to the expression
   std::optional<std::unique_ptr<Expression>> parseLeadingExpression();
   std::optional<std::unique_ptr<Expression>>
-  parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev);
+  parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev,
+                          TokenType endOn);
   // Parses a block, including the { }
   std::optional<std::unique_ptr<BlockExpression>> parseBlock();
 
   std::optional<std::unique_ptr<Expression>>
-  extendExpression(std::optional<std::unique_ptr<Expression>> prev);
-  std::optional<std::unique_ptr<Expression>> buildLine();
+  extendExpression(std::optional<std::unique_ptr<Expression>> prev,
+                   TokenType endOn);
+  std::optional<std::unique_ptr<Expression>> parseExpression(TokenType end);
   BlockExpression buildRoot();
 
   void syntaxError(std::string msg);

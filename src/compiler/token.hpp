@@ -19,7 +19,8 @@ enum class TokenType {
   GreaterThan,
   Comma,
   Literal,
-  Identifier
+  Identifier,
+  If
 };
 
 enum class TokenSubtype { None, String, Integer, Bool };

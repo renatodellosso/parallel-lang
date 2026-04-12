@@ -54,13 +54,34 @@ AstBuilder::parseLeadingExpression() {
   // Specify RootExpression as type to make_unique to ensure it doesn't become
   // just an Expression
   if (match(TokenType::Identifier))
-    return std::optional(std::make_unique<RootExpression>(
+    return std::make_optional(std::make_unique<RootExpression>(
         RootExpression(InstructionType::GetIdentifier, line, next())));
   if (match(TokenType::Literal))
-    return std::optional(std::make_unique<RootExpression>(
+    return std::make_optional(std::make_unique<RootExpression>(
         RootExpression(InstructionType::GetLiteral, line, next())));
-  if (match(TokenType::LeftBrace)) {
+  if (match(TokenType::LeftBrace))
     return parseBlock();
+  if (match(TokenType::If)) {
+    next(); // Consume 'if'
+
+    if (!match(TokenType::LeftParen))
+      throw std::runtime_error(
+          std::format("Expected '(' after 'if'. Got: '{}'", peek().raw));
+    next(); // Consume '('
+
+    auto condition = parseExpression(TokenType::RightParen);
+    if (!condition.has_value())
+      throw std::runtime_error(
+          std::format("Expected condition in if statement!"));
+
+    if (!match(TokenType::RightParen))
+      throw std::runtime_error(
+          std::format("Expected ')' after condition in if statement. Got: '{}'",
+                      peek().raw));
+    next(); // Consume '('
+
+    return std::make_optional(std::make_unique<UnaryExpression>(UnaryExpression(
+        InstructionType::If, line, std::move(condition.value()))));
   }
 
   throw std::runtime_error(std::format(
@@ -69,7 +90,7 @@ AstBuilder::parseLeadingExpression() {
 }
 
 std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
-    std::optional<std::unique_ptr<Expression>> prev) {
+    std::optional<std::unique_ptr<Expression>> prev, TokenType endOn) {
   InstructionType type;
   switch (peek().type) {
   case TokenType::Plus:
@@ -121,7 +142,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
   next(); // Be sure to consume the token!
 
   // Parse right operand
-  auto nextExpr = extendExpression(std::nullopt);
+  auto nextExpr = extendExpression(std::nullopt, TokenType::Semicolon);
   if (!nextExpr.has_value()) {
     throw std::runtime_error(std::format(
         "Could not parse line: Binary expression ('{}') has no right operand",
@@ -138,9 +159,13 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
   next(); // Consume '{'
 
   while (!match(TokenType::RightBrace)) {
-    auto expr = buildLine();
+    auto expr = parseExpression(TokenType::Semicolon);
     if (!expr.has_value())
       break;
+
+    if (hasNext())
+      next(); // Consume semicolon
+
     // Use move to convert unique to shared (other way around doesn't work
     // though)
     block.expressions.push_back(std::move(expr.value()));
@@ -154,31 +179,32 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
 }
 
 std::optional<std::unique_ptr<Expression>>
-AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev) {
+AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
+                             TokenType endOn) {
   if (match(TokenType::Semicolon))
     return std::nullopt;
 
   if (!prev.has_value()) {
     // No previous value
     prev = parseLeadingExpression();
+
+    if (!prev.has_value())
+      return prev;
   }
 
-  if (!match(TokenType::Semicolon) && hasNext()) {
-    prev = parseCompoundExpression(std::move(prev));
+  bool autoEndExpr = prev->get()->type == InstructionType::If;
+  if (!autoEndExpr && !match(endOn) && hasNext()) {
+    prev = parseCompoundExpression(std::move(prev), endOn);
   }
 
   return prev;
 }
 
-std::optional<std::unique_ptr<Expression>> AstBuilder::buildLine() {
-  // Reset current expression
-
+std::optional<std::unique_ptr<Expression>>
+AstBuilder::parseExpression(TokenType endOn) {
   try {
     std::optional<std::unique_ptr<Expression>> curr =
-        extendExpression(std::nullopt);
-
-    if (hasNext())
-      next(); // Consume semicolon
+        extendExpression(std::nullopt, endOn);
 
     return curr;
   } catch (const std::runtime_error &e) {
@@ -193,9 +219,12 @@ BlockExpression AstBuilder::buildRoot() {
 
   // Loop until we have no more expressions
   while (hasNext()) {
-    auto expr = buildLine();
+    auto expr = parseExpression(TokenType::Semicolon);
     if (expr.has_value())
       block.expressions.push_back(std::move(expr.value()));
+
+    if (match(TokenType::Semicolon))
+      next(); // Consume semicolon
   }
 
   return block;

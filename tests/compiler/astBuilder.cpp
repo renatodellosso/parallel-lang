@@ -184,3 +184,23 @@ TEST(AstBuilder, errorsOnLeadingBinaryExpression) {
   EXPECT_EQ(builder.getErrors().get()->size(), 1);
   EXPECT_EQ(builder.getRoot().get()->expressions.size(), 0);
 }
+
+TEST(AstBuilder, buildsIfStatements) {
+  std::vector<Token> tokens = {
+      {TokenType::If, TokenSubtype::None, "+", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "+", 1},
+      {TokenType::Literal, TokenSubtype::Bool, "true", 1},
+      {TokenType::RightParen, TokenSubtype::None, ";", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getRoot().get()->expressions.size(), 2);
+  EXPECT_EQ(builder.getRoot().get()->expressions[0]->type, InstructionType::If);
+}
