@@ -40,3 +40,9 @@ std::shared_ptr<Value> Scope::get(std::string key) {
 
   return it->second;
 }
+
+int Scope::getDepth() const {
+  if (enclosing)
+    return enclosing->getDepth() + 1;
+  return 1;
+}

@@ -65,8 +65,27 @@ void Executor::execSingleInstruction(Instruction &instr) {
   std::shared_ptr<Value> result;
 
   switch (instr.type) {
-  case InstructionType::Block:
+  case InstructionType::Block: {
+    // Create new scope
+    std::shared_ptr<Scope> scope = std::make_shared<Scope>(
+        instr.scope); // make_shared() uses the constructor
+    int size = std::get<int>(instr.bytecodeArgs[0].val);
+
+    int skip = 0;
+    for (int i = 0; i < size; i++) {
+      if (skip > 0) {
+        skip--;
+        continue;
+      }
+
+      auto &inner = instructions[instr.id + i + 1];
+      if (inner.type == InstructionType::Block) {
+        skip = std::get<int>(inner.bytecodeArgs[0].val);
+      }
+      inner.scope = scope;
+    }
     break;
+  }
   case InstructionType::GetLiteral:
     result = std::make_shared<Value>(instr.bytecodeArgs[0]);
     break;
@@ -253,8 +272,7 @@ void Executor::initScopes() {
   std::shared_ptr<Scope> root = std::make_shared<Scope>();
   std::shared_ptr<Scope> global = std::make_shared<Scope>(root);
 
-  for (int i = 0; i < instructions.size(); i++) {
-    auto &instr = instructions[i];
+  for (auto &instr : instructions) {
     instr.scope = global;
   }
 

@@ -57,9 +57,10 @@ Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
       scope(scope) {}
 
 std::string Instruction::toString() {
-  std::string str =
-      std::format("({}){}(dependencies: {}/{}, bytecode args: [", id,
-                  instructionTypeToString(type), depsFulfilled, depCount);
+  std::string str = std::format(
+      "({}){}(dependencies: {}/{}, scope depth: {}, bytecode args: [", id,
+      instructionTypeToString(type), depsFulfilled, depCount,
+      scope ? scope->getDepth() : -1);
 
   for (auto arg : bytecodeArgs)
     str += valToStr(arg) + ", ";

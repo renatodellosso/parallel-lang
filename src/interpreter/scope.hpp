@@ -21,4 +21,6 @@ public:
 
   std::shared_ptr<Value> alloc(std::string key, Value val = {});
   std::shared_ptr<Value> get(std::string key);
+
+  int getDepth() const;
 };
