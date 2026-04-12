@@ -8,6 +8,7 @@
 class GraphLinker {
   std::shared_ptr<std::vector<SyntaxError>> errors;
   std::unordered_map<std::string, Resource> resources;
+  std::vector<std::reference_wrapper<Expression>> expressions;
   std::shared_ptr<BlockExpression> root;
 
   Resource &createResource(std::string name);

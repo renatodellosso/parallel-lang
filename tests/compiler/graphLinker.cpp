@@ -1,5 +1,7 @@
 #include "../../src/compiler/graphLinker.hpp"
 #include <gtest/gtest.h>
+#include <memory>
+#include <vector>
 
 TEST(constructor, createsDefaultResources) {
   GraphLinker *linker =
@@ -168,4 +170,30 @@ TEST(linkGraph, linksInternally) {
   ASSERT_TRUE(right.get()->dependents[0].argIndex.has_value());
   EXPECT_EQ(left.get()->dependents[0].argIndex.value(), 0);
   EXPECT_EQ(right.get()->dependents[0].argIndex.value(), 1);
+}
+
+TEST(linkGraph, linksNestedBlocks) {
+  auto base = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto inner = std::make_shared<BlockExpression>(BlockExpression({base}, 1));
+  auto outer = std::make_shared<BlockExpression>(BlockExpression({inner}, 1));
+  auto root = std::make_shared<BlockExpression>(BlockExpression({outer}, 1));
+
+  // Must number expressions to properly index during linking!
+  outer->numberExpressions(0);
+  GraphLinker *linker = new GraphLinker(root);
+  linker->linkGraph();
+  delete linker;
+
+  ASSERT_EQ(outer->dependents.size(), 1);
+  ASSERT_EQ(inner->dependencies.size(), 1);
+  ASSERT_EQ(inner->dependents.size(), 1);
+  ASSERT_EQ(base->dependencies.size(), 1);
+
+  EXPECT_EQ(&outer->dependents[0].expr.get(), inner.get());
+  EXPECT_EQ(&inner->dependencies[0].get(), outer.get());
+
+  EXPECT_EQ(&inner->dependents[0].expr.get(), base.get());
+  EXPECT_EQ(&base->dependencies[0].get(), inner.get());
 }

@@ -155,16 +155,14 @@ std::string BlockExpression::toByteCode() const {
 
 std::vector<std::reference_wrapper<Expression>>
 BlockExpression::getWithSubExpressions() const {
-  std::vector<std::reference_wrapper<Expression>> vector;
+  std::vector<std::reference_wrapper<Expression>> vector =
+      Expression::getWithSubExpressions();
 
   for (auto expr : expressions) {
     auto exprVec = expr.get()->getWithSubExpressions();
     std::move(exprVec.begin(), exprVec.end(),
               std::back_inserter(vector)); // Move rightVec into end of vector
   }
-
-  auto super = Expression::getWithSubExpressions();
-  std::move(super.begin(), super.end(), std::back_inserter(vector));
 
   return vector;
 }

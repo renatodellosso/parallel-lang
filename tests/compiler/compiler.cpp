@@ -55,7 +55,7 @@ TEST(compile, compilesCompoundExpressions) {
 
 TEST(compile, compilesBlockExpressions) {
   auto out = testCompile("{1+1;}");
-  EXPECT_EQ(out, std::format("0  {} 3\n0 3.0 {} 1\n0 3.1 {} 1\n2  {}",
+  EXPECT_EQ(out, std::format("0 1,2 {} 3\n1 3.0 {} 1\n1 3.1 {} 1\n2  {}",
                              (int)InstructionType::Block,
                              (int)InstructionType::GetLiteral,
                              (int)InstructionType::GetLiteral,

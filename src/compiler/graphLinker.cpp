@@ -127,6 +127,42 @@ void GraphLinker::processExpression(Expression &expr) {
                         "binary expression! Expression: {}",
                         expr.toString()));
       }
+    } else if (expr.type == InstructionType::If) {
+      auto next = expressions[expr.id + 1];
+      next.get().dependencies.push_back(expr);
+      expr.dependents.emplace_back(next.get());
+    } else if (expr.type == InstructionType::Block) {
+      BlockExpression &block = *static_cast<BlockExpression *>(&expr);
+      int size =
+          block.countInstructions() - 1; // -1 to exclude the block itself
+
+      // Don't add dependencies to things inside of a nested blocks
+      // Deps only need to go out one layer
+
+      int skip = 0;
+      for (int i = 0; i < size; i++) {
+        if (skip > 0) {
+          skip--;
+          continue;
+        }
+
+        // Handle nested blocks
+        auto inner = expressions[expr.id + i + 1];
+        if (inner.get().type == InstructionType::Block) {
+          skip = static_cast<BlockExpression *>(&expr)->expressions.size();
+        }
+
+        // Only add dependencies to root-level expressions and blocks
+        // All other exprs will have intra-block dependencies that already
+        // depend on the block instruction
+        if (inner.get().type != InstructionType::Block &&
+            dynamic_cast<RootExpression *>(&inner.get()) == nullptr)
+          continue;
+
+        // Add dependency
+        inner.get().dependencies.push_back(expr);
+        expr.dependents.emplace_back(inner.get());
+      }
     }
   } catch (std::runtime_error err) {
     syntaxError(expr.lineNumber, err.what());
@@ -138,7 +174,9 @@ void GraphLinker::syntaxError(int line, std::string msg) {
 }
 
 void GraphLinker::linkGraph() {
-  auto expressions = root.get()->getWithSubExpressions();
+  expressions = root.get()->getWithSubExpressions();
+  expressions.erase(expressions.begin()); // Remove root block
+
   for (auto expr : expressions) {
     processExpression(expr);
     expr.get().linkInternally();

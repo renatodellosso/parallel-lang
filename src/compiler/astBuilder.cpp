@@ -163,7 +163,7 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
     if (!expr.has_value())
       break;
 
-    if (hasNext())
+    if (hasNext() && match(TokenType::Semicolon))
       next(); // Consume semicolon
 
     // Use move to convert unique to shared (other way around doesn't work
@@ -181,7 +181,7 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
 std::optional<std::unique_ptr<Expression>>
 AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
                              TokenType endOn) {
-  if (match(TokenType::Semicolon))
+  if (match(endOn))
     return std::nullopt;
 
   if (!prev.has_value()) {
@@ -192,7 +192,9 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
       return prev;
   }
 
-  bool autoEndExpr = prev->get()->type == InstructionType::If;
+  auto type = prev->get()->type;
+  bool autoEndExpr =
+      type == InstructionType::If || type == InstructionType::Block;
   if (!autoEndExpr && !match(endOn) && hasNext()) {
     prev = parseCompoundExpression(std::move(prev), endOn);
   }

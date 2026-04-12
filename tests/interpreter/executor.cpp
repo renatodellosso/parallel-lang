@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 std::vector<Instruction> getInstrs() {
+  DISABLE_COUT
+
   std::vector<Instruction> instrs = {Instruction(0), Instruction(1),
                                      Instruction(2)};
 
@@ -17,25 +19,34 @@ std::vector<Instruction> getInstrs() {
   instrs[2].type = InstructionType::Add;
   instrs[2].depCount = 2;
 
+  REENABLE_COUT
   return instrs;
 }
 
 TEST(startExecution, doesntError) {
+  DISABLE_COUT
+
   auto instrs = getInstrs();
 
   Executor executor({.threads = 1}, instrs);
   executor.startExecution();
 
   EXPECT_NO_THROW(executor.startExecution());
+
+  REENABLE_COUT
 }
 
 TEST(startExecution, updatesDepsFulfilled) {
+  DISABLE_COUT
+
   auto instrs = getInstrs();
 
   Executor executor({.threads = 1}, instrs);
   executor.startExecution();
 
   EXPECT_EQ(instrs[2].depsFulfilled, 2);
+
+  REENABLE_COUT
 }
 
 TEST(startExecution, populatesDepArgs) {
