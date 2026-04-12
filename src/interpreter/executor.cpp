@@ -42,6 +42,23 @@ void Executor::updateDependency(InstrDependent dep,
     queue.push(*dep.instr);
 }
 
+void Executor::skipInstruction(Instruction &instr, bool recurse) {
+  for (auto dep : instr.dependents) {
+    // Deps with indices are intra-line deps and the entire line will be
+    // skipped, so we don't have to worry about them
+    if (!dep.argIndex.has_value())
+      updateDependency(dep, nullptr);
+  }
+
+  if (!recurse || instr.type != InstructionType::Block)
+    return;
+
+  int toSkip = std::get<int>(instr.depArgs[0]->val);
+  for (int i = 1; i < toSkip; i++) {
+    skipInstruction(instructions[instr.id + i], false);
+  }
+}
+
 void Executor::execSingleInstruction(Instruction &instr) {
   if (cliArgs.verbose)
     log(LOCATION, "Executing instruction: {}", instr.toString());
@@ -139,7 +156,15 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     break;
   }
+  case InstructionType::If: {
+    bool condition = valToBool(*instr.depArgs[0]);
+    if (condition)
+      break;
 
+    // Skip next instruction
+    skipInstruction(instructions[instr.id + 1]);
+    break;
+  }
   default:
     throw std::runtime_error(
         std::format("Unknown instruction type on instruction {}: {}", instr.id,
