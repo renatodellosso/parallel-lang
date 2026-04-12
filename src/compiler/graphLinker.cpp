@@ -116,11 +116,17 @@ void GraphLinker::processExpression(Expression &expr) {
     } else if (expr.type == InstructionType::Set) {
       try {
         BinaryExpression &set = dynamic_cast<BinaryExpression &>(expr);
-        RootExpression &identifier =
-            dynamic_cast<RootExpression &>(*set.left.get());
 
-        useResource(set, identifier.token.raw, true);
-        deduplicateDependenciesForSet(set, identifier);
+        RootExpression *identifier;
+        if (set.left->type == InstructionType::Declare) {
+          BinaryExpression &declare =
+              dynamic_cast<BinaryExpression &>(*set.left.get());
+          identifier = dynamic_cast<RootExpression *>(declare.left.get());
+        } else
+          identifier = dynamic_cast<RootExpression *>(set.left.get());
+
+        useResource(set, identifier->token.raw, true);
+        deduplicateDependenciesForSet(set, *identifier);
       } catch (const std::bad_cast &err) {
         throw std::runtime_error(
             std::format("Attempted to write resource, but expression was not a "

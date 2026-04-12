@@ -124,15 +124,22 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
     // allocate it
     RootExpression nameExpr(InstructionType::GetLiteral, line, name);
 
-    return std::make_optional(std::make_unique<BinaryExpression>(
-        BinaryExpression(InstructionType::Declare, line,
-                         std::move(prev.value()),
-                         std::make_shared<RootExpression>(nameExpr))));
+    auto declare =
+        std::make_optional(std::make_unique<BinaryExpression>(BinaryExpression(
+            InstructionType::Declare, line, std::move(prev.value()),
+            std::make_shared<RootExpression>(nameExpr))));
+
+    if (!match(TokenType::Equals))
+      return declare;
+
+    prev = std::make_optional(std::unique_ptr<Expression>(
+        static_cast<Expression *>(declare->release())));
+    type = InstructionType::Set;
+    break;
   }
   case TokenType::Equals:
     type = InstructionType::Set;
     break;
-
   default:
     throw std::runtime_error(std::format(
         "Could not parse line: No matching instruction type for token '{}'",
