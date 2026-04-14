@@ -2,7 +2,10 @@
 #include "expression.hpp"
 #include <algorithm>
 #include <format>
+#include <functional>
+#include <iterator>
 #include <optional>
+#include <vector>
 
 static void deduplicateDependenciesForSet(BinaryExpression &set,
                                           RootExpression &identifier) {
@@ -26,10 +29,17 @@ static void deduplicateDependenciesForSet(BinaryExpression &set,
   }
 }
 
-GraphLinker::GraphLinker(std::shared_ptr<BlockExpression> root)
-    : root(root), errors(std::make_shared<std::vector<SyntaxError>>(
-                      std::vector<SyntaxError>())),
+GraphLinker::GraphLinker(
+    std::shared_ptr<std::vector<std::shared_ptr<Expression>>> exprVector)
+    : errors(std::make_shared<std::vector<SyntaxError>>(
+          std::vector<SyntaxError>())),
       resources(std::unordered_map<std::string, Resource>()) {
+  expressions = std::vector<std::reference_wrapper<Expression>>();
+  for (auto expr : *exprVector.get()) {
+    auto vec = expr->getWithSubExpressions();
+    std::move(vec.begin(), vec.end(), std::back_inserter(expressions));
+  }
+
   // Init default resources
   createResource("int");
   createResource("bool");
@@ -180,9 +190,6 @@ void GraphLinker::syntaxError(int line, std::string msg) {
 }
 
 void GraphLinker::linkGraph() {
-  expressions = root.get()->getWithSubExpressions();
-  expressions.erase(expressions.begin()); // Remove root block
-
   for (auto expr : expressions) {
     processExpression(expr);
     expr.get().linkInternally();

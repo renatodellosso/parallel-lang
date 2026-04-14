@@ -13,11 +13,11 @@ TEST(AstBuilder, buildsLiteralExpressions) {
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
-  auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(),
+  auto expressions = *builder.getExpressions().get();
+  ASSERT_EQ(expressions.size(),
             1); // Assert to avoid segfault if no expressions
 
-  auto expr = root.get()->expressions[0].get();
+  auto expr = expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::GetLiteral);
 
   // Can't use dynamic_cast here since Expression has no virtual methods
@@ -39,11 +39,11 @@ TEST(AstBuilder, buildsBinaryExpressions) {
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
-  auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(),
+  auto expressions = *builder.getExpressions().get();
+  ASSERT_EQ(expressions.size(),
             1); // Assert to avoid segfault if no expressions
 
-  auto expr = root.get()->expressions[0].get();
+  auto expr = expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Add);
 
   // Can't use dynamic_cast here since Expression has no virtual methods
@@ -68,11 +68,11 @@ TEST(AstBuilder, buildsDeclarations) {
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
-  auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(),
+  auto expressions = *builder.getExpressions().get();
+  ASSERT_EQ(expressions.size(),
             1); // Assert to avoid segfault if no expressions
 
-  auto expr = root.get()->expressions[0].get();
+  auto expr = expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Declare);
 
   // Can't use dynamic_cast here since Expression has no virtual methods
@@ -98,11 +98,11 @@ TEST(AstBuilder, buildsSets) {
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
-  auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(),
+  auto expressions = *builder.getExpressions().get();
+  ASSERT_EQ(expressions.size(),
             1); // Assert to avoid segfault if no expressions
 
-  auto expr = root.get()->expressions[0].get();
+  auto expr = expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Set);
 
   // Can't use dynamic_cast here since Expression has no virtual methods
@@ -132,14 +132,14 @@ TEST(AstBuilder, buildsMultipleLines) {
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
 
-  auto root = builder.getRoot();
-  ASSERT_EQ(root.get()->expressions.size(),
+  auto expressions = *builder.getExpressions().get();
+  ASSERT_EQ(expressions.size(),
             2); // Assert to avoid segfault if no expressions
 
-  auto expr = root.get()->expressions[0].get();
+  auto expr = expressions[0].get();
   EXPECT_EQ(expr->type, InstructionType::Add);
 
-  expr = root.get()->expressions[1].get();
+  expr = expressions[1].get();
   EXPECT_EQ(expr->type, InstructionType::Subtract);
 }
 
@@ -153,7 +153,7 @@ TEST(AstBuilder, errorsOnInvalidToken) {
   builder.build();
 
   EXPECT_EQ(builder.getErrors().get()->size(), 1);
-  EXPECT_EQ(builder.getRoot().get()->expressions.size(), 0);
+  EXPECT_EQ(builder.getExpressions().get()->size(), 0);
 }
 
 TEST(AstBuilder, errorsOnPartialBinaryExpression) {
@@ -168,7 +168,7 @@ TEST(AstBuilder, errorsOnPartialBinaryExpression) {
   builder.build();
 
   EXPECT_EQ(builder.getErrors().get()->size(), 1);
-  EXPECT_EQ(builder.getRoot().get()->expressions.size(), 0);
+  EXPECT_EQ(builder.getExpressions().get()->size(), 0);
 }
 
 TEST(AstBuilder, errorsOnLeadingBinaryExpression) {
@@ -182,7 +182,7 @@ TEST(AstBuilder, errorsOnLeadingBinaryExpression) {
   builder.build();
 
   EXPECT_EQ(builder.getErrors().get()->size(), 1);
-  EXPECT_EQ(builder.getRoot().get()->expressions.size(), 0);
+  EXPECT_EQ(builder.getExpressions().get()->size(), 0);
 }
 
 TEST(AstBuilder, buildsIfStatements) {
@@ -201,6 +201,6 @@ TEST(AstBuilder, buildsIfStatements) {
   builder.build();
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
-  ASSERT_EQ(builder.getRoot().get()->expressions.size(), 2);
-  EXPECT_EQ(builder.getRoot().get()->expressions[0]->type, InstructionType::If);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 2);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type, InstructionType::If);
 }

@@ -4,11 +4,13 @@
 #include <format>
 #include <memory>
 #include <optional>
+#include <vector>
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens) {
   errors = std::make_shared<std::vector<SyntaxError>>();
   this->tokens = std::move(tokens);
-  root = std::make_shared<BlockExpression>();
+  expressions = std::make_shared<std::vector<std::shared_ptr<Expression>>>(
+      std::vector<std::shared_ptr<Expression>>());
   line = 0;
   nextTokenIndex = 0;
 }
@@ -222,25 +224,15 @@ AstBuilder::parseExpression(TokenType endOn) {
   }
 }
 
-BlockExpression AstBuilder::buildRoot() {
-  BlockExpression block;
-  block.lineNumber = line;
-
-  // Loop until we have no more expressions
+void AstBuilder::build() {
   while (hasNext()) {
     auto expr = parseExpression(TokenType::Semicolon);
     if (expr.has_value())
-      block.expressions.push_back(std::move(expr.value()));
+      expressions.get()->push_back(std::move(expr.value()));
 
     if (match(TokenType::Semicolon))
       next(); // Consume semicolon
   }
-
-  return block;
-}
-
-void AstBuilder::build() {
-  root = std::make_unique<BlockExpression>(buildRoot());
 }
 
 void AstBuilder::syntaxError(std::string msg) {
@@ -255,4 +247,7 @@ std::shared_ptr<std::vector<SyntaxError>> AstBuilder::getErrors() {
   return errors;
 }
 
-std::shared_ptr<BlockExpression> AstBuilder::getRoot() { return root; }
+std::shared_ptr<std::vector<std::shared_ptr<Expression>>>
+AstBuilder::getExpressions() {
+  return expressions;
+}

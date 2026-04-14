@@ -4,8 +4,8 @@
 #include <vector>
 
 TEST(constructor, createsDefaultResources) {
-  GraphLinker *linker =
-      new GraphLinker(std::make_shared<BlockExpression>(BlockExpression()));
+  GraphLinker *linker = new GraphLinker(
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>());
 
   auto resources = linker->getResources();
   EXPECT_EQ(resources.size(), 3);
@@ -24,9 +24,11 @@ TEST(linkGraph, createsResources) {
   auto declaration = std::make_shared<BinaryExpression>(
       BinaryExpression(InstructionType::Declare, 0, type, name));
   auto root = std::make_shared<BlockExpression>(BlockExpression());
-  root.get()->expressions.push_back(declaration);
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
 
-  GraphLinker *linker = new GraphLinker(root);
+  GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
 
@@ -57,11 +59,12 @@ TEST(linkGraph, readsResources) {
       RootExpression(InstructionType::GetIdentifier, 0,
                      {TokenType::Identifier, TokenSubtype::None, "var", 1}));
 
-  auto root = std::make_shared<BlockExpression>(BlockExpression());
-  root.get()->expressions.push_back(declaration);
-  root.get()->expressions.push_back(refName);
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(refName);
 
-  GraphLinker *linker = new GraphLinker(root);
+  GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
 
@@ -102,11 +105,12 @@ TEST(linkGraph, writesResources) {
   auto set = std::make_shared<BinaryExpression>(
       BinaryExpression(InstructionType::Set, 0, refName, literal));
 
-  auto root = std::make_shared<BlockExpression>(BlockExpression());
-  root.get()->expressions.push_back(declaration);
-  root.get()->expressions.push_back(set);
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(set);
 
-  GraphLinker *linker = new GraphLinker(root);
+  GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
 
@@ -142,10 +146,11 @@ TEST(linkGraph, linksInternally) {
   auto binary = std::make_shared<BinaryExpression>(
       BinaryExpression(InstructionType::Add, 0, left, right));
 
-  auto root = std::make_shared<BlockExpression>(BlockExpression());
-  root.get()->expressions.push_back(binary);
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(binary);
 
-  GraphLinker *linker = new GraphLinker(root);
+  GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
 
@@ -178,11 +183,13 @@ TEST(linkGraph, linksNestedBlocks) {
                      {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
   auto inner = std::make_shared<BlockExpression>(BlockExpression({base}, 1));
   auto outer = std::make_shared<BlockExpression>(BlockExpression({inner}, 1));
-  auto root = std::make_shared<BlockExpression>(BlockExpression({outer}, 1));
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(outer);
 
   // Must number expressions to properly index during linking!
   outer->numberExpressions(0);
-  GraphLinker *linker = new GraphLinker(root);
+  GraphLinker *linker = new GraphLinker(expressions);
   linker->linkGraph();
   delete linker;
 
