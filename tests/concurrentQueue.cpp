@@ -1,4 +1,5 @@
 #include "../src/concurrentQueue.hpp"
+#include <cstddef>
 #include <gtest/gtest.h>
 
 TEST(size, sizeStartAtZero) {
@@ -23,7 +24,13 @@ TEST(pushPop, pushesToBack) {
   queue.push(2);
   queue.push(3);
 
-  EXPECT_EQ(queue.pop(), 1);
-  EXPECT_EQ(queue.pop(), 2);
-  EXPECT_EQ(queue.pop(), 3);
+  EXPECT_EQ(std::get<int>(queue.pop()), 1);
+  EXPECT_EQ(std::get<int>(queue.pop()), 2);
+  EXPECT_EQ(std::get<int>(queue.pop()), 3);
+}
+
+TEST(pushPop, returnsNullptrIfEmpty) {
+  ConcurrentQueue<int> queue;
+
+  EXPECT_EQ(std::get<nullptr_t>(queue.pop()), nullptr);
 }

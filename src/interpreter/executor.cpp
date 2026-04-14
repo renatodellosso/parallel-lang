@@ -2,12 +2,15 @@
 #include "../logging.hpp"
 #include "scope.hpp"
 #include <chrono>
+#include <cstddef>
 #include <format>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <thread>
+#include <variant>
 #include <vector>
 
 #define LOCATION "Executor"
@@ -43,19 +46,21 @@ void Executor::updateDependency(InstrDependent dep,
 }
 
 void Executor::skipInstruction(Instruction &instr, bool recurse) {
+  instr.depCount = -1;
+
+  if (recurse && instr.type == InstructionType::Block) {
+    int toSkip = std::get<int>(instr.bytecodeArgs[0].val);
+    for (int i = 1; i < toSkip; i++) {
+      skipInstruction(instructions[instr.id + i], false);
+    }
+  }
+
+  // Skip all deps first, then update so we don't accidently push onto queue
   for (auto dep : instr.dependents) {
     // Deps with indices are intra-line deps and the entire line will be
     // skipped, so we don't have to worry about them
     if (!dep.argIndex.has_value())
       updateDependency(dep, nullptr);
-  }
-
-  if (!recurse || instr.type != InstructionType::Block)
-    return;
-
-  int toSkip = std::get<int>(instr.depArgs[0]->val);
-  for (int i = 1; i < toSkip; i++) {
-    skipInstruction(instructions[instr.id + i], false);
   }
 }
 
@@ -204,13 +209,17 @@ void Executor::execWorker(int id) {
     log(location.c_str(), "Worker {} awake", id);
 
   while (!halt) {
-    if (queue.size() == 0) {
+    auto popped = queue.pop();
+
+    // Check popped holds a nullptr_t
+    if (std::holds_alternative<nullptr_t>(popped)) {
       stalls[id] = true;
       continue;
     }
     stalls[id] = false;
 
-    auto &instr = queue.pop().get();
+    auto &instr = std::get<std::reference_wrapper<Instruction>>(popped).get();
+
     try {
       execSingleInstruction(instr);
     } catch (std::runtime_error err) {

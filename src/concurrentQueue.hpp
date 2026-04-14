@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <mutex>
 #include <queue>
-#include <stdexcept>
 
 template <class T> class ConcurrentQueue {
   std::queue<T> queue;
@@ -11,18 +11,18 @@ template <class T> class ConcurrentQueue {
 public:
   ConcurrentQueue();
 
-  T pop();
+  std::variant<T, nullptr_t> pop();
   void push(T val);
   int size();
 };
 
 template <class T> inline ConcurrentQueue<T>::ConcurrentQueue() {}
 
-template <class T> inline T ConcurrentQueue<T>::pop() {
+template <class T> inline std::variant<T, nullptr_t> ConcurrentQueue<T>::pop() {
   const std::lock_guard<std::mutex> lock(mutex);
 
   if (queue.size() == 0)
-    throw std::runtime_error("Tried to pop from empty queue!");
+    return nullptr;
 
   auto t = queue.front();
   queue.pop();

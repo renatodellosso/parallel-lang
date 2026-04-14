@@ -1,4 +1,2 @@
-int a = 1;
-if (a) {
-  int b = 2;
-}
+if (false)
+  99 + 101;
