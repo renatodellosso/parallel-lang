@@ -42,6 +42,8 @@ private:
                    TokenType endOn);
   std::optional<std::unique_ptr<Expression>> parseExpression(TokenType end);
 
+  void postProcess();
+
   void syntaxError(std::string msg);
 
 public:

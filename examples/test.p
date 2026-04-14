@@ -1,2 +1,2 @@
-if (false)
+if (true)
   99 + 101;

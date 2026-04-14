@@ -224,6 +224,20 @@ AstBuilder::parseExpression(TokenType endOn) {
   }
 }
 
+void AstBuilder::postProcess() {
+  for (int i = 0; i < expressions->size(); i++) {
+    auto &expr = *expressions->at(i).get();
+
+    // If statements should be followed by blocks
+    if (i < expressions->size() - 1 && expr.type == InstructionType::If &&
+        expressions->at(i + 1).get()->type != InstructionType::Block) {
+      auto next = expressions->at(i + 1);
+      (*expressions.get())[i + 1] = std::make_shared<BlockExpression>(
+          BlockExpression({next}, next->lineNumber));
+    }
+  }
+}
+
 void AstBuilder::build() {
   while (hasNext()) {
     auto expr = parseExpression(TokenType::Semicolon);
@@ -233,6 +247,8 @@ void AstBuilder::build() {
     if (match(TokenType::Semicolon))
       next(); // Consume semicolon
   }
+
+  postProcess();
 }
 
 void AstBuilder::syntaxError(std::string msg) {
