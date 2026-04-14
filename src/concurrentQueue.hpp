@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <mutex>
 #include <queue>
+#include <variant>
 
 template <class T> class ConcurrentQueue {
   std::queue<T> queue;
