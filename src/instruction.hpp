@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interpreter/scope.hpp"
+#include "scope.hpp"
 #include "value.hpp"
 #include <memory>
 #include <optional>
@@ -52,9 +52,9 @@ struct Instruction {
   int depCount, depsFulfilled;
   std::vector<InstrDependent> dependents;
 
-  std::shared_ptr<Scope> scope;
+  std::shared_ptr<Scope<Value>> scope;
 
-  Instruction(int id, std::shared_ptr<Scope> scope = nullptr);
+  Instruction(int id, std::shared_ptr<Scope<Value>> scope = nullptr);
 
   std::string toString();
 };

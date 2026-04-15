@@ -1,9 +1,11 @@
 #include "graphLinker.hpp"
 #include "expression.hpp"
+#include "resource.hpp"
 #include <algorithm>
 #include <format>
 #include <functional>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -33,7 +35,7 @@ GraphLinker::GraphLinker(
     std::shared_ptr<std::vector<std::shared_ptr<Expression>>> exprVector)
     : errors(std::make_shared<std::vector<SyntaxError>>(
           std::vector<SyntaxError>())),
-      resources(std::unordered_map<std::string, Resource>()) {
+      scope(std::make_shared<Scope<Resource>>()), scopeLifetimes() {
   expressions = std::vector<std::reference_wrapper<Expression>>();
   for (auto expr : *exprVector.get()) {
     auto vec = expr->getWithSubExpressions();
@@ -49,12 +51,13 @@ GraphLinker::GraphLinker(
 Resource &GraphLinker::createResource(std::string name) {
   Resource resource(name);
 
-  auto [iterator, inserted] =
-      resources.insert(std::make_pair(resource.name, resource));
-  if (!inserted)
-    throw new std::runtime_error(std::format(
-        "Tried to declare resource '{}', but it already existed!", name));
-  return iterator->second;
+  if (scope->getVarTable().contains(resource.name))
+    throw std::runtime_error(std::format(
+        "Tried to declare resource '{}', but it already existed in this scope!",
+        name));
+
+  auto inserted = scope->alloc(resource.name, resource);
+  return *inserted.get();
 }
 
 void GraphLinker::createResource(Expression &expr) {
@@ -75,14 +78,14 @@ void GraphLinker::createResource(Expression &expr) {
 }
 
 void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
-  auto entry = resources.find(name);
-  if (entry == resources.end())
+  auto entry = scope->get(name);
+  if (!entry)
     throw std::runtime_error(
         std::format("Expression attempted to use resource '{}', which does not "
                     "exist! Expression: {}",
                     name, expr.toString()));
 
-  Resource &resource = entry->second;
+  Resource &resource = *entry.get();
 
   // If not written yet, don't add dependency to nullptr
   // If we're writing to this resource, the last write is in currAccesses, so we
@@ -109,6 +112,15 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
 }
 
 void GraphLinker::processExpression(Expression &expr) {
+  if (scopeLifetimes.size()) {
+    scopeLifetimes.top()--; // int& so this works
+
+    if (scopeLifetimes.top() == -1) {
+      scopeLifetimes.pop();
+      scope = scope->getEnclosing();
+    }
+  }
+
   try {
     if (expr.type == InstructionType::Declare)
       createResource(expr);
@@ -152,6 +164,10 @@ void GraphLinker::processExpression(Expression &expr) {
       int size =
           block.countInstructions() - 1; // -1 to exclude the block itself
 
+      // Push new scope
+      scopeLifetimes.push(size);
+      scope = std::make_shared<Scope<Resource>>(scope);
+
       // Don't add dependencies to things inside of a nested blocks
       // Deps only need to go out one layer
 
@@ -181,6 +197,8 @@ void GraphLinker::processExpression(Expression &expr) {
       }
     }
   } catch (std::runtime_error err) {
+    // Careful with runtime_error vs runtime_error* - catching one won't catch
+    // the other!
     syntaxError(expr.lineNumber, err.what());
   }
 }
@@ -200,6 +218,7 @@ std::shared_ptr<std::vector<SyntaxError>> GraphLinker::getErrors() {
   return errors;
 }
 
-std::unordered_map<std::string, Resource> &GraphLinker::getResources() {
-  return resources;
+std::unordered_map<std::string, std::shared_ptr<Resource>> &
+GraphLinker::getResources() {
+  return scope->getVarTable();
 }

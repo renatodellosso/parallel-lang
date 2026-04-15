@@ -39,10 +39,10 @@ TEST(linkGraph, createsResources) {
 
   auto var = resources.find("var");
   ASSERT_NE(var, resources.end());
-  EXPECT_EQ(var->second.name, name.get()->token.raw);
-  EXPECT_EQ(var->second.lastWrittenBy, declaration.get());
-  ASSERT_EQ(var->second.currAccesses.size(), 1);
-  EXPECT_EQ(&var->second.currAccesses[0].get(), declaration.get());
+  EXPECT_EQ(var->second->name, name.get()->token.raw);
+  EXPECT_EQ(var->second->lastWrittenBy, declaration.get());
+  ASSERT_EQ(var->second->currAccesses.size(), 1);
+  EXPECT_EQ(&var->second->currAccesses[0].get(), declaration.get());
 }
 
 TEST(linkGraph, readsResources) {
@@ -76,14 +76,14 @@ TEST(linkGraph, readsResources) {
   auto var = resources.find("var");
   ASSERT_NE(var, resources.end());
 
-  auto lastWrite = var->second.lastWrittenBy;
+  auto lastWrite = var->second->lastWrittenBy;
   ASSERT_EQ(refName.get()->dependencies.size(), 1);
   ASSERT_EQ(lastWrite->dependents.size(), 1);
   EXPECT_EQ(&refName.get()->dependencies[0].get(), lastWrite);
   EXPECT_EQ(&lastWrite->dependents[0].expr.get(), refName.get());
 
-  ASSERT_EQ(var->second.currAccesses.size(), 2);
-  EXPECT_EQ(&var->second.currAccesses[1].get(), refName.get());
+  ASSERT_EQ(var->second->currAccesses.size(), 2);
+  EXPECT_EQ(&var->second->currAccesses[1].get(), refName.get());
 }
 
 TEST(linkGraph, writesResources) {
@@ -122,11 +122,11 @@ TEST(linkGraph, writesResources) {
   auto var = resources.find("var");
   ASSERT_NE(var, resources.end());
 
-  auto lastWrite = var->second.lastWrittenBy;
+  auto lastWrite = var->second->lastWrittenBy;
   EXPECT_EQ(lastWrite, set.get());
 
-  ASSERT_EQ(var->second.currAccesses.size(), 1);
-  EXPECT_EQ(&var->second.currAccesses[0].get(), set.get());
+  ASSERT_EQ(var->second->currAccesses.size(), 1);
+  EXPECT_EQ(&var->second->currAccesses[0].get(), set.get());
 
   // Check that set depends on declaration
   ASSERT_EQ(set.get()->dependencies.size(), 3);
@@ -203,4 +203,61 @@ TEST(linkGraph, linksNestedBlocks) {
 
   EXPECT_EQ(&inner->dependents[0].expr.get(), base.get());
   EXPECT_EQ(&base->dependencies[0].get(), inner.get());
+}
+
+TEST(linkGraph, allowsVariableShadowing) {
+  auto type1 = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto name1 = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration1 = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type1, name1));
+
+  auto refName1 = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+
+  auto type2 = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto name2 = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration2 = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type2, name2));
+
+  auto refName2 = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+
+  auto block = std::make_shared<BlockExpression>(
+      BlockExpression({declaration2, refName2}, 1));
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration1);
+  expressions->push_back(block);
+  expressions->push_back(refName1);
+
+  // Must number expressions to properly index during linking!
+  block->numberExpressions(0);
+  GraphLinker *linker = new GraphLinker(expressions);
+
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  delete linker;
+
+  ASSERT_EQ(declaration1->dependents.size(), 1);
+  ASSERT_EQ(refName1->dependencies.size(), 1);
+
+  EXPECT_EQ(&refName1->dependencies[0].get(), declaration1.get());
+  EXPECT_EQ(&declaration1->dependents[0].expr.get(), refName1.get());
+
+  ASSERT_EQ(declaration2->dependents.size(), 1);
+  ASSERT_EQ(refName2->dependencies.size(), 1);
+
+  EXPECT_EQ(&refName2->dependencies[0].get(), declaration2.get());
+  EXPECT_EQ(&declaration2->dependents[0].expr.get(), refName2.get());
 }

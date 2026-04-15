@@ -50,7 +50,7 @@ InstrDependent::InstrDependent(Instruction *instr, int argIndex)
 InstrDependent::InstrDependent(Instruction *instr)
     : InstrDependent(instr, std::nullopt) {}
 
-Instruction::Instruction(int id, std::shared_ptr<Scope> scope)
+Instruction::Instruction(int id, std::shared_ptr<Scope<Value>> scope)
     : id(id), type((InstructionType)0), bytecodeArgs(std::vector<Value>()),
       depArgs(std::vector<std::shared_ptr<Value>>()), depCount(0),
       depsFulfilled(0), dependents(std::vector<InstrDependent>()),

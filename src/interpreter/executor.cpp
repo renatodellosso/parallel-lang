@@ -1,6 +1,6 @@
 #include "executor.hpp"
 #include "../logging.hpp"
-#include "scope.hpp"
+#include "../scope.hpp"
 #include <chrono>
 #include <cstddef>
 #include <format>
@@ -72,7 +72,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
   switch (instr.type) {
   case InstructionType::Block: {
     // Create new scope
-    std::shared_ptr<Scope> scope = std::make_shared<Scope>(
+    std::shared_ptr<Scope<Value>> scope = std::make_shared<Scope<Value>>(
         instr.scope); // make_shared() uses the constructor
     int size = std::get<int>(instr.bytecodeArgs[0].val);
 
@@ -278,8 +278,8 @@ void Executor::initQueue() {
 }
 
 void Executor::initScopes() {
-  std::shared_ptr<Scope> root = std::make_shared<Scope>();
-  std::shared_ptr<Scope> global = std::make_shared<Scope>(root);
+  auto root = std::make_shared<Scope<Value>>();
+  auto global = std::make_shared<Scope<Value>>(root);
 
   for (auto &instr : instructions) {
     instr.scope = global;
