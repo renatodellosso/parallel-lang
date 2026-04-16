@@ -4,6 +4,7 @@
 #include <format>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens) {
@@ -63,8 +64,9 @@ AstBuilder::parseLeadingExpression() {
         RootExpression(InstructionType::GetLiteral, line, next())));
   if (match(TokenType::LeftBrace))
     return parseBlock();
-  if (match(TokenType::If)) {
-    next(); // Consume 'if'
+  if (match(TokenType::If) || match(TokenType::While)) {
+    bool loop = match(TokenType::While);
+    next(); // Consume 'if'/'while'
 
     if (!match(TokenType::LeftParen))
       throw std::runtime_error(
@@ -80,10 +82,11 @@ AstBuilder::parseLeadingExpression() {
       throw std::runtime_error(
           std::format("Expected ')' after condition in if statement. Got: '{}'",
                       peek().raw));
-    next(); // Consume '('
+    next(); // Consume ')'
 
-    return std::make_optional(std::make_unique<UnaryExpression>(UnaryExpression(
-        InstructionType::If, line, std::move(condition.value()))));
+    return std::make_optional(std::make_unique<UnaryExpression>(
+        loop ? InstructionType::While : InstructionType::If, line,
+        std::move(condition.value())));
   }
 
   throw std::runtime_error(std::format(
@@ -202,8 +205,9 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
   }
 
   auto type = prev->get()->type;
-  bool autoEndExpr =
-      type == InstructionType::If || type == InstructionType::Block;
+  bool autoEndExpr = type == InstructionType::If ||
+                     type == InstructionType::While ||
+                     type == InstructionType::Block;
   if (!autoEndExpr && !match(endOn) && hasNext()) {
     prev = parseCompoundExpression(std::move(prev), endOn);
   }
@@ -229,11 +233,40 @@ void AstBuilder::postProcess() {
     auto &expr = *expressions->at(i).get();
 
     // If statements should be followed by blocks
-    if (i < expressions->size() - 1 && expr.type == InstructionType::If &&
-        expressions->at(i + 1).get()->type != InstructionType::Block) {
-      auto next = expressions->at(i + 1);
-      (*expressions.get())[i + 1] = std::make_shared<BlockExpression>(
-          BlockExpression({next}, next->lineNumber));
+    if (expr.type == InstructionType::If ||
+        expr.type == InstructionType::While) {
+      if (i == expressions->size() - 1) {
+        syntaxError(
+            "Cannot have an if/while statement as the final expression!");
+        return;
+      }
+
+      std::shared_ptr<BlockExpression> block;
+      if (expressions->at(i + 1).get()->type != InstructionType::Block) {
+        auto next = expressions->at(i + 1);
+
+        block = std::make_shared<BlockExpression>(
+            BlockExpression({next}, next->lineNumber));
+        (*expressions.get())[i + 1] = block;
+      }
+
+      if (!block) {
+        block =
+            std::static_pointer_cast<BlockExpression>(expressions->at(i + 1));
+      }
+
+      auto &unary = static_cast<UnaryExpression &>(expr);
+      if (expr.type == InstructionType::While) {
+        // Add goto
+        int dist = -block->countInstructions() -
+                   expr.countInstructions(); // negative so we go back
+        Token token = {TokenType::Literal, TokenSubtype::Integer,
+                       std::to_string(dist), expr.lineNumber};
+
+        auto jump = std::make_shared<RootExpression>(
+            RootExpression(InstructionType::GoTo, expr.lineNumber, token));
+        block->expressions.push_back(jump);
+      }
     }
   }
 }

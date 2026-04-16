@@ -31,6 +31,17 @@ static void deduplicateDependenciesForSet(BinaryExpression &set,
   }
 }
 
+static void addDependency(Expression &expr, Expression &dependsOn) {
+  auto redirect = dependsOn.dependentRedirect;
+  if (!redirect) {
+    dependsOn.dependents.emplace_back(expr);
+    expr.dependencies.push_back(dependsOn);
+    return;
+  }
+
+  addDependency(expr, *redirect);
+}
+
 GraphLinker::GraphLinker(
     std::shared_ptr<std::vector<std::shared_ptr<Expression>>> exprVector)
     : errors(std::make_shared<std::vector<SyntaxError>>(
@@ -99,10 +110,9 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
     resource.lastWrittenBy = &expr;
 
     // Add a dependency to everything in the access set
-    for (auto dep : resource.currAccesses)
-      dep.get().dependents.push_back(ExprDependent(expr));
-    std::move(resource.currAccesses.begin(), resource.currAccesses.end(),
-              std::back_inserter(expr.dependencies));
+    for (auto dep : resource.currAccesses) {
+      addDependency(expr, dep);
+    }
 
     // Clear accesses
     resource.currAccesses = std::vector<std::reference_wrapper<Expression>>();
@@ -155,7 +165,8 @@ void GraphLinker::processExpression(Expression &expr) {
                         "binary expression! Expression: {}",
                         expr.toString()));
       }
-    } else if (expr.type == InstructionType::If) {
+    } else if (expr.type == InstructionType::If ||
+               expr.type == InstructionType::While) {
       auto next = expressions[expr.id + 1];
       next.get().dependencies.push_back(expr);
       expr.dependents.emplace_back(next.get());
@@ -194,6 +205,32 @@ void GraphLinker::processExpression(Expression &expr) {
         // Add dependency
         inner.get().dependencies.push_back(expr);
         expr.dependents.emplace_back(inner.get());
+      }
+    } else if (expr.type == InstructionType::GoTo) {
+      RootExpression &root = static_cast<RootExpression &>(expr);
+      int dist = std::atoi(root.token.raw.c_str());
+      int returnTo = expr.id + dist;
+
+      // Depend on everything between returnTo and expr
+      // This is to allow loop bodies to run before restarting them
+      int conditionIndex = -1;
+      for (int i = returnTo; i < expr.id; i++) {
+        // Skip everything before the if statement
+        if (conditionIndex == -1) {
+          if (expressions[i].get().type == InstructionType::While) {
+            conditionIndex = i;
+          }
+          continue;
+        }
+
+        // Don't a dependency to the block since we'll already have one
+        if (i != conditionIndex + 1)
+          addDependency(expr, expressions[i]);
+
+        // We've already linked everything in the loop body, so we don't have to
+        // worry Nesting multiple levels of redirects
+        expressions[i].get().dependentRedirect =
+            &expressions[conditionIndex].get();
       }
     }
   } catch (std::runtime_error err) {

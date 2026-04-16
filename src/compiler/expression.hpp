@@ -27,11 +27,12 @@ struct Expression {
 
   std::vector<std::reference_wrapper<Expression>> dependencies;
   std::vector<ExprDependent> dependents;
+  Expression *dependentRedirect;
 
   Expression(InstructionType type, int lineNumber)
       : type(type), lineNumber(lineNumber), id(-1),
         dependencies(std::vector<std::reference_wrapper<Expression>>()),
-        dependents(std::vector<ExprDependent>()) {}
+        dependents(std::vector<ExprDependent>()), dependentRedirect(nullptr) {}
 
   virtual std::string toString() const;
   virtual std::string toByteCode() const;

@@ -36,6 +36,8 @@ std::string instructionTypeToString(InstructionType type) {
     return "CompareGreaterThanEquals";
   case InstructionType::If:
     return "If";
+  case InstructionType::GoTo:
+    return "GoTo";
   default:
     return "UnknownInstructionType";
   }

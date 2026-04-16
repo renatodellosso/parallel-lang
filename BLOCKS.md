@@ -32,6 +32,8 @@ a = 5; // 4
 ```
 3 clearly depends on 2, but, where 4 would ordinarily depend on 3, it actually depends on 2. Furthermore, the initial condition check depends on 1, but subsequent checks depend on 3.
 
+To achieve this, first, anything that depends on an expression inside a loop has that dependency replaced a dependency on the loop. At the end of the loop is a goto statement that jumps back up to the condition. This goto depends on each expression inside the loop (this isn't great, but we'll tolerate it for now).
+
 There are a few options for functions. First, the body of a function could be copied into the bytecode where the call is, but this would massively bloat the bytecode.
 
 The second option is more complicated. In the bytecode, the function call becomes an instruction that runs as soon as we know the function will be called. 

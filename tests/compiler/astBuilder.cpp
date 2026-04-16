@@ -1,6 +1,7 @@
 #include "../../src/compiler/astBuilder.hpp"
 #include "../testUtils.hpp"
 #include <gtest/gtest.h>
+#include <memory>
 
 TEST(AstBuilder, buildsLiteralExpressions) {
   std::vector<Token> tokens = {
@@ -187,13 +188,14 @@ TEST(AstBuilder, errorsOnLeadingBinaryExpression) {
 
 TEST(AstBuilder, buildsIfStatements) {
   std::vector<Token> tokens = {
-      {TokenType::If, TokenSubtype::None, "+", 1},
-      {TokenType::LeftParen, TokenSubtype::None, "+", 1},
+      {TokenType::If, TokenSubtype::None, "if", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
       {TokenType::Literal, TokenSubtype::Bool, "true", 1},
-      {TokenType::RightParen, TokenSubtype::None, ";", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
       {TokenType::Literal, TokenSubtype::Integer, "1", 2},
       {TokenType::Plus, TokenSubtype::None, "+", 2},
       {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
   };
 
   AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
@@ -203,4 +205,45 @@ TEST(AstBuilder, buildsIfStatements) {
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
   ASSERT_EQ(builder.getExpressions().get()->size(), 2);
   EXPECT_EQ(builder.getExpressions().get()->at(0)->type, InstructionType::If);
+}
+
+TEST(AstBuilder, buildsWhileStatements) {
+  std::vector<Token> tokens = {
+      {TokenType::While, TokenSubtype::None, "while", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Literal, TokenSubtype::Bool, "true", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 2);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type,
+            InstructionType::While);
+
+  auto expressions = builder.getExpressions();
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  auto block = std::dynamic_pointer_cast<BlockExpression>(expressions->at(1));
+  ASSERT_NE(block, nullptr);
+  ASSERT_EQ(block->expressions.size(), 2);
+
+  auto goTo =
+      std::dynamic_pointer_cast<RootExpression>(block->expressions.at(1));
+  ASSERT_NE(goTo, nullptr);
+
+  auto whileStatement = expressions->at(0);
+  EXPECT_EQ(whileStatement->type, InstructionType::While);
+
+  EXPECT_EQ(goTo->id + std::atoi(goTo->token.raw.c_str()), 0);
 }

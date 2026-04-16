@@ -199,6 +199,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
     updateDependency(dep, result);
   }
 
+  instr.depsFulfilled = 0; // Reset in case when run the instruction again
+
   log(LOCATION, "[instruction {}]: {}", instr.id,
       result ? valToStr(*result) : "<no result>");
 }

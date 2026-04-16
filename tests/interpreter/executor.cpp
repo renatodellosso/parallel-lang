@@ -36,19 +36,6 @@ TEST(startExecution, doesntError) {
   REENABLE_COUT
 }
 
-TEST(startExecution, updatesDepsFulfilled) {
-  DISABLE_COUT
-
-  auto instrs = getInstrs();
-
-  Executor executor({.threads = 1}, instrs);
-  executor.startExecution();
-
-  EXPECT_EQ(instrs[2].depsFulfilled, 2);
-
-  REENABLE_COUT
-}
-
 TEST(startExecution, populatesDepArgs) {
   DISABLE_COUT
 

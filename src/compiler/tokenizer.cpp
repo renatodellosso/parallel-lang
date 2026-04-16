@@ -1,4 +1,5 @@
 #include "tokenizer.hpp"
+#include "token.hpp"
 #include <iostream>
 
 static bool isWhitespace(char c) {
@@ -137,6 +138,8 @@ void Tokenizer::parseToken() {
       token.subtype = TokenSubtype::Bool;
     } else if (raw == "if") {
       token.type = TokenType::If;
+    } else if (raw == "while") {
+      token.type = TokenType::While;
     } else
       token.type = TokenType::Identifier;
   }

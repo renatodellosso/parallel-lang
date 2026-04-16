@@ -1,6 +1,3 @@
-int a = 1;
-if (true) {
-  int a = 2;
-  a;
+while (true) {
+  99;
 }
-a;

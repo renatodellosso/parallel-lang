@@ -261,3 +261,50 @@ TEST(linkGraph, allowsVariableShadowing) {
   EXPECT_EQ(&refName2->dependencies[0].get(), declaration2.get());
   EXPECT_EQ(&declaration2->dependents[0].expr.get(), refName2.get());
 }
+
+TEST(linkGraph, linksWhileLoops) {
+  auto trueLiteral = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Bool, "true", 1}));
+  auto condition = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::While, 1, trueLiteral));
+  auto getLiteral = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "99", 1}));
+  auto goTo = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GoTo, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "-4", 1}));
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({getLiteral, goTo}, 1));
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(condition);
+  expressions->push_back(block);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  delete linker;
+
+  ASSERT_EQ(condition->dependents.size(), 1);
+
+  EXPECT_EQ(&condition->dependents[0].expr.get(), block.get());
+
+  ASSERT_EQ(block->dependencies.size(), 1);
+  EXPECT_EQ(&block->dependencies[0].get(), condition.get());
+
+  ASSERT_EQ(getLiteral->dependencies.size(), 1);
+  EXPECT_EQ(&getLiteral->dependencies[0].get(), block.get());
+
+  ASSERT_EQ(goTo->dependencies.size(), 2);
+  EXPECT_EQ(&goTo->dependencies[0].get(), block.get());
+  EXPECT_EQ(&goTo->dependencies[1].get(), getLiteral.get());
+}

@@ -20,7 +20,8 @@ enum class TokenType {
   Comma,
   Literal,
   Identifier,
-  If
+  If,
+  While
 };
 
 enum class TokenSubtype { None, String, Integer, Bool };

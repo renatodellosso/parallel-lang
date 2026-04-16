@@ -23,7 +23,9 @@ enum class InstructionType {
   CompareLessThanEquals,
   CompareGreaterThan,
   CompareGreaterThanEquals,
-  If
+  If,
+  While,
+  GoTo
 };
 
 std::string instructionTypeToString(InstructionType type);
