@@ -48,8 +48,10 @@ void Executor::updateDependency(InstrDependent dep,
 void Executor::skipInstruction(Instruction &instr, bool recurse) {
   instr.depCount = -1;
 
+  int skipUntil = -1;
   if (recurse && instr.type == InstructionType::Block) {
     int toSkip = std::get<int>(instr.bytecodeArgs[0].val);
+    skipUntil = instr.id + toSkip;
     for (int i = 1; i < toSkip; i++) {
       skipInstruction(instructions[instr.id + i], false);
     }
@@ -59,8 +61,13 @@ void Executor::skipInstruction(Instruction &instr, bool recurse) {
   for (auto dep : instr.dependents) {
     // Deps with indices are intra-line deps and the entire line will be
     // skipped, so we don't have to worry about them
-    if (!dep.argIndex.has_value())
+
+    if (skipUntil != -1 && dep.instr->id <= skipUntil)
+      continue;
+
+    if (!dep.argIndex.has_value()) {
       updateDependency(dep, nullptr);
+    }
   }
 }
 
@@ -68,6 +75,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
   if (cliArgs.verbose)
     log(LOCATION, "Executing instruction: {}", instr.toString());
   std::shared_ptr<Value> result;
+
+  bool updateDeps = true;
 
   switch (instr.type) {
   case InstructionType::Block: {
@@ -189,17 +198,56 @@ void Executor::execSingleInstruction(Instruction &instr) {
     skipInstruction(instructions[instr.id + 1]);
     break;
   }
+  case InstructionType::While: {
+    bool condition = valToBool(*instr.depArgs[0]);
+    if (condition) {
+      updateDeps =
+          false; // Only update if condition is false, as we won't loop back
+
+      // Manually update block
+      for (auto dep : instr.dependents) {
+        // Block always comes immediately after
+        if (dep.instr->id == instr.id + 1)
+          updateDependency(dep, result);
+      }
+      break;
+    }
+
+    // Skip next instruction
+    skipInstruction(instructions[instr.id + 1]);
+    break;
+  }
+  case InstructionType::GoTo: {
+    int dist = std::get<int>(instr.bytecodeArgs[0].val);
+
+    if (dist > 0)
+      throw std::runtime_error(
+          "Using GoTo with a positive distance is not supported!");
+
+    int returnTo = instr.id + dist;
+
+    for (int i = returnTo; i <= instr.id; i++) {
+      for (auto dep : instructions[i].dependents) {
+        if (dep.instr->id > returnTo && dep.instr->id <= instr.id)
+          dep.instr->depsFulfilled--;
+      }
+    }
+
+    queue.push(instructions[returnTo]);
+
+    break;
+  }
   default:
     throw std::runtime_error(
         std::format("Unknown instruction type on instruction {}: {}", instr.id,
                     (int)instr.type));
   }
 
-  for (auto dep : instr.dependents) {
-    updateDependency(dep, result);
+  if (updateDeps) {
+    for (auto dep : instr.dependents) {
+      updateDependency(dep, result);
+    }
   }
-
-  instr.depsFulfilled = 0; // Reset in case when run the instruction again
 
   log(LOCATION, "[instruction {}]: {}", instr.id,
       result ? valToStr(*result) : "<no result>");
