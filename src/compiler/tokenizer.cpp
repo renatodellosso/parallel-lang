@@ -57,6 +57,8 @@ void Tokenizer::parseToken() {
     token.type = TokenType::Plus;
     break;
   case '-':
+    if (isNumber(stream.peek()))
+      break; // Likely a negative number
     token.type = TokenType::Minus;
     break;
   case '*':
@@ -109,16 +111,20 @@ void Tokenizer::parseToken() {
 
     token.type = TokenType::Literal;
     token.subtype = TokenSubtype::String;
-  } else if (isNumber(c)) {
+  } else if (isNumber(c) || c == '-') {
     // Number
+    std::cout << c;
+
     for (c = stream.peek(); isNumber(c); c = stream.peek()) {
-      stream.get();
-
       raw += c;
+      std::cout << c;
 
+      stream.get();
       if (stream.eof())
         break;
     }
+
+    std::cout << "\n";
 
     token.type = TokenType::Literal;
     token.subtype = TokenSubtype::Integer;

@@ -6,7 +6,8 @@ bool beginsWith(std::string str, std::string prefix) {
 }
 
 bool isInteger(const std::string &s) {
-  return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+  return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit) ||
+         s[0] == '-' && std::all_of(s.begin() + 1, s.end(), ::isdigit);
 }
 
 std::string formatNs(std::chrono::nanoseconds time) {

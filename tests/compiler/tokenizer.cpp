@@ -152,6 +152,24 @@ TEST(Tokenizer, identifiesNumbers) {
   delete tokenizer;
 }
 
+TEST(Tokenizer, identifiesNegativeNumbers) {
+  std::string text("-123");
+
+  std::istringstream stream(text);
+  Tokenizer *tokenizer = new Tokenizer(stream);
+
+  tokenizer->parse();
+  auto tokens = *(tokenizer->close().get());
+
+  ASSERT_EQ(tokens.size(), 1);
+  EXPECT_EQ(tokens[0].type, TokenType::Literal);
+  EXPECT_EQ(tokens[0].subtype, TokenSubtype::Integer);
+  EXPECT_EQ(tokens[0].raw, text);
+
+  // Cleanup
+  delete tokenizer;
+}
+
 TEST(Tokenizer, identifiesNumbersMixedWithOtherTypes) {
   std::string text(";123)");
 
