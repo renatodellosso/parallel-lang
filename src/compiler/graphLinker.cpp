@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <format>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -33,13 +34,13 @@ static void deduplicateDependenciesForSet(BinaryExpression &set,
 
 static void addDependency(Expression &expr, Expression &dependsOn) {
   auto redirect = dependsOn.dependentRedirect;
-  if (!redirect) {
-    dependsOn.dependents.emplace_back(expr);
-    expr.dependencies.push_back(dependsOn);
+  if (redirect) {
+    addDependency(expr, *redirect);
     return;
   }
 
-  addDependency(expr, *redirect);
+  dependsOn.dependents.push_back(expr);
+  expr.dependencies.push_back(dependsOn);
 }
 
 GraphLinker::GraphLinker(
@@ -102,8 +103,7 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
   // If we're writing to this resource, the last write is in currAccesses, so we
   // add the dependency there
   if (!write && resource.lastWrittenBy) {
-    resource.lastWrittenBy->dependents.push_back(ExprDependent(expr));
-    expr.dependencies.push_back(*resource.lastWrittenBy);
+    addDependency(expr, *resource.lastWrittenBy);
   }
 
   if (write) {
@@ -168,8 +168,7 @@ void GraphLinker::processExpression(Expression &expr) {
     } else if (expr.type == InstructionType::If ||
                expr.type == InstructionType::While) {
       auto next = expressions[expr.id + 1];
-      next.get().dependencies.push_back(expr);
-      expr.dependents.emplace_back(next.get());
+      addDependency(next, expr); // Add dependency with block
     } else if (expr.type == InstructionType::Block) {
       BlockExpression &block = *static_cast<BlockExpression *>(&expr);
       int size =
@@ -202,9 +201,7 @@ void GraphLinker::processExpression(Expression &expr) {
             dynamic_cast<RootExpression *>(&inner.get()) == nullptr)
           continue;
 
-        // Add dependency
-        inner.get().dependencies.push_back(expr);
-        expr.dependents.emplace_back(inner.get());
+        addDependency(inner, expr);
       }
     } else if (expr.type == InstructionType::GoTo) {
       RootExpression &root = static_cast<RootExpression &>(expr);

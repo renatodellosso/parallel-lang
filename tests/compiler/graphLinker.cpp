@@ -308,3 +308,63 @@ TEST(linkGraph, linksWhileLoops) {
   EXPECT_EQ(&goTo->dependencies[0].get(), block.get());
   EXPECT_EQ(&goTo->dependencies[1].get(), getLiteral.get());
 }
+TEST(linkGraph, linksWhileLoopsWithFollowingStatements) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto trueLiteral = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Bool, "true", 1}));
+  auto condition = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::While, 1, trueLiteral));
+  auto getLiteral = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "99", 1}));
+  auto getIdentifier = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 1,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, getIdentifier, getLiteral));
+
+  auto goTo = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GoTo, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "-7", 1}));
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({set, goTo}, 1));
+
+  auto getIdentifierAfter = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 1,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(condition);
+  expressions->push_back(block);
+  expressions->push_back(getIdentifierAfter);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  delete linker;
+
+  ASSERT_EQ(getIdentifierAfter->dependencies.size(), 1);
+  EXPECT_EQ(&getIdentifierAfter->dependencies[0].get(), condition.get());
+
+  ASSERT_EQ(condition->dependents.size(), 2);
+  EXPECT_EQ(&condition->dependents[0].expr.get(), block.get());
+  EXPECT_EQ(&condition->dependents[1].expr.get(), getIdentifierAfter.get());
+}
