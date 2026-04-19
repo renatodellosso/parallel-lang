@@ -113,18 +113,14 @@ void Tokenizer::parseToken() {
     token.subtype = TokenSubtype::String;
   } else if (isNumber(c) || c == '-') {
     // Number
-    std::cout << c;
 
     for (c = stream.peek(); isNumber(c); c = stream.peek()) {
       raw += c;
-      std::cout << c;
 
       stream.get();
       if (stream.eof())
         break;
     }
-
-    std::cout << "\n";
 
     token.type = TokenType::Literal;
     token.subtype = TokenSubtype::Integer;
