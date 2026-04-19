@@ -237,6 +237,15 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     break;
   }
+  case InstructionType::Print: {
+    result = instr.depArgs[0];
+
+    // Don't use << in cout since it's only atomic at the level of individual
+    // <<'s
+    std::string str = valToStr(*result) + "\n";
+    std::cout << str;
+    break;
+  }
   default:
     throw std::runtime_error(
         std::format("Unknown instruction type on instruction {}: {}", instr.id,
@@ -249,8 +258,9 @@ void Executor::execSingleInstruction(Instruction &instr) {
     }
   }
 
-  log(LOCATION, "[instruction {}]: {}", instr.id,
-      result ? valToStr(*result) : "<no result>");
+  if (cliArgs.verbose)
+    log(LOCATION, "[instruction {}]: {}", instr.id,
+        result ? valToStr(*result) : "<no result>");
 }
 
 void Executor::execWorker(int id) {

@@ -88,6 +88,12 @@ AstBuilder::parseLeadingExpression() {
         loop ? InstructionType::While : InstructionType::If, line,
         std::move(condition.value())));
   }
+  if (match(TokenType::Print)) {
+    next(); // Be sure to consume the leading token itself!
+    auto output = parseExpression(TokenType::Semicolon);
+    return std::make_optional(std::make_unique<UnaryExpression>(
+        InstructionType::Print, line, std::move(output.value())));
+  }
 
   throw std::runtime_error(std::format(
       "Could not parse line: No valid starting expression for token '{}'",

@@ -142,6 +142,8 @@ void Tokenizer::parseToken() {
       token.type = TokenType::If;
     } else if (raw == "while") {
       token.type = TokenType::While;
+    } else if (raw == "print") {
+      token.type = TokenType::Print;
     } else
       token.type = TokenType::Identifier;
   }
