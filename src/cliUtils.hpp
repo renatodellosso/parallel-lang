@@ -3,7 +3,7 @@
 #include <optional>
 #include <string>
 
-enum class CliMode { Unset, Compile, Interpret };
+enum class CliMode { Unset, Compile, Interpret, CompileAndInterpret };
 
 struct CliArgs {
   std::string target;

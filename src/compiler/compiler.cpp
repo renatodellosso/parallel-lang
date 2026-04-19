@@ -9,13 +9,16 @@
 ExitCode
 compile(const CliArgs &args, std::istream &inputStream,
         std::function<std::optional<std::string>(std::string)> writeOutput) {
+  bool shouldLog = args.verbose || args.mode == CliMode::Compile;
+
   Tokenizer *tokenizer = new Tokenizer(inputStream);
 
   tokenizer->parse();
   auto tokens = tokenizer->close();
   delete tokenizer;
 
-  log(LOCATION, "Parsed {:d} tokens. Building AST...", tokens.get()->size());
+  if (shouldLog)
+    log(LOCATION, "Parsed {:d} tokens. Building AST...", tokens.get()->size());
 
   AstBuilder astBuilder(std::move(tokens));
   astBuilder.build();
@@ -31,13 +34,16 @@ compile(const CliArgs &args, std::istream &inputStream,
     return ExitCode::SyntaxErrors;
   }
 
-  log(LOCATION, "Built AST");
+  if (shouldLog)
+    log(LOCATION, "Built AST");
 
   int exprId = 0;
   for (auto expr : *astBuilder.getExpressions().get()) {
     exprId = expr->numberExpressions(exprId);
   }
-  log(LOCATION, "Numbered expressions");
+
+  if (shouldLog)
+    log(LOCATION, "Numbered expressions");
 
   GraphLinker graphLinker(astBuilder.getExpressions());
   graphLinker.linkGraph();
@@ -53,7 +59,8 @@ compile(const CliArgs &args, std::istream &inputStream,
     return ExitCode::SyntaxErrors;
   }
 
-  log(LOCATION, "Linked graph");
+  if (shouldLog)
+    log(LOCATION, "Linked graph");
 
   std::string bytecode = "";
   for (auto expr : *astBuilder.getExpressions().get()) {
@@ -67,6 +74,7 @@ compile(const CliArgs &args, std::istream &inputStream,
     return ExitCode::FailedToWriteFile;
   }
 
-  log(LOCATION, "Wrote bytecode to file!");
+  if (shouldLog)
+    log(LOCATION, "Wrote bytecode to file!");
   return ExitCode::Ok;
 }

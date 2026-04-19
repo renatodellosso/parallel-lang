@@ -1,13 +1,15 @@
 #include "cli.hpp"
+#include "cliUtils.hpp"
 #include "compiler/compiler.hpp"
+#include "exitCode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging.hpp"
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <functional>
-#include <map>
 #include <optional>
+#include <sstream>
 #include <string>
 
 const char *LOCATION = "CLI";
@@ -65,6 +67,16 @@ const std::unordered_map<std::string,
 
            return 0;
          }},
+        {"--buildAndRun",
+         [](OPTIONS_HANDLER_PARAMS) -> int {
+           if (args.mode != CliMode::Unset) {
+             logWarning(LOCATION, "CLI mode was set twice!");
+           }
+
+           args.mode = CliMode::CompileAndInterpret;
+
+           return 0;
+         }},
         {"--verbose",
          [](OPTIONS_HANDLER_PARAMS) -> int {
            args.verbose = true;
@@ -96,8 +108,9 @@ std::string resolveShortcuts(std::string key) {
 
 CliArgs parseArgs(int argc, char *argv[]) {
   std::unordered_map<std::string, std::string> argMap;
-  CliArgs args = {
-      .outputFile = std::nullopt, .mode = CliMode::Unset, .threads = 1};
+  CliArgs args = {.outputFile = std::nullopt,
+                  .mode = CliMode::CompileAndInterpret,
+                  .threads = 1};
 
   // argv[0] is the executable path
   for (int i = 1; i < argc; i++) {
@@ -167,10 +180,35 @@ ExitCode executeCommand(const CliArgs &args) {
     return compile(args, stream,
                    [args](std::string text) { return writeFile(args, text); });
   }
+
   if (args.mode == CliMode::Interpret) {
     std::ifstream stream(args.target);
     Interpreter interpreter(args);
     interpreter.interpret(stream);
+  }
+
+  if (args.mode == CliMode::CompileAndInterpret) {
+    std::ifstream fileStream(args.target);
+    std::string bytecode;
+
+    std::function<std::optional<std::string>(std::string)> writeBytecode =
+        [&bytecode](std::string text) {
+          bytecode = text;
+          return std::nullopt;
+        };
+
+    ExitCode exitCode = compile(args, fileStream, writeBytecode);
+    fileStream.close();
+    if (exitCode != ExitCode::Ok)
+      return exitCode;
+
+    std::istringstream bytecodeStream(bytecode);
+
+    Interpreter *interpreter = new Interpreter(args);
+    exitCode = interpreter->interpret(bytecodeStream);
+    delete interpreter;
+
+    return exitCode;
   }
 
   return ExitCode::InvalidCli;

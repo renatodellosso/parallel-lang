@@ -14,7 +14,7 @@ Value BytecodeParser::buildArg() {
 
   bool inStr = false;
   bool endInstr = false;
-  for (char c = stream.peek(); true; c = stream.peek()) {
+  for (char c = stream.peek(); !stream.fail(); c = stream.peek()) {
     if (c == '"') {
       if (!inStr)
         inStr = true;
@@ -24,7 +24,7 @@ Value BytecodeParser::buildArg() {
         break;
       }
     }
-    if (!inStr && (c == ' ' || c == '\n' || c == '\r' || stream.eof())) {
+    if (!inStr && (c == ' ' || c == '\n' || c == '\r' || stream.fail())) {
       break;
     }
 
@@ -59,7 +59,7 @@ Value BytecodeParser::buildArg() {
 
 std::string BytecodeParser::buildDepStr() {
   std::string depStr = "";
-  for (char c = stream.peek(); c != ' '; c = stream.peek()) {
+  for (char c = stream.peek(); c != ' ' && !stream.fail(); c = stream.peek()) {
     depStr += c;
     stream.get();
   }
@@ -118,7 +118,8 @@ void BytecodeParser::buildSingleInstruction() {
   // Parse depCount
   std::string curr = "";
   for (char c = stream.peek();
-       c != ' ' && c != '\n' && c != '\r' && !stream.eof(); c = stream.peek()) {
+       c != ' ' && c != '\n' && c != '\r' && !stream.fail();
+       c = stream.peek()) {
     stream.get();
     curr += c;
   }
@@ -135,7 +136,8 @@ void BytecodeParser::buildSingleInstruction() {
   // Parse type
   curr = "";
   for (char c = stream.peek();
-       c != ' ' && c != '\n' && c != '\r' && !stream.eof(); c = stream.peek()) {
+       c != ' ' && c != '\n' && c != '\r' && !stream.fail();
+       c = stream.peek()) {
     stream.get();
     curr += c;
   }
@@ -143,7 +145,7 @@ void BytecodeParser::buildSingleInstruction() {
   instr.type = (InstructionType)std::atoi(curr.c_str());
 
   // Parse args
-  while (stream.peek() != '\n' && stream.peek() != '\r' && !stream.eof()) {
+  while (stream.peek() != '\n' && stream.peek() != '\r' && !stream.fail()) {
     Value arg = buildArg();
     instr.bytecodeArgs.push_back(arg);
   }
@@ -156,7 +158,7 @@ void BytecodeParser::buildSingleInstruction() {
 }
 
 void BytecodeParser::buildInstructions() {
-  while (!stream.eof()) {
+  while (!stream.fail()) {
     buildSingleInstruction();
 
     stream.get(); // Consume '\n'
