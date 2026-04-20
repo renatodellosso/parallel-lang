@@ -10,7 +10,7 @@
 #include <vector>
 
 // Int is thread count
-class E2eFixture : public testing::TestWithParam<std::tuple<E2eTest, int>> {};
+class E2EFixture : public testing::TestWithParam<std::tuple<E2eTest, int>> {};
 
 const std::string folder = "temp";
 
@@ -52,7 +52,7 @@ testing::AssertionResult Contains(std::vector<std::string> vector,
                                      << "'. Vector: " << vectorToString(vector);
 }
 
-TEST_P(E2eFixture, E2E) {
+TEST_P(E2EFixture, E2E) {
   auto test = std::get<E2eTest>(GetParam());
   auto threads = std::get<int>(GetParam());
 
@@ -84,10 +84,10 @@ TEST_P(E2eFixture, E2E) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    E2E, E2eFixture,
+    E2E, E2EFixture,
     testing::Combine(testing::ValuesIn(tests.begin(), tests.end()),
                      testing::Values(1, 2, 4, 8, 16)),
-    [](const testing::TestParamInfo<E2eFixture::ParamType> &info) {
+    [](const testing::TestParamInfo<E2EFixture::ParamType> &info) {
       return getTestName(std::get<E2eTest>(info.param),
                          std::get<int>(info.param));
     });

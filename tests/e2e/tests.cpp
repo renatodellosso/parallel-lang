@@ -58,11 +58,16 @@ std::vector<E2eTest> tests = {
      {"ran"}},
 
     // While loops
-
     {"WhileLoopsRunWhileConditionIsTrue",
      "int count = 10;\n"
      "while (count) {\n"
      "print count;\n"
      "count = count - 1;\n"
      "}",
-     {"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}}};
+     {"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}},
+    {"WhileLoopsAllowImplicitBlocks",
+     "int count = 10;\n"
+     "while (count)\n"
+     "count = count - 1;\n"
+     "print count;",
+     {"0"}}};
