@@ -6,7 +6,7 @@ std::string valToStr(Value val) {
   case ValueType::Integer:
     return std::to_string(std::get<int>(val.val));
   case ValueType::Bool:
-    return std::to_string(std::get<bool>(val.val));
+    return std::get<bool>(val.val) ? "true" : "false";
   case ValueType::String:
     return std::format("{}", std::get<std::string>(val.val));
   case ValueType::Identifier:
