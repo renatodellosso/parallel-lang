@@ -127,10 +127,9 @@ void Tokenizer::parseToken() {
   } else {
     // Identifier
     for (c = stream.peek(); isAlphanumeric(c); c = stream.peek()) {
-      stream.get();
-
       raw += c;
 
+      stream.get();
       if (stream.eof())
         break;
     }

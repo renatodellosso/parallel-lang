@@ -44,10 +44,25 @@ std::vector<E2eTest> tests = {
      {"1", "2"}},
     {"VariablesCanHaveBoolType", "bool a = true;\nprint a;", {"true"}},
     {"VariablesCanHaveStringType", "string a = \"abc\";\nprint a;", {"abc"}},
+    {"VariablesCanBeUsedToUpdateThemselves",
+     "int a = 1;\na = a + 1;\nprint a;",
+     {"2"}},
 
     // If statements
     {"IfsDontRunIfConditionIsFalse", "if (false) { print \"ran\"; }", {}},
     {"IfsRunIfConditionIsTrue", "if (true) { print \"ran\"; }", {"ran"}},
     {"IfsAllowImplicitBlocks", "if (true) print \"ran\";", {"ran"}},
     {"IfsAllowComplexConditions", "if (1 + 1 - 1) print \"ran\";", {"ran"}},
-};
+    {"IfsAllowVariablesInCondition",
+     "bool a = true;\nif (a) print \"ran\";",
+     {"ran"}},
+
+    // While loops
+
+    {"WhileLoopsRunWhileConditionIsTrue",
+     "int count = 10;\n"
+     "while (count) {\n"
+     "print count;\n"
+     "count = count - 1;\n"
+     "}",
+     {"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}}};

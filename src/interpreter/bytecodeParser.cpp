@@ -14,7 +14,8 @@ Value BytecodeParser::buildArg() {
 
   bool inStr = false;
   bool endInstr = false;
-  for (char c = stream.peek(); !stream.fail(); c = stream.peek()) {
+  for (char c = stream.peek(); !stream.fail() && !stream.eof();
+       c = stream.peek()) {
     if (c == '"') {
       if (!inStr)
         inStr = true;
@@ -59,7 +60,8 @@ Value BytecodeParser::buildArg() {
 
 std::string BytecodeParser::buildDepStr() {
   std::string depStr = "";
-  for (char c = stream.peek(); c != ' ' && !stream.fail(); c = stream.peek()) {
+  for (char c = stream.peek(); c != ' ' && !stream.fail() && !stream.eof();
+       c = stream.peek()) {
     depStr += c;
     stream.get();
   }
@@ -145,7 +147,8 @@ void BytecodeParser::buildSingleInstruction() {
   instr.type = (InstructionType)std::atoi(curr.c_str());
 
   // Parse args
-  while (stream.peek() != '\n' && stream.peek() != '\r' && !stream.fail()) {
+  while (stream.peek() != '\n' && stream.peek() != '\r' && !stream.fail() &&
+         !stream.eof()) {
     Value arg = buildArg();
     instr.bytecodeArgs.push_back(arg);
   }

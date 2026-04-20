@@ -2,3 +2,4 @@ build/
 *.trace
 .cache/
 .DS_Store
+temp/
