@@ -30,6 +30,28 @@ std::vector<std::string> split(std::string str, char delimiter) {
   return vec;
 }
 
+std::string vectorToString(std::vector<std::string> vector) {
+  std::string str = "";
+
+  for (int i = 0; i < vector.size(); i++) {
+    str += "'" + vector[i] + "'";
+    if (i < vector.size() - 1)
+      str += ", ";
+  }
+
+  return str;
+}
+
+testing::AssertionResult Contains(std::vector<std::string> vector,
+                                  std::string line) {
+  if (std::ranges::find(vector, line) == vector.end())
+    return testing::AssertionFailure()
+           << "Vector did not contain '" << line
+           << "'. Vector: " << vectorToString(vector);
+  return testing::AssertionSuccess() << "Vector contained '" << line
+                                     << "'. Vector: " << vectorToString(vector);
+}
+
 TEST_P(E2eFixture, E2E) {
   auto test = std::get<E2eTest>(GetParam());
   auto threads = std::get<int>(GetParam());
@@ -57,7 +79,7 @@ TEST_P(E2eFixture, E2E) {
 
   EXPECT_EQ(test.output.size(), splitOut.size());
   for (auto line : test.output) {
-    EXPECT_NE(std::ranges::find(splitOut, line), splitOut.end());
+    EXPECT_TRUE(Contains(splitOut, line));
   }
 }
 

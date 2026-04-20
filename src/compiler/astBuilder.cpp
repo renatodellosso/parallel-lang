@@ -160,7 +160,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
   next(); // Be sure to consume the token!
 
   // Parse right operand
-  auto nextExpr = extendExpression(std::nullopt, TokenType::Semicolon);
+  auto nextExpr = extendExpression(std::nullopt, endOn);
   if (!nextExpr.has_value()) {
     throw std::runtime_error(std::format(
         "Could not parse line: Binary expression ('{}') has no right operand",
