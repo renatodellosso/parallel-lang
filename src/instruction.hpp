@@ -10,6 +10,7 @@
 enum class InstructionType {
   Block,
   GetLiteral,
+  ReferenceIdentifier,
   GetIdentifier,
   Declare,
   Set,

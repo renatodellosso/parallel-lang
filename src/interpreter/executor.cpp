@@ -103,7 +103,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
   case InstructionType::GetLiteral:
     result = std::make_shared<Value>(instr.bytecodeArgs[0]);
     break;
-  case InstructionType::GetIdentifier: {
+  case InstructionType::ReferenceIdentifier: {
     auto ptr =
         instr.scope->get(std::get<std::string>(instr.bytecodeArgs[0].val));
     if (!ptr)
@@ -111,6 +111,16 @@ void Executor::execSingleInstruction(Instruction &instr) {
           "Attempted to read identifier '{}', but it did not exist!",
           std::get<std::string>(instr.bytecodeArgs[0].val)));
     result = ptr;
+    break;
+  }
+  case InstructionType::GetIdentifier: {
+    auto ptr =
+        instr.scope->get(std::get<std::string>(instr.bytecodeArgs[0].val));
+    if (!ptr)
+      throw std::runtime_error(std::format(
+          "Attempted to read identifier '{}', but it did not exist!",
+          std::get<std::string>(instr.bytecodeArgs[0].val)));
+    result = std::make_shared<Value>(ptr->type, ptr->val);
     break;
   }
   case InstructionType::Declare: {

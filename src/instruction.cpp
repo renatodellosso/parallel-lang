@@ -8,6 +8,8 @@ std::string instructionTypeToString(InstructionType type) {
     return "Block";
   case InstructionType::GetLiteral:
     return "GetLiteral";
+  case InstructionType::ReferenceIdentifier:
+    return "ReferenceIdentifier";
   case InstructionType::GetIdentifier:
     return "GetIdentifier";
   case InstructionType::Declare:

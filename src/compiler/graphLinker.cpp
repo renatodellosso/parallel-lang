@@ -133,7 +133,8 @@ void GraphLinker::processExpression(Expression &expr) {
   try {
     if (expr.type == InstructionType::Declare)
       createResource(expr);
-    else if (expr.type == InstructionType::GetIdentifier) {
+    else if (expr.type == InstructionType::GetIdentifier ||
+             expr.type == InstructionType::ReferenceIdentifier) {
       try {
         RootExpression &root = dynamic_cast<RootExpression &>(expr);
         useResource(expr, root.token.raw, false);

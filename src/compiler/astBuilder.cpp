@@ -150,6 +150,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
   }
   case TokenType::Equals:
     type = InstructionType::Set;
+    prev.value()->type = InstructionType::ReferenceIdentifier;
     break;
   default:
     throw std::runtime_error(std::format(
