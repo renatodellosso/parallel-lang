@@ -12,7 +12,7 @@
 // Int is thread count
 class E2eFixture : public testing::TestWithParam<std::tuple<E2eTest, int>> {};
 
-constexpr std::string folder = "temp";
+const std::string folder = "temp";
 
 std::string getTestName(E2eTest test, int threads) {
   return test.name + std::to_string(threads);
