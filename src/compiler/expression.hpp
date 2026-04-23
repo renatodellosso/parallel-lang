@@ -20,6 +20,11 @@ struct ExprDependent {
   std::string toString();
 };
 
+struct FunctionExprParameter {
+  std::string type;
+  std::string name;
+};
+
 struct Expression {
   InstructionType type;
   int lineNumber;
@@ -106,6 +111,28 @@ struct BlockExpression : public Expression {
   BlockExpression(int lineNumber)
       : BlockExpression(std::vector<std::shared_ptr<Expression>>(),
                         lineNumber) {}
+
+  std::string toString() const override;
+  std::string toByteCode() const override;
+  std::vector<std::reference_wrapper<Expression>>
+  getWithSubExpressions() const override;
+  int numberExpressions(int startWith) override;
+  int countInstructions() const override;
+};
+
+struct FunctionExpression : public Expression {
+  std::string name;
+  std::string returnType;
+  std::vector<FunctionExprParameter> params;
+  std::shared_ptr<Expression> body;
+
+  FunctionExpression() : FunctionExpression("unnamed_func", "void", 0) {}
+  FunctionExpression(std::string name, std::string returnType, int lineNumber)
+      : Expression(InstructionType::Function, lineNumber), name(name),
+        returnType(returnType), params(std::vector<FunctionExprParameter>()),
+        body(nullptr) {}
+  FunctionExpression(int lineNumber)
+      : FunctionExpression("unnamed_func", "void", lineNumber) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;

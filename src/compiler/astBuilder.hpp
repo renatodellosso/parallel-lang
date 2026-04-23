@@ -4,6 +4,7 @@
 #include "syntaxError.hpp"
 #include "token.hpp"
 #include <memory>
+#include <optional>
 #include <vector>
 
 class AstBuilder {
@@ -34,6 +35,8 @@ private:
   std::optional<std::unique_ptr<Expression>>
   parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev,
                           TokenType endOn);
+  FunctionExprParameter parseFuncParam();
+  std::optional<std::unique_ptr<FunctionExpression>> parseFunction(std::unique_ptr<BinaryExpression> declaration);
   // Parses a block, including the { }
   std::optional<std::unique_ptr<BlockExpression>> parseBlock();
 

@@ -247,3 +247,186 @@ TEST(AstBuilder, buildsWhileStatements) {
 
   EXPECT_EQ(goTo->id + std::atoi(goTo->token.raw.c_str()), 0);
 }
+
+TEST(AstBuilder, buildsFunctionsWithoutParameters) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "void", 1},
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type,
+            InstructionType::Function);
+
+  auto expressions = builder.getExpressions();
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  auto func = std::dynamic_pointer_cast<FunctionExpression>(expressions->at(0));
+  ASSERT_NE(func, nullptr);
+
+  EXPECT_EQ(func->type, InstructionType::Function);
+  EXPECT_EQ(func->name, tokens[1].raw);
+  EXPECT_EQ(func->returnType, tokens[0].raw);
+
+  auto body = func->body;
+  ASSERT_NE(body, nullptr);
+  EXPECT_EQ(body->type, InstructionType::Add);
+}
+
+TEST(AstBuilder, buildsFunctionsWithSingleParameter) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "void", 1},
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Identifier, TokenSubtype::None, "param", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type,
+            InstructionType::Function);
+
+  auto expressions = builder.getExpressions();
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  auto func = std::dynamic_pointer_cast<FunctionExpression>(expressions->at(0));
+  ASSERT_NE(func, nullptr);
+
+  EXPECT_EQ(func->type, InstructionType::Function);
+  EXPECT_EQ(func->name, tokens[1].raw);
+  EXPECT_EQ(func->returnType, tokens[0].raw);
+
+  ASSERT_EQ(func->params.size(), 1);
+  auto param = func->params[0];
+  EXPECT_EQ(param.type, tokens[3].raw);
+  EXPECT_EQ(param.name, tokens[4].raw);
+
+  auto body = func->body;
+  ASSERT_NE(body, nullptr);
+  EXPECT_EQ(body->type, InstructionType::Add);
+}
+
+TEST(AstBuilder, buildsFunctionsWithMultipleParameters) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "void", 1},
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Identifier, TokenSubtype::None, "a", 1},
+      {TokenType::Comma, TokenSubtype::None, ",", 1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Identifier, TokenSubtype::None, "b", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type,
+            InstructionType::Function);
+
+  auto expressions = builder.getExpressions();
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  auto func = std::dynamic_pointer_cast<FunctionExpression>(expressions->at(0));
+  ASSERT_NE(func, nullptr);
+
+  EXPECT_EQ(func->type, InstructionType::Function);
+  EXPECT_EQ(func->name, tokens[1].raw);
+  EXPECT_EQ(func->returnType, tokens[0].raw);
+
+  ASSERT_EQ(func->params.size(), 2);
+
+  auto param = func->params[0];
+  EXPECT_EQ(param.type, tokens[3].raw);
+  EXPECT_EQ(param.name, tokens[4].raw);
+
+  param = func->params[1];
+  EXPECT_EQ(param.type, tokens[6].raw);
+  EXPECT_EQ(param.name, tokens[7].raw);
+
+  auto body = func->body;
+  ASSERT_NE(body, nullptr);
+  EXPECT_EQ(body->type, InstructionType::Add);
+}
+
+TEST(AstBuilder, buildsFunctionsWitBlockBodies) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "void", 1},
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::LeftBrace, TokenSubtype::None, "{", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
+      {TokenType::RightBrace, TokenSubtype::None, "}", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type,
+            InstructionType::Function);
+
+  auto expressions = builder.getExpressions();
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  auto func = std::dynamic_pointer_cast<FunctionExpression>(expressions->at(0));
+  ASSERT_NE(func, nullptr);
+
+  EXPECT_EQ(func->type, InstructionType::Function);
+  EXPECT_EQ(func->name, tokens[1].raw);
+  EXPECT_EQ(func->returnType, tokens[0].raw);
+
+  EXPECT_EQ(func->params.size(), 0);
+
+  auto body = std::dynamic_pointer_cast<BlockExpression>(func->body);
+  ASSERT_NE(body, nullptr);
+  EXPECT_EQ(body->type, InstructionType::Block);
+  EXPECT_EQ(body->expressions.size(), 1);
+}

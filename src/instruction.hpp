@@ -27,7 +27,8 @@ enum class InstructionType {
   If,
   While,
   GoTo,
-  Print
+  Print,
+  Function
 };
 
 std::string instructionTypeToString(InstructionType type);

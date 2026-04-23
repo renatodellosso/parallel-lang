@@ -4,6 +4,7 @@
 #include <format>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -140,8 +141,11 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
             InstructionType::Declare, line, std::move(prev.value()),
             std::make_shared<RootExpression>(nameExpr))));
 
-    if (!match(TokenType::Equals))
+    if (!match(TokenType::Equals)) {
+      if (match(TokenType::LeftParen))
+        return parseFunction(std::move(declare.value()));
       return declare;
+    }
 
     prev = std::make_optional(std::unique_ptr<Expression>(
         static_cast<Expression *>(declare->release())));
@@ -197,6 +201,54 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
   return std::nullopt;
 }
 
+FunctionExprParameter AstBuilder::parseFuncParam() {
+  if (!match(TokenType::Identifier)) {
+    auto n = next();
+    throw std::runtime_error(std::format(
+        "Expected parameter type, but got {} (type {})!", n.raw, (int)n.type));
+  }
+  auto type = next().raw;
+
+  if (!match(TokenType::Identifier)) {
+    auto n = next();
+    throw std::runtime_error(std::format(
+        "Expected parameter name, but got {} (type {})!", n.raw, (int)n.type));
+  }
+  auto name = next().raw;
+
+  return {type, name};
+}
+
+std::optional<std::unique_ptr<FunctionExpression>>
+AstBuilder::parseFunction(std::unique_ptr<BinaryExpression> declaration) {
+  next(); // Consume '('
+
+  auto returnType =
+      std::static_pointer_cast<RootExpression>(declaration->left)->token.raw;
+  auto name =
+      std::static_pointer_cast<RootExpression>(declaration->right)->token.raw;
+
+  auto func = std::make_unique<FunctionExpression>(name, returnType,
+                                                   declaration->lineNumber);
+
+  // Parse parameters
+  while (!match(TokenType::RightParen)) {
+    func->params.push_back(parseFuncParam());
+    if (match(TokenType::Comma))
+      next(); // Consume ','
+  }
+
+  next(); // Consume ')'
+
+  auto body = parseExpression(TokenType::Semicolon);
+  if (!body.has_value())
+    throw std::runtime_error("Expected function to have body, but it did not!");
+
+  func->body = std::move(body.value());
+
+  return std::make_optional(std::move(func));
+}
+
 std::optional<std::unique_ptr<Expression>>
 AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
                              TokenType endOn) {
@@ -212,9 +264,9 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
   }
 
   auto type = prev->get()->type;
-  bool autoEndExpr = type == InstructionType::If ||
-                     type == InstructionType::While ||
-                     type == InstructionType::Block;
+  bool autoEndExpr =
+      type == InstructionType::If || type == InstructionType::While ||
+      type == InstructionType::Block || type == InstructionType::Function;
   if (!autoEndExpr && !match(endOn) && hasNext()) {
     prev = parseCompoundExpression(std::move(prev), endOn);
   }

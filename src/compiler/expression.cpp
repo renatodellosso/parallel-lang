@@ -185,6 +185,47 @@ int BlockExpression::countInstructions() const {
   return count;
 }
 
+std::string FunctionExpression::toString() const {
+  auto str = Expression::toString() + " " + name + " {\n";
+
+  str += "\t" + body.get()->toString() + "\n";
+
+  return str + "}";
+}
+
+std::string FunctionExpression::toByteCode() const {
+  // Subtract 1 from count to exclude this instruction
+  std::string str = Expression::toByteCode() + " " +
+                    std::to_string(countInstructions() - 1) + "\n";
+
+  str += body->toByteCode() + "\n";
+
+  return str.erase(str.length() - 1); // Erase trailing \n
+}
+
+std::vector<std::reference_wrapper<Expression>>
+FunctionExpression::getWithSubExpressions() const {
+  std::vector<std::reference_wrapper<Expression>> vector =
+      Expression::getWithSubExpressions();
+
+  auto exprVec = body->getWithSubExpressions();
+  std::move(exprVec.begin(), exprVec.end(),
+            std::back_inserter(vector)); // Move rightVec into end of vector
+
+  return vector;
+}
+
+int FunctionExpression::numberExpressions(int startWith) {
+  id = startWith;
+  startWith++;
+
+  return body->numberExpressions(startWith);
+}
+
+int FunctionExpression::countInstructions() const {
+  return 1 + body->countInstructions();
+}
+
 ExprDependent::ExprDependent(Expression &expr, std::optional<int> argIndex)
     : expr(expr), argIndex(argIndex) {}
 
