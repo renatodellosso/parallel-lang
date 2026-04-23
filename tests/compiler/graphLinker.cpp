@@ -308,6 +308,7 @@ TEST(linkGraph, linksWhileLoops) {
   EXPECT_EQ(&goTo->dependencies[0].get(), block.get());
   EXPECT_EQ(&goTo->dependencies[1].get(), getLiteral.get());
 }
+
 TEST(linkGraph, linksWhileLoopsWithFollowingStatements) {
   auto type = std::make_shared<RootExpression>(
       RootExpression(InstructionType::GetIdentifier, 0,
@@ -367,4 +368,54 @@ TEST(linkGraph, linksWhileLoopsWithFollowingStatements) {
   ASSERT_EQ(condition->dependents.size(), 2);
   EXPECT_EQ(&condition->dependents[0].expr.get(), block.get());
   EXPECT_EQ(&condition->dependents[1].expr.get(), getIdentifierAfter.get());
+}
+
+TEST(linkGraph, linksPrintStatementsWithVariables) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, declaration, value));
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(set);
+  expressions->push_back(print);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  auto resource = linker->getResources().find("var");
+  ASSERT_NE(resource, linker->getResources().end());
+  EXPECT_EQ(resource->second->lastWrittenBy, set.get());
+
+  ASSERT_EQ(set->dependents.size(), 1);
+  ASSERT_EQ(get->dependencies.size(), 1);
+
+  EXPECT_EQ(&set->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&get->dependencies[0].get(), set.get());
+
+  delete linker;
 }

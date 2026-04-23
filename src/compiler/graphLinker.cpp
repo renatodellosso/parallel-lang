@@ -153,7 +153,7 @@ void GraphLinker::processExpression(Expression &expr) {
         if (set.left->type == InstructionType::Declare) {
           BinaryExpression &declare =
               dynamic_cast<BinaryExpression &>(*set.left.get());
-          identifier = dynamic_cast<RootExpression *>(declare.left.get());
+          identifier = dynamic_cast<RootExpression *>(declare.right.get());
         } else
           identifier = dynamic_cast<RootExpression *>(set.left.get());
 
