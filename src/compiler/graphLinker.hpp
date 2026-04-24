@@ -1,8 +1,11 @@
 #pragma once
 
+#include "expression.hpp"
 #include "resource.hpp"
 #include "syntaxError.hpp"
+#include <functional>
 #include <memory>
+#include <optional>
 #include <stack>
 #include <string>
 #include <unordered_map>
@@ -14,11 +17,17 @@ class GraphLinker {
   std::vector<std::reference_wrapper<Expression>> expressions;
   std::stack<int> scopeLifetimes;
 
+  std::optional<std::reference_wrapper<FunctionExpression>> function;
+  std::stack<std::unique_ptr<int>> funcExprsRemaining;
+
   Resource &createResource(std::string name);
 
   void createResource(Expression &expr);
   void useResource(Expression &expr, std::string name, bool write);
   void processExpression(Expression &expr);
+
+  void enterFunction(std::reference_wrapper<Expression> expr);
+  void exitFunction();
 
   void syntaxError(int line, std::string msg);
 

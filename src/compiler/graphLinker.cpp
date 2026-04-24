@@ -46,7 +46,8 @@ GraphLinker::GraphLinker(
     std::shared_ptr<std::vector<std::shared_ptr<Expression>>> exprVector)
     : errors(std::make_shared<std::vector<SyntaxError>>(
           std::vector<SyntaxError>())),
-      scope(std::make_shared<Scope<Resource>>()), scopeLifetimes() {
+      scope(std::make_shared<Scope<Resource>>()), scopeLifetimes(),
+      function(std::nullopt), funcExprsRemaining() {
   expressions = std::vector<std::reference_wrapper<Expression>>();
   for (auto expr : *exprVector.get()) {
     auto vec = expr->getWithSubExpressions();
@@ -237,14 +238,43 @@ void GraphLinker::processExpression(Expression &expr) {
   }
 }
 
+void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
+  function = std::make_optional<std::reference_wrapper<FunctionExpression>>(
+      static_cast<FunctionExpression &>(expr.get()));
+
+  int exprCount = expr.get().countInstructions();
+
+  if (funcExprsRemaining.top()) {
+    // Decrease outer func since the decrement when processing
+    // only applies to the current top
+    (*funcExprsRemaining.top()) -= exprCount;
+  }
+
+  funcExprsRemaining.push(std::move(std::make_unique<int>(exprCount)));
+}
+
+void GraphLinker::exitFunction() {
+  function = std::nullopt;
+  funcExprsRemaining.pop();
+}
+
 void GraphLinker::syntaxError(int line, std::string msg) {
   errors.get()->push_back({line, msg});
 }
 
 void GraphLinker::linkGraph() {
   for (auto expr : expressions) {
+    if (expr.get().type == InstructionType::Function)
+      enterFunction(expr);
+
     processExpression(expr);
     expr.get().linkInternally();
+
+    if (!funcExprsRemaining.empty()) {
+      (*funcExprsRemaining.top().get())--;
+      if (*funcExprsRemaining.top() == 0)
+        exitFunction();
+    }
   }
 }
 

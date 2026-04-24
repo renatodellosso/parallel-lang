@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct Expression;
@@ -18,11 +19,6 @@ struct ExprDependent {
   ExprDependent(Expression &expr, int argIndex);
   ExprDependent(Expression &expr);
   std::string toString();
-};
-
-struct FunctionExprParameter {
-  std::string type;
-  std::string name;
 };
 
 struct Expression {
@@ -120,17 +116,35 @@ struct BlockExpression : public Expression {
   int countInstructions() const override;
 };
 
+struct FunctionExprParameter {
+  std::string type;
+  std::string name;
+};
+
 struct FunctionExpression : public Expression {
   std::string name;
   std::string returnType;
   std::vector<FunctionExprParameter> params;
   std::shared_ptr<Expression> body;
 
+  // Each entry is a resource name and the set of expressions that first use it
+  // before a set (if it's immediately set, this will just contain the setting
+  // expression)
+  std::unordered_map<std::string,
+                     std::vector<std::reference_wrapper<Expression>>>
+      firstUses;
+  std::unordered_map<std::string,
+                     std::vector<std::reference_wrapper<Expression>>>
+      lastUses;
+  std::unordered_map<std::string,
+                     std::vector<std::reference_wrapper<Expression>>>
+      lastWrites;
+
   FunctionExpression() : FunctionExpression("unnamed_func", "void", 0) {}
   FunctionExpression(std::string name, std::string returnType, int lineNumber)
       : Expression(InstructionType::Function, lineNumber), name(name),
         returnType(returnType), params(std::vector<FunctionExprParameter>()),
-        body(nullptr) {}
+        body(nullptr), firstUses(), lastUses(), lastWrites() {}
   FunctionExpression(int lineNumber)
       : FunctionExpression("unnamed_func", "void", lineNumber) {}
 
