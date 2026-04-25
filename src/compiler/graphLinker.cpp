@@ -114,6 +114,12 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
       addDependency(expr, dep);
     }
 
+    if (function.has_value() && !function->get().firstUses.contains(name)) {
+      // This is our first write
+      function->get().firstUses[name] = resource.currAccesses;
+      function->get().firstWrites.emplace(name, expr);
+    }
+
     // Clear accesses
     resource.currAccesses = std::vector<std::reference_wrapper<Expression>>();
   }
@@ -251,11 +257,35 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
   }
 
   funcExprsRemaining.push(std::move(std::make_unique<int>(exprCount)));
+
+  savedScopes.push(scope);
+  scope = cloneResourceScope(scope);
 }
 
 void GraphLinker::exitFunction() {
+  // Populate lastUses and lastWrites
+  for (auto key : scope->getKeys()) {
+    auto resource = scope->get(key);
+
+    if (resource->lastWrittenBy)
+      function->get().lastWrites.emplace(key, *resource->lastWrittenBy);
+    if (resource->currAccesses.size())
+      function->get().lastUses[key] = resource->currAccesses;
+
+    if (!function->get().firstUses.contains(key)) {
+      // This is our first use/write
+      if (resource->currAccesses.size())
+        function->get().firstUses[key] = resource->currAccesses;
+      if (resource->lastWrittenBy)
+        function->get().firstWrites.emplace(key, *resource->lastWrittenBy);
+    }
+  }
+
   function = std::nullopt;
   funcExprsRemaining.pop();
+
+  scope = savedScopes.top();
+  savedScopes.pop();
 }
 
 void GraphLinker::syntaxError(int line, std::string msg) {
@@ -276,6 +306,10 @@ void GraphLinker::linkGraph() {
         exitFunction();
     }
   }
+
+  // Exit any remaining functions
+  while (function.has_value())
+    exitFunction();
 }
 
 std::shared_ptr<std::vector<SyntaxError>> GraphLinker::getErrors() {

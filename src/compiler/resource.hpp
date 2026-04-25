@@ -1,6 +1,8 @@
 #pragma once
 
+#include "../scope.hpp"
 #include "expression.hpp"
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,3 +15,6 @@ struct Resource {
 
   Resource(std::string name);
 };
+
+// Clones the scope, but reinitializes all vars in the clone
+std::shared_ptr<Scope<Resource>> cloneResourceScope(std::shared_ptr<Scope<Resource>> scope);

@@ -133,18 +133,19 @@ struct FunctionExpression : public Expression {
   std::unordered_map<std::string,
                      std::vector<std::reference_wrapper<Expression>>>
       firstUses;
+  std::unordered_map<std::string, std::reference_wrapper<Expression>>
+      firstWrites;
   std::unordered_map<std::string,
                      std::vector<std::reference_wrapper<Expression>>>
       lastUses;
-  std::unordered_map<std::string,
-                     std::vector<std::reference_wrapper<Expression>>>
+  std::unordered_map<std::string, std::reference_wrapper<Expression>>
       lastWrites;
 
   FunctionExpression() : FunctionExpression("unnamed_func", "void", 0) {}
   FunctionExpression(std::string name, std::string returnType, int lineNumber)
       : Expression(InstructionType::Function, lineNumber), name(name),
         returnType(returnType), params(std::vector<FunctionExprParameter>()),
-        body(nullptr), firstUses(), lastUses(), lastWrites() {}
+        body(nullptr), firstUses(), firstWrites(), lastUses(), lastWrites() {}
   FunctionExpression(int lineNumber)
       : FunctionExpression("unnamed_func", "void", lineNumber) {}
 

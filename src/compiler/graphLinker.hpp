@@ -19,6 +19,7 @@ class GraphLinker {
 
   std::optional<std::reference_wrapper<FunctionExpression>> function;
   std::stack<std::unique_ptr<int>> funcExprsRemaining;
+  std::stack<std::shared_ptr<Scope<Resource>>> savedScopes;
 
   Resource &createResource(std::string name);
 

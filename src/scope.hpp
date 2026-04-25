@@ -4,6 +4,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 template <class T> class Scope {
   // May be nullptr!
@@ -25,6 +26,7 @@ public:
   int getDepth() const;
   std::shared_ptr<Scope> getEnclosing();
   std::unordered_map<std::string, std::shared_ptr<T>> &getVarTable();
+  std::unordered_set<std::string> getKeys();
 };
 
 template <class T>
@@ -82,4 +84,17 @@ template <class T>
 inline std::unordered_map<std::string, std::shared_ptr<T>> &
 Scope<T>::getVarTable() {
   return vars;
+}
+
+template <class T> inline std::unordered_set<std::string> Scope<T>::getKeys() {
+  auto set =
+      enclosing ? enclosing->getKeys() : std::unordered_set<std::string>();
+
+  std::shared_lock<std::shared_mutex> lock(
+      mutex); // Don't forget mutex! Can't lock mutex in const methods
+
+  for (auto var : vars)
+    set.insert(var.first);
+
+  return set;
 }
