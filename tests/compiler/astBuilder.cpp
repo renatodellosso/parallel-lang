@@ -284,7 +284,6 @@ TEST(AstBuilder, buildsFunctionsWithoutParameters) {
 
   auto body = func->body;
   ASSERT_NE(body, nullptr);
-  EXPECT_EQ(body->type, InstructionType::Add);
 }
 
 TEST(AstBuilder, buildsFunctionsWithSingleParameter) {
@@ -330,7 +329,6 @@ TEST(AstBuilder, buildsFunctionsWithSingleParameter) {
 
   auto body = func->body;
   ASSERT_NE(body, nullptr);
-  EXPECT_EQ(body->type, InstructionType::Add);
 }
 
 TEST(AstBuilder, buildsFunctionsWithMultipleParameters) {
@@ -384,10 +382,9 @@ TEST(AstBuilder, buildsFunctionsWithMultipleParameters) {
 
   auto body = func->body;
   ASSERT_NE(body, nullptr);
-  EXPECT_EQ(body->type, InstructionType::Add);
 }
 
-TEST(AstBuilder, buildsFunctionsWitBlockBodies) {
+TEST(AstBuilder, buildsFunctionsWithBlockBodies) {
   std::vector<Token> tokens = {
       {TokenType::Identifier, TokenSubtype::None, "void", 1},
       {TokenType::Identifier, TokenSubtype::None, "func", 1},
@@ -429,4 +426,49 @@ TEST(AstBuilder, buildsFunctionsWitBlockBodies) {
   ASSERT_NE(body, nullptr);
   EXPECT_EQ(body->type, InstructionType::Block);
   EXPECT_EQ(body->expressions.size(), 1);
+}
+
+TEST(AstBuilder, buildsFunctionsWithImplicitBlockBodies) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "void", 1},
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Identifier, TokenSubtype::None, "a", 1},
+      {TokenType::Comma, TokenSubtype::None, ",", 1},
+      {TokenType::Identifier, TokenSubtype::None, "int", 1},
+      {TokenType::Identifier, TokenSubtype::None, "b", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 2},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 2},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+  EXPECT_EQ(builder.getExpressions().get()->at(0)->type,
+            InstructionType::Function);
+
+  auto expressions = builder.getExpressions();
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  auto func = std::dynamic_pointer_cast<FunctionExpression>(expressions->at(0));
+  ASSERT_NE(func, nullptr);
+
+  auto body = func->body;
+  ASSERT_NE(body, nullptr);
+  EXPECT_EQ(body->type, InstructionType::Block);
+
+  auto block = std::dynamic_pointer_cast<BlockExpression>(body);
+  ASSERT_NE(func, nullptr);
+  ASSERT_EQ(block->expressions.size(), 1);
+  EXPECT_EQ(block->expressions[0]->type, InstructionType::Add);
 }

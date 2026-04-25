@@ -240,11 +240,12 @@ AstBuilder::parseFunction(std::unique_ptr<BinaryExpression> declaration) {
 
   next(); // Consume ')'
 
-  auto body = parseExpression(TokenType::Semicolon);
-  if (!body.has_value())
-    throw std::runtime_error("Expected function to have body, but it did not!");
+  // auto body = parseExpression(TokenType::Semicolon);
+  // if (!body.has_value())
+  //   throw std::runtime_error("Expected function to have body, but it did
+  //   not!");
 
-  func->body = std::move(body.value());
+  // func->body = std::move(body.value());
 
   return std::make_optional(std::move(func));
 }
@@ -293,10 +294,11 @@ void AstBuilder::postProcess() {
 
     // If statements should be followed by blocks
     if (expr.type == InstructionType::If ||
-        expr.type == InstructionType::While) {
+        expr.type == InstructionType::While ||
+        expr.type == InstructionType::Function) {
       if (i == expressions->size() - 1) {
-        syntaxError(
-            "Cannot have an if/while statement as the final expression!");
+        syntaxError("Cannot have an if/while/function statement as the final "
+                    "expression!");
         return;
       }
 
@@ -326,6 +328,13 @@ void AstBuilder::postProcess() {
             RootExpression(InstructionType::GoTo, expr.lineNumber, token));
         block->expressions.push_back(jump);
       }
+    }
+
+    if (expr.type == InstructionType::Function) {
+      auto &func = static_cast<FunctionExpression &>(expr);
+      func.body = expressions->at(i + 1);
+
+      expressions->erase(expressions->begin() + i + 1);
     }
   }
 }
