@@ -419,3 +419,176 @@ TEST(linkGraph, linksPrintStatementsWithVariables) {
 
   delete linker;
 }
+
+TEST(linkGraph, linksFunctionsInternally) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, declaration, value));
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({set, print}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(func);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  ASSERT_EQ(set->dependents.size(), 1);
+  ASSERT_EQ(get->dependencies.size(), 2);
+
+  EXPECT_EQ(&set->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&get->dependencies[0].get(), block.get());
+  EXPECT_EQ(&get->dependencies[1].get(), set.get());
+
+  delete linker;
+}
+
+TEST(linkGraph, linksFunctionsWithExternalVariables) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto ref = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, ref, value));
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({set, print}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(func);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  EXPECT_EQ(declaration->dependents.size(), 0);
+  ASSERT_EQ(ref->dependencies.size(), 1);
+  EXPECT_EQ(&ref->dependencies[0].get(), block.get());
+
+  delete linker;
+}
+
+TEST(linkGraph, setsFunctionFirstAndLastUsesAndWrites) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto ref = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, ref, value));
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({set, print}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(func);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  EXPECT_TRUE(func->firstUses.contains("var"));
+  EXPECT_TRUE(func->firstWrites.contains("var"));
+  EXPECT_TRUE(func->lastUses.contains("var"));
+  EXPECT_TRUE(func->lastWrites.contains("var"));
+
+  ASSERT_EQ(func->firstUses["var"].size(), 1);
+  EXPECT_EQ(&func->firstUses["var"][0].get(), ref.get());
+
+  EXPECT_EQ(&func->firstWrites.at("var").get(), set.get());
+
+  ASSERT_EQ(func->lastUses["var"].size(), 2);
+  EXPECT_EQ(&func->lastUses["var"][0].get(), set.get());
+  EXPECT_EQ(&func->lastUses["var"][1].get(), get.get());
+
+  EXPECT_EQ(&func->lastWrites.at("var").get(), set.get());
+
+  delete linker;
+}

@@ -250,7 +250,7 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
 
   int exprCount = expr.get().countInstructions();
 
-  if (funcExprsRemaining.top()) {
+  if (!funcExprsRemaining.empty()) { // Can't do top() to check non-emptiness
     // Decrease outer func since the decrement when processing
     // only applies to the current top
     (*funcExprsRemaining.top()) -= exprCount;
