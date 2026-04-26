@@ -253,6 +253,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
     // Don't use << in cout since it's only atomic at the level of individual
     // <<'s
     std::string str = valToStr(*result) + "\n";
+    std::unique_lock<std::mutex> lock(coutMutex);
     std::cout << str;
     break;
   }

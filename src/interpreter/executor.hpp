@@ -17,6 +17,8 @@ class Executor {
   // We have to put the mutexes in here since we can't move them
   std::vector<std::mutex> depArgsMutexes, depsFulfilledMutexes;
 
+  std::mutex coutMutex;
+
   // Set to true to end workers
   bool halt;
   std::string haltCause;
