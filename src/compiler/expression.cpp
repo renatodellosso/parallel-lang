@@ -186,17 +186,76 @@ int BlockExpression::countInstructions() const {
 }
 
 std::string FunctionExpression::toString() const {
-  auto str = Expression::toString() + " " + name + " {\n";
+  auto str = Expression::toString() + " " + name + "(";
+
+  for (auto param : params)
+    str += param.type + " " + param.name + ", ";
+
+  if (params.size())
+    str.erase(str.end() - 2); // Remove trailing ', '
+
+  str += ") {\n";
 
   str += "\t" + body.get()->toString() + "\n";
 
   return str + "}";
 }
 
+// Formats as "[size] [key] [value1,value2,value3] " (note the trailing space!)
+static std::string stringifyUses(
+    std::unordered_map<std::string,
+                       std::vector<std::reference_wrapper<Expression>>>
+        uses) {
+  std::string str = std::to_string(uses.size());
+
+  str += " ";
+  for (auto entry : uses) {
+    str += entry.first + " ";
+    for (auto expr : entry.second)
+      str += std::to_string(expr.get().id) + ",";
+    str.erase(str.end() - 1);
+
+    str += " ";
+  }
+
+  return str;
+}
+
+// Formats as "[size] [key] [value] " (note the trailing space!)
+static std::string stringifyWrites(
+    std::unordered_map<std::string, std::reference_wrapper<Expression>>
+        writes) {
+  std::string str = std::to_string(writes.size()) + " ";
+
+  for (auto entry : writes) {
+    str += entry.first + " ";
+    str += std::to_string(entry.second.get().id);
+    str += " ";
+  }
+
+  return str;
+}
+
+// Bytecode params are in format "[returnType] [name] [# of params] [param i
+// type] [param i name] [first uses] [first writes] [last uses] [last
+// writes]"
 std::string FunctionExpression::toByteCode() const {
   // Subtract 1 from count to exclude this instruction
-  std::string str = Expression::toByteCode() + " " +
-                    std::to_string(countInstructions() - 1) + "\n";
+  std::string str =
+      Expression::toByteCode() + " " + returnType + " " + name + " ";
+
+  str += std::to_string(params.size()) + " ";
+  for (auto param : params) {
+    str += param.type + " " + param.name + " ";
+  }
+
+  str += stringifyUses(firstUses);
+  str += stringifyWrites(firstWrites);
+  str += stringifyUses(lastUses);
+  str += stringifyWrites(lastWrites);
+  str.erase(str.end() - 1); // Remove trailing ' '
+
+  str += "\n";
 
   str += body->toByteCode() + "\n";
 

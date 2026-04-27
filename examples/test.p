@@ -1,2 +1,7 @@
 int a = 1;
-print a;
+
+int func(bool b) {
+  a = 2;
+  print b;
+  print a;
+}

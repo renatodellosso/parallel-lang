@@ -260,6 +260,9 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
 
   savedScopes.push(scope);
   scope = cloneResourceScope(scope);
+
+  for (auto param : function->get().params)
+    createResource(param.name);
 }
 
 void GraphLinker::exitFunction() {
