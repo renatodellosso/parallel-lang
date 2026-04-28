@@ -1,6 +1,7 @@
 #include "executor.hpp"
 #include "../logging.hpp"
 #include "../scope.hpp"
+#include "function.hpp"
 #include <chrono>
 #include <cstddef>
 #include <format>
@@ -255,6 +256,11 @@ void Executor::execSingleInstruction(Instruction &instr) {
     std::string str = valToStr(*result) + "\n";
     std::unique_lock<std::mutex> lock(coutMutex);
     std::cout << str;
+    break;
+  }
+  case InstructionType::Function: {
+    auto func = std::make_shared<Function>(instr);
+    instr.scope->alloc(func->getName(), {ValueType::Function, func});
     break;
   }
   default:
