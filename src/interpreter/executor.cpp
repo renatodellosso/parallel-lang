@@ -259,7 +259,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
     break;
   }
   case InstructionType::Function: {
-    auto func = std::make_shared<Function>(instr);
+    auto func = std::make_shared<Function>(instr, instructions);
     instr.scope->alloc(func->getName(), {ValueType::Function, func});
     break;
   }

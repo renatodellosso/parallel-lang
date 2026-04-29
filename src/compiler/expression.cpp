@@ -201,7 +201,8 @@ std::string FunctionExpression::toString() const {
   return str + "}";
 }
 
-// Formats as "[size] [key] [value1,value2,value3] " (note the trailing space!)
+// Formats as "[size] [key] [valueCount] [value1] [value2] [value3] " (note the
+// trailing space!)
 static std::string stringifyUses(
     std::unordered_map<std::string,
                        std::vector<std::reference_wrapper<Expression>>>
@@ -210,12 +211,10 @@ static std::string stringifyUses(
 
   str += " ";
   for (auto entry : uses) {
-    str += entry.first + " ";
-    for (auto expr : entry.second)
-      str += std::to_string(expr.get().id) + ",";
-    str.erase(str.end() - 1);
+    str += entry.first + " " + std::to_string(entry.second.size()) + " ";
 
-    str += " ";
+    for (auto expr : entry.second)
+      str += std::to_string(expr.get().id) + " ";
   }
 
   return str;

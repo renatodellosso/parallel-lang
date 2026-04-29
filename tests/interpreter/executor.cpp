@@ -56,16 +56,56 @@ TEST(startExecution, populatesDepArgs) {
   REENABLE_COUT
 }
 
+Instruction getFuncInstr() {
+  Instruction funcInstr(0);
+  funcInstr.depCount = 0;
+  funcInstr.type = InstructionType::Function;
+  funcInstr.bytecodeArgs = {
+      {ValueType::Identifier, "int"},
+      {ValueType::Identifier, "func"},
+
+      // First uses
+      {ValueType::Integer, 2},
+      {ValueType::Identifier, "var1"},
+      {ValueType::Integer, 1},
+      {ValueType::Integer, 0},
+      {ValueType::Identifier, "var2"},
+      {ValueType::Integer, 1},
+      {ValueType::Integer, 0},
+
+      // First writes
+      {ValueType::Integer, 2},
+      {ValueType::Identifier, "a"},
+      {ValueType::Integer, 0},
+      {ValueType::Identifier, "b"},
+      {ValueType::Integer, 0},
+
+      // Last uses
+      {ValueType::Integer, 2},
+      {ValueType::Identifier, "var3"},
+      {ValueType::Integer, 1},
+      {ValueType::Integer, 0},
+      {ValueType::Identifier, "var4"},
+      {ValueType::Integer, 1},
+      {ValueType::Integer, 0},
+
+      // Last writes
+      {ValueType::Integer, 2},
+      {ValueType::Identifier, "c"},
+      {ValueType::Integer, 0},
+      {ValueType::Identifier, "d"},
+      {ValueType::Integer, 0},
+  };
+
+  return funcInstr;
+}
+
 TEST(startExecution, initsFunctions) {
   DISABLE_COUT
 
-  std::vector<Instruction> instrs = {Instruction(0)};
+  std::vector<Instruction> instrs = {getFuncInstr()};
 
   Instruction &funcInstr = instrs[0];
-  funcInstr.depCount = 0;
-  funcInstr.type = InstructionType::Function;
-  funcInstr.bytecodeArgs = {{ValueType::Identifier, "int"},
-                            {ValueType::Identifier, "func"}};
 
   Executor executor({.verbose = true, .threads = 1}, instrs);
   executor.startExecution();
@@ -81,6 +121,126 @@ TEST(startExecution, initsFunctions) {
             std::get<std::string>(funcInstr.bytecodeArgs[0].val));
   EXPECT_EQ(func->getName(),
             std::get<std::string>(funcInstr.bytecodeArgs[1].val));
+
+  REENABLE_COUT
+}
+
+TEST(startExecution, initsFunctionsWithFirstUses) {
+  DISABLE_COUT
+
+  std::vector<Instruction> instrs = {getFuncInstr()};
+
+  Instruction &funcInstr = instrs[0];
+
+  Executor executor({.verbose = true, .threads = 1}, instrs);
+  executor.startExecution();
+
+  auto funcVal = funcInstr.scope->get("func");
+  EXPECT_EQ(funcVal->type, ValueType::Function);
+  ASSERT_NE(std::get<std::shared_ptr<Function>>(funcVal->val), nullptr);
+
+  auto func = std::get<std::shared_ptr<Function>>(funcVal->val);
+  ASSERT_NE(func, nullptr);
+
+  auto uses = func->getFirstUses();
+  ASSERT_EQ(uses.size(), 2);
+
+  ASSERT_TRUE(uses.contains("var1"));
+  ASSERT_EQ(uses["var1"].size(), 1);
+  EXPECT_EQ(&uses["var1"][0].get(), &funcInstr);
+
+  ASSERT_TRUE(uses.contains("var2"));
+  ASSERT_EQ(uses["var2"].size(), 1);
+  EXPECT_EQ(&uses["var2"][0].get(), &funcInstr);
+
+  REENABLE_COUT
+}
+
+TEST(startExecution, initsFunctionsWithLastUses) {
+  DISABLE_COUT
+
+  std::vector<Instruction> instrs = {getFuncInstr()};
+
+  Instruction &funcInstr = instrs[0];
+
+  Executor executor({.verbose = true, .threads = 1}, instrs);
+  executor.startExecution();
+
+  auto funcVal = funcInstr.scope->get("func");
+  EXPECT_EQ(funcVal->type, ValueType::Function);
+  ASSERT_NE(std::get<std::shared_ptr<Function>>(funcVal->val), nullptr);
+
+  auto func = std::get<std::shared_ptr<Function>>(funcVal->val);
+  ASSERT_NE(func, nullptr);
+
+  auto uses = func->getLastUses();
+  ASSERT_EQ(uses.size(), 2);
+
+  ASSERT_TRUE(uses.contains("var3"));
+  ASSERT_EQ(uses["var3"].size(), 1);
+  EXPECT_EQ(&uses["var3"][0].get(), &funcInstr);
+
+  ASSERT_TRUE(uses.contains("var4"));
+  ASSERT_EQ(uses["var4"].size(), 1);
+  EXPECT_EQ(&uses["var4"][0].get(), &funcInstr);
+
+  REENABLE_COUT
+}
+
+TEST(startExecution, initsFunctionsWithFirstWrites) {
+  DISABLE_COUT
+
+  std::vector<Instruction> instrs = {getFuncInstr()};
+
+  Instruction &funcInstr = instrs[0];
+
+  Executor executor({.verbose = true, .threads = 1}, instrs);
+  executor.startExecution();
+
+  auto funcVal = funcInstr.scope->get("func");
+  EXPECT_EQ(funcVal->type, ValueType::Function);
+  ASSERT_NE(std::get<std::shared_ptr<Function>>(funcVal->val), nullptr);
+
+  auto func = std::get<std::shared_ptr<Function>>(funcVal->val);
+  ASSERT_NE(func, nullptr);
+
+  auto writes = func->getFirstWrites();
+  ASSERT_EQ(writes.size(), 2);
+
+  ASSERT_TRUE(writes.contains("a"));
+  EXPECT_EQ(&writes.find("a")->second.get(), &funcInstr);
+
+  ASSERT_TRUE(writes.contains("b"));
+  EXPECT_EQ(&writes.find("b")->second.get(), &funcInstr);
+
+  REENABLE_COUT
+}
+
+TEST(startExecution, initsFunctionsWithLastWrites) {
+  DISABLE_COUT
+
+  std::vector<Instruction> instrs = {getFuncInstr()};
+
+  Instruction &funcInstr = instrs[0];
+
+  Executor executor({.verbose = true, .threads = 1}, instrs);
+  executor.startExecution();
+
+  auto funcVal = funcInstr.scope->get("func");
+  EXPECT_EQ(funcVal->type, ValueType::Function);
+  ASSERT_NE(std::get<std::shared_ptr<Function>>(funcVal->val), nullptr);
+
+  auto func = std::get<std::shared_ptr<Function>>(funcVal->val);
+  ASSERT_NE(func, nullptr);
+
+  auto writes = func->getLastWrites();
+  ASSERT_EQ(writes.size(), 2);
+
+  ASSERT_TRUE(writes.contains("c"));
+  EXPECT_EQ(&writes.find("c")->second.get(), &funcInstr);
+
+  ASSERT_TRUE(writes.contains("d"));
+  EXPECT_EQ(&writes.find("d")->second.get(), &funcInstr);
 
   REENABLE_COUT
 }
