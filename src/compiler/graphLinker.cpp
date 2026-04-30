@@ -260,6 +260,8 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
 
   savedScopes.push(scope);
   scope = cloneResourceScope(scope);
+  scopeLifetimes.push(expressions[expr.get().id + 1].get().countInstructions() +
+                      1);
 
   for (auto param : function->get().params)
     createResource(param.name);
@@ -289,6 +291,7 @@ void GraphLinker::exitFunction() {
 
   scope = savedScopes.top();
   savedScopes.pop();
+  scopeLifetimes.pop();
 }
 
 void GraphLinker::syntaxError(int line, std::string msg) {

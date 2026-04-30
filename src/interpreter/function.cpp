@@ -1,4 +1,5 @@
 #include "function.hpp"
+#include "subprogram.hpp"
 #include <vector>
 
 template <class T> struct ParseResult {
@@ -8,8 +9,7 @@ template <class T> struct ParseResult {
 
 static ParseResult<std::unordered_map<
     std::string, std::vector<std::reference_wrapper<Instruction>>>>
-parseUses(std::vector<Value> args, int offset,
-          std::vector<Instruction> &instructions) {
+parseUses(std::vector<Value> args, int offset, Subprogram &instructions) {
   int keyCount = std::get<int>(args[offset++].val);
 
   std::unordered_map<std::string,
@@ -34,8 +34,7 @@ parseUses(std::vector<Value> args, int offset,
 
 static ParseResult<
     std::unordered_map<std::string, std::reference_wrapper<Instruction>>>
-parseWrites(std::vector<Value> args, int offset,
-            std::vector<Instruction> &instructions) {
+parseWrites(std::vector<Value> args, int offset, Subprogram &instructions) {
   int keyCount = std::get<int>(args[offset++].val);
 
   std::unordered_map<std::string, std::reference_wrapper<Instruction>> result;
@@ -51,7 +50,7 @@ parseWrites(std::vector<Value> args, int offset,
   return {offset, result};
 }
 
-Function::Function(Instruction &instr, std::vector<Instruction> &instructions) {
+Function::Function(Instruction &instr, Subprogram &instructions) {
   returnType = std::get<std::string>(instr.bytecodeArgs[0].val);
   name = std::get<std::string>(instr.bytecodeArgs[1].val);
 

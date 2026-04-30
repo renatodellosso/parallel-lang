@@ -2,8 +2,8 @@
 #include "../logging.hpp"
 #include "../scope.hpp"
 #include "function.hpp"
+#include "subprogram.hpp"
 #include <chrono>
-#include <cstddef>
 #include <format>
 #include <functional>
 #include <memory>
@@ -42,8 +42,9 @@ void Executor::updateDependency(InstrDependent dep,
     depVec[i] = result;
   }
 
-  if (fulfilled == dep.instr->depCount)
+  if (fulfilled == dep.instr->depCount) {
     queue.push(*dep.instr);
+  }
 }
 
 void Executor::skipInstruction(Instruction &instr, bool recurse) {
@@ -54,7 +55,7 @@ void Executor::skipInstruction(Instruction &instr, bool recurse) {
     int toSkip = std::get<int>(instr.bytecodeArgs[0].val);
     skipUntil = instr.id + toSkip;
     for (int i = 1; i < toSkip; i++) {
-      skipInstruction(instructions[instr.id + i], false);
+      skipInstruction(program[instr.id + i], false);
     }
   }
 
@@ -93,7 +94,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
         continue;
       }
 
-      auto &inner = instructions[instr.id + i + 1];
+      auto &inner = program[instr.id + i + 1];
       if (inner.type == InstructionType::Block) {
         skip = std::get<int>(inner.bytecodeArgs[0].val);
       }
@@ -206,7 +207,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
       break;
 
     // Skip next instruction
-    skipInstruction(instructions[instr.id + 1]);
+    skipInstruction(program[instr.id + 1]);
     break;
   }
   case InstructionType::While: {
@@ -225,7 +226,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
     }
 
     // Skip next instruction
-    skipInstruction(instructions[instr.id + 1]);
+    skipInstruction(program[instr.id + 1]);
     break;
   }
   case InstructionType::GoTo: {
@@ -238,13 +239,13 @@ void Executor::execSingleInstruction(Instruction &instr) {
     int returnTo = instr.id + dist;
 
     for (int i = returnTo; i <= instr.id; i++) {
-      for (auto dep : instructions[i].dependents) {
+      for (auto dep : program[i].dependents) {
         if (dep.instr->id > returnTo && dep.instr->id <= instr.id)
           dep.instr->depsFulfilled--;
       }
     }
 
-    queue.push(instructions[returnTo]);
+    queue.push(program[returnTo]);
 
     break;
   }
@@ -259,7 +260,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
     break;
   }
   case InstructionType::Function: {
-    auto func = std::make_shared<Function>(instr, instructions);
+    auto func = std::make_shared<Function>(instr, program);
     instr.scope->alloc(func->getName(), {ValueType::Function, func});
     break;
   }
@@ -344,8 +345,8 @@ void Executor::supervisor() {
 }
 
 void Executor::initQueue() {
-  for (int i = 0; i < instructions.size(); i++) {
-    auto &instr = instructions[i];
+  for (int i = 0; i < program.size(); i++) {
+    auto &instr = program[i];
     if (instr.depsFulfilled == instr.depCount)
       queue.push(instr);
   }
@@ -358,7 +359,7 @@ void Executor::initScopes() {
   auto root = std::make_shared<Scope<Value>>();
   auto global = std::make_shared<Scope<Value>>(root);
 
-  for (auto &instr : instructions) {
+  for (auto &instr : program) {
     instr.scope = global;
   }
 
@@ -386,13 +387,12 @@ void Executor::startExecution() {
 
   if (cliArgs.verbose)
     log(LOCATION, "Done! Executed {} instructions. Halt cause: {}",
-        instructions.size(), haltCause);
+        program.size(), haltCause);
 }
 
-Executor::Executor(const CliArgs &cliArgs,
-                   std::vector<Instruction> &instructions)
-    : cliArgs(cliArgs), instructions(instructions),
+Executor::Executor(const CliArgs &cliArgs, Subprogram &program)
+    : cliArgs(cliArgs), program(program),
       stalls(std::vector<bool>(cliArgs.threads)),
-      depArgsMutexes(std::vector<std::mutex>(instructions.size())),
-      depsFulfilledMutexes(std::vector<std::mutex>(instructions.size())),
+      depArgsMutexes(std::vector<std::mutex>(program.size())),
+      depsFulfilledMutexes(std::vector<std::mutex>(program.size())),
       halt(false), haltCause("Unknown") {}

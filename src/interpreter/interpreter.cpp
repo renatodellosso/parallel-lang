@@ -3,6 +3,7 @@
 #include "../utils.hpp"
 #include "bytecodeParser.hpp"
 #include "executor.hpp"
+#include "subprogram.hpp"
 #include <chrono>
 
 #define LOCATION "Interpreter"
@@ -27,7 +28,9 @@ ExitCode Interpreter::interpret(std::istream &stream) {
   }
 
   try {
-    Executor *executor = new Executor(args, instructions);
+    Subprogram program(
+        std::make_shared<std::vector<Instruction>>(instructions));
+    Executor *executor = new Executor(args, program);
     executor->startExecution();
 
     delete executor;

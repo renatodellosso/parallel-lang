@@ -108,9 +108,8 @@ std::string resolveShortcuts(std::string key) {
 
 CliArgs parseArgs(int argc, char *argv[]) {
   std::unordered_map<std::string, std::string> argMap;
-  CliArgs args = {.outputFile = std::nullopt,
-                  .mode = CliMode::CompileAndInterpret,
-                  .threads = 1};
+  CliArgs args = {
+      .outputFile = std::nullopt, .mode = CliMode::Unset, .threads = 1};
 
   // argv[0] is the executable path
   for (int i = 1; i < argc; i++) {
@@ -125,6 +124,9 @@ CliArgs parseArgs(int argc, char *argv[]) {
     int used = handler->second(args, i, argc, argv);
     i += used;
   }
+
+  if (args.mode == CliMode::Unset)
+    args.mode = CliMode::CompileAndInterpret;
 
   return args;
 }

@@ -3,13 +3,14 @@
 #include "../cliUtils.hpp"
 #include "../concurrentQueue.hpp"
 #include "../instruction.hpp"
+#include "subprogram.hpp"
 #include <mutex>
 #include <thread>
 #include <vector>
 
 class Executor {
   const CliArgs &cliArgs;
-  std::vector<Instruction> &instructions;
+  Subprogram &program;
   ConcurrentQueue<std::reference_wrapper<Instruction>> queue;
   std::vector<std::thread> workers;
   std::vector<bool> stalls;
@@ -39,6 +40,6 @@ class Executor {
   void initScopes();
 
 public:
-  Executor(const CliArgs &cliArgs, std::vector<Instruction> &instructions);
+  Executor(const CliArgs &cliArgs, Subprogram &program);
   void startExecution();
 };

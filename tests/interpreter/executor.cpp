@@ -30,8 +30,9 @@ TEST(startExecution, doesntError) {
   DISABLE_COUT
 
   auto instrs = getInstrs();
+  Subprogram program(std::make_shared<std::vector<Instruction>>(instrs));
 
-  Executor executor({.threads = 1}, instrs);
+  Executor executor({.threads = 1}, program);
   executor.startExecution();
 
   EXPECT_NO_THROW(executor.startExecution());
@@ -43,15 +44,17 @@ TEST(startExecution, populatesDepArgs) {
   DISABLE_COUT
 
   auto instrs = getInstrs();
+  Subprogram program(std::make_shared<std::vector<Instruction>>(instrs));
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, program);
   executor.startExecution();
 
-  ASSERT_EQ(instrs[2].depArgs.size(), 2);
-  EXPECT_EQ(instrs[2].depArgs[0]->type, ValueType::Integer);
-  EXPECT_EQ(instrs[2].depArgs[0]->val, instrs[0].bytecodeArgs[0].val);
-  EXPECT_EQ(instrs[2].depArgs[1]->type, ValueType::Integer);
-  EXPECT_EQ(instrs[2].depArgs[1]->val, instrs[1].bytecodeArgs[0].val);
+  auto instr = program.begin() + 2;
+  ASSERT_EQ(instr->depArgs.size(), 2);
+  EXPECT_EQ(instr->depArgs[0]->type, ValueType::Integer);
+  EXPECT_EQ(instr->depArgs[0]->val, instrs[0].bytecodeArgs[0].val);
+  EXPECT_EQ(instr->depArgs[1]->type, ValueType::Integer);
+  EXPECT_EQ(instr->depArgs[1]->val, instrs[1].bytecodeArgs[0].val);
 
   REENABLE_COUT
 }
@@ -103,11 +106,13 @@ Instruction getFuncInstr() {
 TEST(startExecution, initsFunctions) {
   DISABLE_COUT
 
-  std::vector<Instruction> instrs = {getFuncInstr()};
+  auto instrs = std::make_shared<std::vector<Instruction>>(
+      std::vector<Instruction>({getFuncInstr()}));
+  Subprogram program(instrs);
 
-  Instruction &funcInstr = instrs[0];
+  Instruction &funcInstr = instrs->at(0);
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, program);
   executor.startExecution();
 
   auto funcVal = funcInstr.scope->get("func");
@@ -128,11 +133,13 @@ TEST(startExecution, initsFunctions) {
 TEST(startExecution, initsFunctionsWithFirstUses) {
   DISABLE_COUT
 
-  std::vector<Instruction> instrs = {getFuncInstr()};
+  auto instrs = std::make_shared<std::vector<Instruction>>(
+      std::vector<Instruction>({getFuncInstr()}));
+  Subprogram program(instrs);
 
-  Instruction &funcInstr = instrs[0];
+  Instruction &funcInstr = instrs->at(0);
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, program);
   executor.startExecution();
 
   auto funcVal = funcInstr.scope->get("func");
@@ -159,11 +166,13 @@ TEST(startExecution, initsFunctionsWithFirstUses) {
 TEST(startExecution, initsFunctionsWithLastUses) {
   DISABLE_COUT
 
-  std::vector<Instruction> instrs = {getFuncInstr()};
+  auto instrs = std::make_shared<std::vector<Instruction>>(
+      std::vector<Instruction>({getFuncInstr()}));
+  Subprogram program(instrs);
 
-  Instruction &funcInstr = instrs[0];
+  Instruction &funcInstr = instrs->at(0);
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, program);
   executor.startExecution();
 
   auto funcVal = funcInstr.scope->get("func");
@@ -190,11 +199,13 @@ TEST(startExecution, initsFunctionsWithLastUses) {
 TEST(startExecution, initsFunctionsWithFirstWrites) {
   DISABLE_COUT
 
-  std::vector<Instruction> instrs = {getFuncInstr()};
+  auto instrs = std::make_shared<std::vector<Instruction>>(
+      std::vector<Instruction>({getFuncInstr()}));
+  Subprogram program(instrs);
 
-  Instruction &funcInstr = instrs[0];
+  Instruction &funcInstr = instrs->at(0);
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, program);
   executor.startExecution();
 
   auto funcVal = funcInstr.scope->get("func");
@@ -219,11 +230,13 @@ TEST(startExecution, initsFunctionsWithFirstWrites) {
 TEST(startExecution, initsFunctionsWithLastWrites) {
   DISABLE_COUT
 
-  std::vector<Instruction> instrs = {getFuncInstr()};
+  auto instrs = std::make_shared<std::vector<Instruction>>(
+      std::vector<Instruction>({getFuncInstr()}));
+  Subprogram program(instrs);
 
-  Instruction &funcInstr = instrs[0];
+  Instruction &funcInstr = instrs->at(0);
 
-  Executor executor({.verbose = true, .threads = 1}, instrs);
+  Executor executor({.verbose = true, .threads = 1}, program);
   executor.startExecution();
 
   auto funcVal = funcInstr.scope->get("func");

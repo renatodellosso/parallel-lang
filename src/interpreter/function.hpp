@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../instruction.hpp"
+#include "subprogram.hpp"
 
 class Function {
   std::string name;
@@ -12,7 +13,7 @@ class Function {
       firstWrites, lastWrites;
 
 public:
-  Function(Instruction &instr, std::vector<Instruction> &instructions);
+  Function(Instruction &instr, Subprogram &instructions);
 
   std::string getName() const;
   std::string getReturnType() const;
