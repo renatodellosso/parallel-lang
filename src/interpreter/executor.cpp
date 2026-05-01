@@ -262,6 +262,10 @@ void Executor::execSingleInstruction(Instruction &instr) {
   case InstructionType::Function: {
     auto func = std::make_shared<Function>(instr, program);
     instr.scope->alloc(func->getName(), {ValueType::Function, func});
+
+    // Skip body
+    skipInstruction(program[instr.id + 1]);
+
     break;
   }
   default:

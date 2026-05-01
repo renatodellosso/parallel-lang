@@ -153,6 +153,7 @@ struct FunctionExpression : public Expression {
   std::string toByteCode() const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
+  void linkInternally() override;
   int numberExpressions(int startWith) override;
   int countInstructions() const override;
 };

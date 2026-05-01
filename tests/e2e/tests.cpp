@@ -70,4 +70,7 @@ std::vector<E2eTest> tests = {
      "while (count)\n"
      "count = count - 1;\n"
      "print count;",
-     {"0"}}};
+     {"0"}},
+
+    // Functions
+    {"FunctionsCanBeDeclared", "void main() { print 1; }", {}}};

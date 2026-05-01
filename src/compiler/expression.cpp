@@ -273,6 +273,11 @@ FunctionExpression::getWithSubExpressions() const {
   return vector;
 }
 
+void FunctionExpression::linkInternally() {
+  body->dependencies.push_back(*this);
+  dependents.emplace_back(*body);
+}
+
 int FunctionExpression::numberExpressions(int startWith) {
   id = startWith;
   startWith++;
