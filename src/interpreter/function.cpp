@@ -71,6 +71,11 @@ Function::Function(Instruction &instr, Subprogram &instructions) {
   writesRes = parseWrites(instr.bytecodeArgs, offset, instructions);
   lastWrites = writesRes.res;
   offset = writesRes.newOffset;
+
+  auto block = instructions[instr.id + 1];
+  auto size =
+      std::get<int>(block.bytecodeArgs[0].val) + 1; // +1 for the block itself
+  body = Subprogram(instructions, block.id, size);
 }
 
 std::string Function::getName() const { return name; }

@@ -2,9 +2,11 @@
 #include <memory>
 #include <vector>
 
+Subprogram::Subprogram()
+    : instrs(std::make_shared<std::vector<Instruction>>()) {}
+
 Subprogram::Subprogram(Subprogram base, int startIndex, int size)
     : instrs(std::make_shared<std::vector<Instruction>>()) {
-  offset = startIndex;
   for (int i = startIndex; i < startIndex + size; i++) {
     instrs->push_back(base[i]);
   }
@@ -13,13 +15,13 @@ Subprogram::Subprogram(Subprogram base, int startIndex, int size)
   for (auto &instr : *instrs.get()) {
     for (auto &dep : instr.dependents) {
       if (dep.instr->id >= startIndex && dep.instr->id < startIndex + size)
-        dep.instr = &instrs->at(dep.instr->id - offset);
+        dep.instr = &instrs->at(dep.instr->id - startIndex);
     }
   }
 }
 
 Subprogram::Subprogram(std::shared_ptr<std::vector<Instruction>> instrs)
-    : instrs(instrs), offset(0) {
+    : instrs(instrs) {
   for (auto &instr : *instrs) {
     for (auto &dep : instr.dependents)
       dep.instr = &instrs->at(dep.instr->id);

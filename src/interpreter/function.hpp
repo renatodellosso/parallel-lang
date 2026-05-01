@@ -12,6 +12,8 @@ class Function {
   std::unordered_map<std::string, std::reference_wrapper<Instruction>>
       firstWrites, lastWrites;
 
+  Subprogram body;
+
 public:
   Function(Instruction &instr, Subprogram &instructions);
 

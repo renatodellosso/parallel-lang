@@ -6,9 +6,9 @@
 
 class Subprogram {
   std::shared_ptr<std::vector<Instruction>> instrs;
-  int offset;
 
 public:
+  Subprogram();
   Subprogram(Subprogram base, int startIndex, int size);
   Subprogram(std::shared_ptr<std::vector<Instruction>> instrs);
 

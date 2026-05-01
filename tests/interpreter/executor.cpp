@@ -103,11 +103,24 @@ Instruction getFuncInstr() {
   return funcInstr;
 }
 
+Instruction getBlockInstr() {
+  Instruction block(1);
+
+  block.depCount = 0;
+  block.type = InstructionType::Block;
+
+  block.bytecodeArgs = {
+      {ValueType::Integer, 0},
+  };
+
+  return block;
+}
+
 TEST(startExecution, initsFunctions) {
   DISABLE_COUT
 
   auto instrs = std::make_shared<std::vector<Instruction>>(
-      std::vector<Instruction>({getFuncInstr()}));
+      std::vector<Instruction>({getFuncInstr(), getBlockInstr()}));
   Subprogram program(instrs);
 
   Instruction &funcInstr = instrs->at(0);
@@ -134,7 +147,7 @@ TEST(startExecution, initsFunctionsWithFirstUses) {
   DISABLE_COUT
 
   auto instrs = std::make_shared<std::vector<Instruction>>(
-      std::vector<Instruction>({getFuncInstr()}));
+      std::vector<Instruction>({getFuncInstr(), getBlockInstr()}));
   Subprogram program(instrs);
 
   Instruction &funcInstr = instrs->at(0);
@@ -167,7 +180,7 @@ TEST(startExecution, initsFunctionsWithLastUses) {
   DISABLE_COUT
 
   auto instrs = std::make_shared<std::vector<Instruction>>(
-      std::vector<Instruction>({getFuncInstr()}));
+      std::vector<Instruction>({getFuncInstr(), getBlockInstr()}));
   Subprogram program(instrs);
 
   Instruction &funcInstr = instrs->at(0);
@@ -200,7 +213,7 @@ TEST(startExecution, initsFunctionsWithFirstWrites) {
   DISABLE_COUT
 
   auto instrs = std::make_shared<std::vector<Instruction>>(
-      std::vector<Instruction>({getFuncInstr()}));
+      std::vector<Instruction>({getFuncInstr(), getBlockInstr()}));
   Subprogram program(instrs);
 
   Instruction &funcInstr = instrs->at(0);
@@ -231,7 +244,7 @@ TEST(startExecution, initsFunctionsWithLastWrites) {
   DISABLE_COUT
 
   auto instrs = std::make_shared<std::vector<Instruction>>(
-      std::vector<Instruction>({getFuncInstr()}));
+      std::vector<Instruction>({getFuncInstr(), getBlockInstr()}));
   Subprogram program(instrs);
 
   Instruction &funcInstr = instrs->at(0);
