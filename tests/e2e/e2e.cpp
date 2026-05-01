@@ -3,6 +3,7 @@
 #include "tests.hpp"
 #include "gtest/gtest.h"
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <sstream>
@@ -52,6 +53,29 @@ testing::AssertionResult Contains(std::vector<std::string> vector,
                                      << "'. Vector: " << vectorToString(vector);
 }
 
+testing::AssertionResult EqualSize(std::vector<std::string> actual,
+                                   std::vector<std::string> expected) {
+  std::string expectedStr = "";
+  for (auto str : expected)
+    expectedStr += "\"" + str + "\", ";
+  if (!expected.empty())
+    expectedStr.erase(expectedStr.end() - 2); // Remove trailing ', '
+
+  std::string actualStr = "";
+  for (auto str : actual)
+    actualStr += "\"" + str + "\", ";
+  if (!actual.empty())
+    actualStr.erase(actualStr.end() - 2); // Remove trailing ', '
+
+  std::string message = std::format(
+      "Expected size: {}, Actual size: {}, Expected: {}, Actual: {}",
+      expected.size(), actual.size(), expectedStr, actualStr);
+
+  if (actual.size() == expected.size())
+    return testing::AssertionSuccess() << message;
+  return testing::AssertionFailure() << message;
+}
+
 TEST_P(E2EFixture, E2E) {
   auto test = std::get<E2eTest>(GetParam());
   auto threads = std::get<int>(GetParam());
@@ -77,7 +101,8 @@ TEST_P(E2EFixture, E2E) {
 
   auto splitOut = split(output, '\n');
 
-  EXPECT_EQ(test.output.size(), splitOut.size());
+  EXPECT_TRUE(EqualSize(splitOut, test.output));
+  // EXPECT_EQ(splitOut.size(), test.output.size());
   for (auto line : test.output) {
     EXPECT_TRUE(Contains(splitOut, line));
   }

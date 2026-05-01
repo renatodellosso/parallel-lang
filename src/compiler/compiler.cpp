@@ -3,6 +3,7 @@
 #include "astBuilder.hpp"
 #include "graphLinker.hpp"
 #include "tokenizer.hpp"
+#include <cmath>
 
 #define LOCATION "compiler"
 
@@ -44,6 +45,16 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   if (shouldLog)
     log(LOCATION, "Numbered expressions");
+
+  if (shouldLog && args.verbose) {
+    log(LOCATION, "-------- AST --------");
+
+    for (auto expr : *astBuilder.getExpressions().get()) {
+      log(LOCATION, "{}", expr->toString());
+    }
+
+    log(LOCATION, "------ END AST ------");
+  }
 
   GraphLinker graphLinker(astBuilder.getExpressions());
   graphLinker.linkGraph();

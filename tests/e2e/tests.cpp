@@ -71,6 +71,35 @@ std::vector<E2eTest> tests = {
      "count = count - 1;\n"
      "print count;",
      {"0"}},
+    {"WhileLoopsCanBeInsideIfStatements",
+     "if (true) {\n"
+     "int a = 5;\n"
+     "while (a) {\n"
+     "print a;\n"
+     "a = a - 1;\n"
+     "}\n"
+     "}",
+     {"1", "2", "3", "4", "5"}},
 
     // Functions
-    {"FunctionsCanBeDeclared", "void main() { print 1; }", {}}};
+    {"FunctionsCanBeDeclared", "void main() { print 1; }", {}},
+    {"FunctionsCanBeDeclaredWithParameters",
+     "void main(int a, string b) { print 1; }",
+     {}},
+    {"FunctionsCanBeDeclaredWithReturnType", "int main() { print 1; }", {}},
+    {"FunctionsCanBeDeclaredWithReturnTypeAndParameters",
+     "int main(int a, string b) { print 1; }",
+     {}},
+    {"FunctionsCanBeDeclaredWhileUsingParametersInBodies",
+     "int main(int a, string b) { print a + b; }",
+     {}},
+    {"FunctionsCanBeDeclaredMultipleTimes",
+     "void main() { print 1; }\n"
+     "void extra() { print 2; }",
+     {}},
+    {"FunctionsCanBeDeclaredInsideFunctions",
+     "void main() { \n"
+     "void extra() { print 2; }\n"
+     "}",
+     {}},
+};

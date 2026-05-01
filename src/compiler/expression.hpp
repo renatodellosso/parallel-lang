@@ -95,6 +95,8 @@ struct BinaryExpression : public Expression {
   int countInstructions() const override;
 };
 
+// Don't link internally in a method, we handle that in GraphLinker since it's
+// more complicated than just adding deps for The block's expressions
 struct BlockExpression : public Expression {
   std::vector<std::shared_ptr<Expression>> expressions;
 

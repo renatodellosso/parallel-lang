@@ -201,14 +201,20 @@ void GraphLinker::processExpression(Expression &expr) {
           skip = static_cast<BlockExpression *>(&expr)->expressions.size();
         }
 
-        // Only add dependencies to root-level expressions and blocks
-        // All other exprs will have intra-block dependencies that already
-        // depend on the block instruction
+        // Only add dependencies to root-level expressions, blocks, and
+        // functions All other exprs will have intra-block dependencies that
+        // already depend on the block instruction
         if (inner.get().type != InstructionType::Block &&
+            inner.get().type != InstructionType::Function &&
             dynamic_cast<RootExpression *>(&inner.get()) == nullptr)
           continue;
 
         addDependency(inner, expr);
+
+        if (inner.get().type == InstructionType::Function) {
+          // Skip that function's block
+          skip = static_cast<BlockExpression *>(&expr)->expressions.size();
+        }
       }
     } else if (expr.type == InstructionType::GoTo) {
       RootExpression &root = static_cast<RootExpression &>(expr);

@@ -7,6 +7,22 @@ template <class T> struct ParseResult {
   T res;
 };
 
+static ParseResult<std::unordered_map<std::string, std::string>>
+parseParams(std::vector<Value> args, int offset, Subprogram &instructions) {
+  int paramCount = std::get<int>(args[offset++].val);
+
+  auto params = std::unordered_map<std::string, std::string>();
+
+  for (int i = 0; i < paramCount; i++) {
+    auto type = std::get<std::string>(args[offset++].val);
+    auto name = std::get<std::string>(args[offset++].val);
+
+    params[name] = type;
+  }
+
+  return {offset, params};
+}
+
 static ParseResult<std::unordered_map<
     std::string, std::vector<std::reference_wrapper<Instruction>>>>
 parseUses(std::vector<Value> args, int offset, Subprogram &instructions) {
@@ -56,6 +72,10 @@ Function::Function(Instruction &instr, Subprogram &instructions) {
 
   int offset = 2;
 
+  auto paramsRes = parseParams(instr.bytecodeArgs, offset, instructions);
+  params = paramsRes.res;
+  offset = paramsRes.newOffset;
+
   auto usesRes = parseUses(instr.bytecodeArgs, offset, instructions);
   firstUses = usesRes.res;
   offset = usesRes.newOffset;
@@ -101,4 +121,8 @@ Function::getFirstWrites() const {
 std::unordered_map<std::string, std::reference_wrapper<Instruction>>
 Function::getLastWrites() const {
   return lastWrites;
+}
+
+std::unordered_map<std::string, std::string> Function::getParams() const {
+  return params;
 }

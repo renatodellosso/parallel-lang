@@ -1,3 +1,5 @@
 void main() {
-  print 1;
+  void extra() {
+    print 1;
+  }
 }

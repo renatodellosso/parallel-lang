@@ -288,7 +288,8 @@ AstBuilder::parseExpression(TokenType endOn) {
   }
 }
 
-void AstBuilder::postProcess() {
+void AstBuilder::postProcess(
+    std::vector<std::shared_ptr<Expression>> *expressions) {
   for (int i = 0; i < expressions->size(); i++) {
     auto &expr = *expressions->at(i).get();
 
@@ -308,13 +309,15 @@ void AstBuilder::postProcess() {
 
         block = std::make_shared<BlockExpression>(
             BlockExpression({next}, next->lineNumber));
-        (*expressions.get())[i + 1] = block;
+        (*expressions)[i + 1] = block;
       }
 
       if (!block) {
         block =
             std::static_pointer_cast<BlockExpression>(expressions->at(i + 1));
       }
+
+      postProcess(&block->expressions);
 
       auto &unary = static_cast<UnaryExpression &>(expr);
       if (expr.type == InstructionType::While) {
@@ -349,7 +352,7 @@ void AstBuilder::build() {
       next(); // Consume semicolon
   }
 
-  postProcess();
+  postProcess(expressions.get());
 }
 
 void AstBuilder::syntaxError(std::string msg) {

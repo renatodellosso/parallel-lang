@@ -67,6 +67,13 @@ Instruction getFuncInstr() {
       {ValueType::Identifier, "int"},
       {ValueType::Identifier, "func"},
 
+      // Params
+      {ValueType::Integer, 2},
+      {ValueType::Identifier, "int"},
+      {ValueType::Identifier, "a"},
+      {ValueType::Identifier, "bool"},
+      {ValueType::Identifier, "b"},
+
       // First uses
       {ValueType::Integer, 2},
       {ValueType::Identifier, "var1"},
@@ -139,6 +146,37 @@ TEST(startExecution, initsFunctions) {
             std::get<std::string>(funcInstr.bytecodeArgs[0].val));
   EXPECT_EQ(func->getName(),
             std::get<std::string>(funcInstr.bytecodeArgs[1].val));
+
+  REENABLE_COUT
+}
+
+TEST(startExecution, initsFunctionsWithParams) {
+  DISABLE_COUT
+
+  auto instrs = std::make_shared<std::vector<Instruction>>(
+      std::vector<Instruction>({getFuncInstr(), getBlockInstr()}));
+  Subprogram program(instrs);
+
+  Instruction &funcInstr = instrs->at(0);
+
+  Executor executor({.verbose = true, .threads = 1}, program);
+  executor.startExecution();
+
+  auto funcVal = funcInstr.scope->get("func");
+  EXPECT_EQ(funcVal->type, ValueType::Function);
+  ASSERT_NE(std::get<std::shared_ptr<Function>>(funcVal->val), nullptr);
+
+  auto func = std::get<std::shared_ptr<Function>>(funcVal->val);
+  ASSERT_NE(func, nullptr);
+
+  auto params = func->getParams();
+  EXPECT_EQ(params.size(), 2);
+
+  ASSERT_TRUE(params.contains("a"));
+  EXPECT_EQ(params["a"], "int");
+
+  ASSERT_TRUE(params.contains("b"));
+  EXPECT_EQ(params["b"], "bool");
 
   REENABLE_COUT
 }

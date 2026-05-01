@@ -36,7 +36,8 @@ private:
   parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev,
                           TokenType endOn);
   FunctionExprParameter parseFuncParam();
-  std::optional<std::unique_ptr<FunctionExpression>> parseFunction(std::unique_ptr<BinaryExpression> declaration);
+  std::optional<std::unique_ptr<FunctionExpression>>
+  parseFunction(std::unique_ptr<BinaryExpression> declaration);
   // Parses a block, including the { }
   std::optional<std::unique_ptr<BlockExpression>> parseBlock();
 
@@ -45,7 +46,7 @@ private:
                    TokenType endOn);
   std::optional<std::unique_ptr<Expression>> parseExpression(TokenType end);
 
-  void postProcess();
+  void postProcess(std::vector<std::shared_ptr<Expression>> *expressions);
 
   void syntaxError(std::string msg);
 
