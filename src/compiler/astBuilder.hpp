@@ -3,9 +3,21 @@
 #include "expression.hpp"
 #include "syntaxError.hpp"
 #include "token.hpp"
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <vector>
+
+class TokenFilter {
+  TokenType type;
+  std::optional<TokenSubtype> subtype;
+
+public:
+  TokenFilter(TokenType type,
+              std::optional<TokenSubtype> subtype = std::nullopt);
+
+  bool match(Token token);
+};
 
 class AstBuilder {
 private:
@@ -21,12 +33,14 @@ private:
   bool hasNext();
   Token next();
   Token peek();
+
   /**
-   * Returns true if the next token has the specified type. NOTE: Returns false
-   * if there is no next token. Does not consume the token.
+   * Returns true if the next token has any of the specified types. NOTE:
+   * Returns false if there is no next token. Does not consume the token.
    */
-  bool match(TokenType type,
-             std::optional<TokenSubtype> subtype = std::nullopt);
+  bool match(std::initializer_list<TokenFilter> filters);
+  bool match(TokenFilter filter);
+  bool match(TokenType type, std::optional<TokenSubtype> subtype = std::nullopt);
 
   // Building methods
 
@@ -34,7 +48,7 @@ private:
   std::optional<std::unique_ptr<Expression>> parseLeadingExpression();
   std::optional<std::unique_ptr<Expression>>
   parseCompoundExpression(std::optional<std::unique_ptr<Expression>> prev,
-                          TokenType endOn);
+                          std::initializer_list<TokenFilter> endOn);
   FunctionExprParameter parseFuncParam();
   std::optional<std::unique_ptr<FunctionExpression>>
   parseFunction(std::unique_ptr<BinaryExpression> declaration);
@@ -43,8 +57,9 @@ private:
 
   std::optional<std::unique_ptr<Expression>>
   extendExpression(std::optional<std::unique_ptr<Expression>> prev,
-                   TokenType endOn);
-  std::optional<std::unique_ptr<Expression>> parseExpression(TokenType end);
+                   std::initializer_list<TokenFilter> endOn);
+  std::optional<std::unique_ptr<Expression>>
+  parseExpression(std::initializer_list<TokenFilter> endOn);
 
   void postProcess(std::vector<std::shared_ptr<Expression>> *expressions);
 

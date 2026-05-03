@@ -160,8 +160,13 @@ struct FunctionExpression : public Expression {
   int countInstructions() const override;
 };
 
+// First expression in expressions is the function identifier
 struct CallExpression : public BlockExpression {
-  std::vector<std::shared_ptr<Expression>> expressions;
+  CallExpression() : BlockExpression() {}
+  CallExpression(std::vector<std::shared_ptr<Expression>> expressions,
+                 int lineNumber)
+      : BlockExpression(expressions, lineNumber) {}
+  CallExpression(int lineNumber) : BlockExpression(lineNumber) {}
 
   std::string toString() const override;
   std::string toByteCode() const override;

@@ -8,6 +8,19 @@
 #include <string>
 #include <vector>
 
+TokenFilter::TokenFilter(TokenType type, std::optional<TokenSubtype> subtype)
+    : type(type), subtype(subtype) {}
+
+bool TokenFilter::match(Token token) {
+  if (token.type != type)
+    return false;
+
+  if (subtype.has_value() && token.subtype != subtype.value())
+    return false;
+
+  return true;
+}
+
 AstBuilder::AstBuilder(std::unique_ptr<std::vector<Token>> tokens) {
   errors = std::make_shared<std::vector<SyntaxError>>();
   this->tokens = std::move(tokens);
@@ -41,16 +54,26 @@ Token AstBuilder::peek() {
   return tokens->operator[](nextTokenIndex);
 }
 
-bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype) {
+bool AstBuilder::match(std::initializer_list<TokenFilter> filters) {
   if (!hasNext())
     return false;
 
-  Token nextToken = peek();
-  if (nextToken.type != type)
-    return false;
-  if (subtype.has_value() && nextToken.subtype != subtype.value())
-    return false;
-  return true;
+  if (filters.size() == 0)
+    return true;
+
+  auto token = peek();
+  for (auto filter : filters) {
+    if (filter.match(token))
+      return true;
+  }
+
+  return false;
+}
+
+bool AstBuilder::match(TokenFilter filter) { return match({filter}); }
+
+bool AstBuilder::match(TokenType type, std::optional<TokenSubtype> subtype) {
+  return match(TokenFilter(type, subtype));
 }
 
 std::optional<std::unique_ptr<Expression>>
@@ -74,7 +97,7 @@ AstBuilder::parseLeadingExpression() {
           std::format("Expected '(' after 'if'. Got: '{}'", peek().raw));
     next(); // Consume '('
 
-    auto condition = parseExpression(TokenType::RightParen);
+    auto condition = parseExpression({TokenType::RightParen});
     if (!condition.has_value())
       throw std::runtime_error(
           std::format("Expected condition in if statement!"));
@@ -91,7 +114,7 @@ AstBuilder::parseLeadingExpression() {
   }
   if (match(TokenType::Print)) {
     next(); // Be sure to consume the leading token itself!
-    auto output = parseExpression(TokenType::Semicolon);
+    auto output = parseExpression({TokenType::Semicolon});
     return std::make_optional(std::make_unique<UnaryExpression>(
         InstructionType::Print, line, std::move(output.value())));
   }
@@ -102,7 +125,8 @@ AstBuilder::parseLeadingExpression() {
 }
 
 std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
-    std::optional<std::unique_ptr<Expression>> prev, TokenType endOn) {
+    std::optional<std::unique_ptr<Expression>> prev,
+    std::initializer_list<TokenFilter> endOn) {
   InstructionType type;
   switch (peek().type) {
   case TokenType::Plus:
@@ -156,6 +180,23 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
     type = InstructionType::Set;
     prev.value()->type = InstructionType::ReferenceIdentifier;
     break;
+  case TokenType::LeftParen: {
+    if (prev.value()->type != InstructionType::GetIdentifier)
+      throw std::runtime_error(std::format(
+          "Cannot call a function without an identifier. Got '{}' as previous "
+          "instead of identifer",
+          prev.value()->toString()));
+
+    CallExpression call({std::make_shared<Expression>(*prev.value().release())},
+                        prev.value()->lineNumber);
+
+    while (!match(TokenType::RightParen)) {
+      // Parse arguments
+      auto arg = parseExpression({TokenType::Comma});
+    }
+
+    return std::make_optional(std::make_unique<CallExpression>(call));
+  }
   default:
     throw std::runtime_error(std::format(
         "Could not parse line: No matching instruction type for token '{}'",
@@ -182,7 +223,7 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
   next(); // Consume '{'
 
   while (!match(TokenType::RightBrace)) {
-    auto expr = parseExpression(TokenType::Semicolon);
+    auto expr = parseExpression({TokenType::Semicolon});
     if (!expr.has_value())
       break;
 
@@ -240,19 +281,12 @@ AstBuilder::parseFunction(std::unique_ptr<BinaryExpression> declaration) {
 
   next(); // Consume ')'
 
-  // auto body = parseExpression(TokenType::Semicolon);
-  // if (!body.has_value())
-  //   throw std::runtime_error("Expected function to have body, but it did
-  //   not!");
-
-  // func->body = std::move(body.value());
-
   return std::make_optional(std::move(func));
 }
 
 std::optional<std::unique_ptr<Expression>>
 AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
-                             TokenType endOn) {
+                             std::initializer_list<TokenFilter> endOn) {
   if (match(endOn))
     return std::nullopt;
 
@@ -276,7 +310,7 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
 }
 
 std::optional<std::unique_ptr<Expression>>
-AstBuilder::parseExpression(TokenType endOn) {
+AstBuilder::parseExpression(std::initializer_list<TokenFilter> endOn) {
   try {
     std::optional<std::unique_ptr<Expression>> curr =
         extendExpression(std::nullopt, endOn);
@@ -344,7 +378,7 @@ void AstBuilder::postProcess(
 
 void AstBuilder::build() {
   while (hasNext()) {
-    auto expr = parseExpression(TokenType::Semicolon);
+    auto expr = parseExpression({TokenType::Semicolon});
     if (expr.has_value())
       expressions.get()->push_back(std::move(expr.value()));
 
