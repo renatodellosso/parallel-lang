@@ -47,15 +47,18 @@ void Executor::updateDependency(InstrDependent dep,
   }
 }
 
-void Executor::skipInstruction(Instruction &instr, bool recurse) {
+void Executor::skipInstruction(Instruction &instr) {
+  if (cliArgs.verbose)
+    log(LOCATION, "Skipping instruction: {}", instr.toString());
+
   instr.depCount = -1;
 
   int skipUntil = -1;
-  if (recurse && instr.type == InstructionType::Block) {
+  if (instr.type == InstructionType::Block) {
     int toSkip = std::get<int>(instr.bytecodeArgs[0].val);
     skipUntil = instr.id + toSkip;
     for (int i = 1; i < toSkip; i++) {
-      skipInstruction(program[instr.id + i], false);
+      skipInstruction(program[instr.id + i]);
     }
   }
 

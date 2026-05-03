@@ -213,7 +213,9 @@ void GraphLinker::processExpression(Expression &expr) {
 
         if (inner.get().type == InstructionType::Function) {
           // Skip that function's block
-          skip = static_cast<BlockExpression *>(&expr)->expressions.size();
+          auto body = static_cast<BlockExpression *>(
+              &expressions[inner.get().id + 1].get());
+          skip = body->expressions.size() + 1;
         }
       }
     } else if (expr.type == InstructionType::GoTo) {
