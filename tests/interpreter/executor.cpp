@@ -172,11 +172,13 @@ TEST(startExecution, initsFunctionsWithParams) {
   auto params = func->getParams();
   EXPECT_EQ(params.size(), 2);
 
-  ASSERT_TRUE(params.contains("a"));
-  EXPECT_EQ(params["a"], "int");
+  ASSERT_EQ(params.size(), 2);
 
-  ASSERT_TRUE(params.contains("b"));
-  EXPECT_EQ(params["b"], "bool");
+  EXPECT_EQ(params[0].name, "a");
+  EXPECT_EQ(params[0].type, "int");
+
+  EXPECT_EQ(params[1].name, "b");
+  EXPECT_EQ(params[1].type, "bool");
 
   REENABLE_COUT
 }

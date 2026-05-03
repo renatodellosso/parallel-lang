@@ -7,17 +7,17 @@ template <class T> struct ParseResult {
   T res;
 };
 
-static ParseResult<std::unordered_map<std::string, std::string>>
+static ParseResult<std::vector<FunctionParam>>
 parseParams(std::vector<Value> args, int offset, Subprogram &instructions) {
   int paramCount = std::get<int>(args[offset++].val);
 
-  auto params = std::unordered_map<std::string, std::string>();
+  auto params = std::vector<FunctionParam>();
 
   for (int i = 0; i < paramCount; i++) {
     auto type = std::get<std::string>(args[offset++].val);
     auto name = std::get<std::string>(args[offset++].val);
 
-    params[name] = type;
+    params.emplace_back(name, type);
   }
 
   return {offset, params};
@@ -123,6 +123,4 @@ Function::getLastWrites() const {
   return lastWrites;
 }
 
-std::unordered_map<std::string, std::string> Function::getParams() const {
-  return params;
-}
+std::vector<FunctionParam> Function::getParams() const { return params; }
