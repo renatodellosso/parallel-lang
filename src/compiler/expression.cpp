@@ -10,6 +10,22 @@ void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
       expr, argIndex != -1 ? std::make_optional(argIndex) : std::nullopt));
 }
 
+ExprDependent::ExprDependent(Expression &expr, std::optional<int> argIndex)
+    : expr(expr), argIndex(argIndex) {}
+
+ExprDependent::ExprDependent(Expression &expr, int argIndex)
+    : ExprDependent(expr, std::make_optional(argIndex)) {}
+
+ExprDependent::ExprDependent(Expression &expr)
+    : ExprDependent(expr, std::nullopt) {}
+
+std::string ExprDependent::toString() {
+  std::string str = std::to_string(expr.get().id);
+  if (argIndex.has_value())
+    str += "." + std::to_string(argIndex.value());
+  return str;
+}
+
 std::string Expression::toString() const {
   return std::format("({}){}", id, instructionTypeToString(type));
 }
@@ -286,18 +302,57 @@ int FunctionExpression::countInstructions() const {
   return 1 + body->countInstructions();
 }
 
-ExprDependent::ExprDependent(Expression &expr, std::optional<int> argIndex)
-    : expr(expr), argIndex(argIndex) {}
+std::string CallExpression::toString() const {
+  auto str = Expression::toString() + "(";
 
-ExprDependent::ExprDependent(Expression &expr, int argIndex)
-    : ExprDependent(expr, std::make_optional(argIndex)) {}
+  // Use references
+  for (auto &line : expressions) {
+    str += line.get()->toString() + ", ";
+  }
 
-ExprDependent::ExprDependent(Expression &expr)
-    : ExprDependent(expr, std::nullopt) {}
+  str.erase(str.end() - 2);
 
-std::string ExprDependent::toString() {
-  std::string str = std::to_string(expr.get().id);
-  if (argIndex.has_value())
-    str += "." + std::to_string(argIndex.value());
-  return str;
+  return str + ")";
+}
+
+std::string CallExpression::toByteCode() const {
+  // Subtract 1 from count to exclude this instruction
+  std::string str = "";
+
+  // Use references
+  for (auto &line : expressions) {
+    str += line->toByteCode() + "\n";
+  }
+
+  str += Expression::toByteCode();
+
+  return str.erase(str.length() - 1); // Erase trailing \n
+}
+
+std::vector<std::reference_wrapper<Expression>>
+CallExpression::getWithSubExpressions() const {
+  std::vector<std::reference_wrapper<Expression>> vector;
+
+  for (auto expr : expressions) {
+    auto exprVec = expr.get()->getWithSubExpressions();
+    std::move(exprVec.begin(), exprVec.end(),
+              std::back_inserter(vector)); // Move rightVec into end of vector
+  }
+
+  auto base = Expression::getWithSubExpressions();
+  std::move(base.begin(), base.end(), std::back_inserter(vector));
+
+  return vector;
+}
+
+int CallExpression::numberExpressions(int startWith) {
+
+  for (auto &line : expressions) {
+    startWith = line.get()->numberExpressions(startWith);
+  }
+
+  id = startWith;
+  startWith++;
+
+  return startWith;
 }

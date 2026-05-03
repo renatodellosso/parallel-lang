@@ -159,3 +159,13 @@ struct FunctionExpression : public Expression {
   int numberExpressions(int startWith) override;
   int countInstructions() const override;
 };
+
+struct CallExpression : public BlockExpression {
+  std::vector<std::shared_ptr<Expression>> expressions;
+
+  std::string toString() const override;
+  std::string toByteCode() const override;
+  std::vector<std::reference_wrapper<Expression>>
+  getWithSubExpressions() const override;
+  int numberExpressions(int startWith) override;
+};

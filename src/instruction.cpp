@@ -46,6 +46,8 @@ std::string instructionTypeToString(InstructionType type) {
     return "Print";
   case InstructionType::Function:
     return "Function";
+  case InstructionType::Call:
+    return "Call";
   default:
     return std::format("UnknownInstructionType:{}", (int)type);
   }
