@@ -600,3 +600,36 @@ TEST(AstBuilder, buildsCallsWithComplexArguments) {
   EXPECT_EQ(root->type, InstructionType::GetLiteral);
   EXPECT_EQ(root->token.raw, "\"abc\"");
 }
+
+TEST(AstBuilder, buildsCallsInLargerExpressions) {
+  std::vector<Token> tokens = {
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Plus, TokenSubtype::None, "+", 1},
+      {TokenType::Identifier, TokenSubtype::None, "func", 2},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 2},
+      {TokenType::RightParen, TokenSubtype::None, ")", 2},
+      {TokenType::Plus, TokenSubtype::None, "+", 2},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 3},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 3},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+  auto expressions = builder.getExpressions();
+
+  ASSERT_EQ(expressions->size(), 1);
+
+  auto expr = expressions->at(0);
+  ASSERT_EQ(expr->type, InstructionType::Add);
+
+  auto binary = std::static_pointer_cast<BinaryExpression>(expr);
+  binary = std::static_pointer_cast<BinaryExpression>(binary->right);
+
+  ASSERT_EQ(binary->left->type, InstructionType::Call);
+  auto func = std::static_pointer_cast<CallExpression>(binary->left);
+
+  ASSERT_EQ(func->expressions.size(), 1);
+}

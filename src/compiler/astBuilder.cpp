@@ -217,7 +217,11 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
 
       next(); // Consume ')'
 
-      return std::make_optional(std::make_unique<CallExpression>(call));
+      // We return early, so we have to handle extending manually
+      auto final = std::make_optional(std::make_unique<CallExpression>(call));
+      if (!match(endOn))
+        return extendExpression(std::move(final), endOn);
+      return final;
     }
   }
   default:
