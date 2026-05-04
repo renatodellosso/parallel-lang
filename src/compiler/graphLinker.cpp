@@ -266,6 +266,11 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
 
   funcExprsRemaining.push(std::move(std::make_unique<int>(exprCount)));
 
+  // Create function in outer scope (use auto & instead of just auto so as not
+  // to make a copy!)
+  auto &resource = createResource(function->get().name);
+  resource.function = function;
+
   savedScopes.push(scope);
   scope = cloneResourceScope(scope);
   scopeLifetimes.push(expressions[expr.get().id + 1].get().countInstructions() +

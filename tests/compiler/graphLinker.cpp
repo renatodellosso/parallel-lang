@@ -698,3 +698,43 @@ TEST(linkGraph, setsFunctionFirstAndLastUsesAndWrites) {
 
   delete linker;
 }
+
+TEST(linkGraph, createsFunctionResource) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto block = std::make_shared<BlockExpression>(BlockExpression({}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(func);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  auto &resources = linker->getResources();
+
+  ASSERT_TRUE(resources.contains("func"));
+  auto resource = resources["func"];
+  ASSERT_TRUE(resource->function.has_value());
+  EXPECT_EQ(&resource->function.value().get(), func.get());
+
+  delete linker;
+}
