@@ -2,6 +2,7 @@
 #include "../testUtils.hpp"
 #include <gtest/gtest.h>
 #include <memory>
+#include <vector>
 
 TEST(AstBuilder, buildsLiteralExpressions) {
   std::vector<Token> tokens = {
@@ -471,4 +472,131 @@ TEST(AstBuilder, buildsFunctionsWithImplicitBlockBodies) {
   ASSERT_NE(func, nullptr);
   ASSERT_EQ(block->expressions.size(), 1);
   EXPECT_EQ(block->expressions[0]->type, InstructionType::Add);
+}
+
+TEST(AstBuilder, buildsCallsWithoutParameters) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+  auto expressions = builder.getExpressions();
+
+  ASSERT_EQ(expressions->size(), 1);
+
+  auto expr = expressions->at(0);
+  ASSERT_EQ(expr->type, InstructionType::Call);
+
+  auto func = std::static_pointer_cast<CallExpression>(expr);
+
+  ASSERT_EQ(func->expressions.size(), 1);
+  ASSERT_EQ(func->expressions[0]->type, InstructionType::GetIdentifier);
+
+  auto root = std::static_pointer_cast<RootExpression>(func->expressions[0]);
+  EXPECT_EQ(root->token.raw, tokens[0].raw);
+}
+
+TEST(AstBuilder, buildsCallsWithArguments) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Identifier, TokenSubtype::None, "1", 1},
+      {TokenType::Comma, TokenSubtype::None, ",", 1},
+      {TokenType::Identifier, TokenSubtype::None, "true", 1},
+      {TokenType::Comma, TokenSubtype::None, ",", 1},
+      {TokenType::Identifier, TokenSubtype::None, "\"a\"", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+  auto expressions = builder.getExpressions();
+
+  ASSERT_EQ(expressions->size(), 1);
+
+  auto expr = expressions->at(0);
+  ASSERT_EQ(expr->type, InstructionType::Call);
+
+  auto func = std::static_pointer_cast<CallExpression>(expr);
+
+  ASSERT_EQ(func->expressions.size(), 4);
+
+  for (int i = 0; i < func->expressions.size(); i++) {
+    auto expr = func->expressions[i];
+    ASSERT_EQ(expr->type, InstructionType::GetIdentifier);
+
+    auto root = std::static_pointer_cast<RootExpression>(expr);
+    EXPECT_EQ(root->token.raw, tokens[i * 2].raw);
+  }
+}
+
+TEST(AstBuilder, buildsCallsWithComplexArguments) {
+  std::vector<Token> tokens = {
+      {TokenType::Identifier, TokenSubtype::None, "func", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Plus, TokenSubtype::None, "+", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 1},
+      {TokenType::Comma, TokenSubtype::None, ",", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "true", 1},
+      {TokenType::Minus, TokenSubtype::None, "-", 1},
+      {TokenType::Literal, TokenSubtype::String, "\"abc\"", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+  auto expressions = builder.getExpressions();
+
+  ASSERT_EQ(expressions->size(), 1);
+
+  auto expr = expressions->at(0);
+  ASSERT_EQ(expr->type, InstructionType::Call);
+
+  auto func = std::static_pointer_cast<CallExpression>(expr);
+
+  ASSERT_EQ(func->expressions.size(), 3);
+
+  ASSERT_EQ(func->expressions[0]->type, InstructionType::GetIdentifier);
+
+  auto root = std::static_pointer_cast<RootExpression>(func->expressions[0]);
+  EXPECT_EQ(root->token.raw, tokens[0].raw);
+
+  ASSERT_EQ(func->expressions[1]->type, InstructionType::Add);
+  auto binary =
+      std::static_pointer_cast<BinaryExpression>(func->expressions[1]);
+
+  root = std::static_pointer_cast<RootExpression>(binary->left);
+  EXPECT_EQ(root->type, InstructionType::GetLiteral);
+  EXPECT_EQ(root->token.raw, "1");
+
+  root = std::static_pointer_cast<RootExpression>(binary->right);
+  EXPECT_EQ(root->type, InstructionType::GetLiteral);
+  EXPECT_EQ(root->token.raw, "2");
+
+  ASSERT_EQ(func->expressions[2]->type, InstructionType::Subtract);
+  binary = std::static_pointer_cast<BinaryExpression>(func->expressions[2]);
+
+  root = std::static_pointer_cast<RootExpression>(binary->left);
+  EXPECT_EQ(root->type, InstructionType::GetLiteral);
+  EXPECT_EQ(root->token.raw, "true");
+
+  root = std::static_pointer_cast<RootExpression>(binary->right);
+  EXPECT_EQ(root->type, InstructionType::GetLiteral);
+  EXPECT_EQ(root->token.raw, "\"abc\"");
 }

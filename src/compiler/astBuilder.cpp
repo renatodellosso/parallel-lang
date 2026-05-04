@@ -88,7 +88,7 @@ AstBuilder::parseLeadingExpression() {
         RootExpression(InstructionType::GetLiteral, line, next())));
   if (match(TokenType::LeftBrace))
     return parseBlock();
-  if (match(TokenType::If) || match(TokenType::While)) {
+  if (match({TokenType::If, TokenType::While})) {
     bool loop = match(TokenType::While);
     next(); // Consume 'if'/'while'
 
@@ -181,21 +181,44 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
     prev.value()->type = InstructionType::ReferenceIdentifier;
     break;
   case TokenType::LeftParen: {
+    // Function call!
+
+    next(); // Consume '('
+
+    if (!prev.has_value())
+      throw std::runtime_error(
+          "Attempted to call a function without providing an identifier!");
     if (prev.value()->type != InstructionType::GetIdentifier)
       throw std::runtime_error(std::format(
           "Cannot call a function without an identifier. Got '{}' as previous "
           "instead of identifer",
           prev.value()->toString()));
 
-    CallExpression call({std::make_shared<Expression>(*prev.value().release())},
-                        prev.value()->lineNumber);
+    // Check cast to verify it's not a function declaration
+    auto casted = dynamic_cast<RootExpression *>(prev.value().get());
+    if (casted) {
 
-    while (!match(TokenType::RightParen)) {
-      // Parse arguments
-      auto arg = parseExpression({TokenType::Comma});
+      CallExpression call(
+          {std::move(prev.value())},
+          line); // Can't use prev->lineNumber since it's been released
+
+      while (!match(TokenType::RightParen)) {
+        // Parse arguments
+        auto arg = parseExpression({TokenType::Comma, TokenType::RightParen});
+
+        if (!arg.has_value())
+          break;
+
+        if (match(TokenType::Comma))
+          next();
+
+        call.expressions.push_back(std::move(arg.value()));
+      }
+
+      next(); // Consume ')'
+
+      return std::make_optional(std::make_unique<CallExpression>(call));
     }
-
-    return std::make_optional(std::make_unique<CallExpression>(call));
   }
   default:
     throw std::runtime_error(std::format(
