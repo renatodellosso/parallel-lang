@@ -177,4 +177,6 @@ struct CallExpression : public BlockExpression {
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   int numberExpressions(int startWith) override;
+
+  std::string getFunctionName() const;
 };

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <format>
 #include <iterator>
+#include <memory>
 #include <string>
 
 void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
@@ -202,13 +203,13 @@ int BlockExpression::countInstructions() const {
 }
 
 std::string FunctionExpression::toString() const {
-  auto str = Expression::toString() + " " + name + "(";
+  auto str = Expression::toString() + " " + returnType + " " + name + "(";
 
   for (auto param : params)
     str += param.type + " " + param.name + ", ";
 
   if (params.size())
-    str.erase(str.end() - 2); // Remove trailing ', '
+    str.erase(str.end() - 2, str.end()); // Remove trailing ', '
 
   str += ") {\n";
 
@@ -310,7 +311,7 @@ std::string CallExpression::toString() const {
     str += line.get()->toString() + ", ";
   }
 
-  str.erase(str.end() - 2);
+  str.erase(str.end() - 2, str.end());
 
   return str + ")";
 }
@@ -355,4 +356,10 @@ int CallExpression::numberExpressions(int startWith) {
   startWith++;
 
   return startWith;
+}
+
+std::string CallExpression::getFunctionName() const {
+  auto nameExpr = std::static_pointer_cast<RootExpression>(expressions[0]);
+
+  return nameExpr->token.raw;
 }

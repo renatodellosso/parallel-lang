@@ -4,9 +4,12 @@
 #include <algorithm>
 #include <format>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 static void deduplicateDependenciesForSet(BinaryExpression &set,
@@ -97,6 +100,8 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
                     "exist! Expression: {}",
                     name, expr.toString()));
 
+  std::cout << "\tUsing resource: " << name << ", write: " << write << "\n";
+
   Resource &resource = *entry.get();
 
   // If not written yet, don't add dependency to nullptr
@@ -128,6 +133,8 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
 }
 
 void GraphLinker::processExpression(Expression &expr) {
+  std::cout << "Linking " << expr.toString() << "\n";
+
   if (scopeLifetimes.size()) {
     scopeLifetimes.top()--; // int& so this works
 
@@ -244,6 +251,39 @@ void GraphLinker::processExpression(Expression &expr) {
         expressions[i].get().dependentRedirect =
             &expressions[conditionIndex].get();
       }
+    } else if (expr.type == InstructionType::Call) {
+      CallExpression &call = static_cast<CallExpression &>(expr);
+      auto name = call.getFunctionName();
+
+      auto resource = scope->get(name);
+      if (!resource)
+        throw std::runtime_error(std::format(
+            "Tried to call function '{}', but it did not exist!", name));
+      if (!resource->function)
+        throw std::runtime_error(std::format(
+            "Tried to call function '{}', but it was not a function!", name));
+
+      // Maps resource names to write (true/false)
+      auto uses = std::unordered_map<std::string, bool>();
+
+      // Set all reads first
+      for (auto use : resource->function.value().get().firstUses) {
+        std::cout << "\tRead: " << use.first << "\n";
+        uses[use.first] = false;
+      }
+
+      // Then all writes
+      for (auto use : resource->function.value().get().firstWrites) {
+        std::cout << "\tWrite: " << use.first << "\n";
+        uses[use.first] = true;
+      }
+
+      // Use the resources
+      for (auto resource : uses) {
+        std::cout << "\tFrom func: " << resource.first
+                  << ", write: " << resource.second << "\n";
+        useResource(call, resource.first, resource.second);
+      }
     }
   } catch (std::runtime_error err) {
     // Careful with runtime_error vs runtime_error* - catching one won't catch
@@ -256,6 +296,8 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
   function = std::make_optional<std::reference_wrapper<FunctionExpression>>(
       static_cast<FunctionExpression &>(expr.get()));
 
+  std::cout << "Entering function: " << function.value().get().name << "\n";
+
   int exprCount = expr.get().countInstructions();
 
   if (!funcExprsRemaining.empty()) { // Can't do top() to check non-emptiness
@@ -266,9 +308,10 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
 
   funcExprsRemaining.push(std::move(std::make_unique<int>(exprCount)));
 
-  // Create function in outer scope (use auto & instead of just auto so as not
-  // to make a copy!)
+  // Create function resource in outer scope (use auto & instead of just auto so
+  // as not to make a copy!)
   auto &resource = createResource(function->get().name);
+  useResource(function->get(), function->get().name, true);
   resource.function = function;
 
   savedScopes.push(scope);
@@ -281,9 +324,33 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
 }
 
 void GraphLinker::exitFunction() {
+  std::cout << "Exiting function: " << function.value().get().name << "\n";
+
   // Populate lastUses and lastWrites
   for (auto key : scope->getKeys()) {
     auto resource = scope->get(key);
+
+    // Don't add params to first/last uses/writes
+    bool isParam = false;
+    for (auto param : function->get().params) {
+      if (param.name == key) {
+        isParam = true;
+        break;
+      }
+    }
+
+    if (isParam)
+      continue;
+
+    std::cout << "\tScope contains: " << key << "\n";
+    std::cout << "\t\tLast written by: "
+              << (resource->lastWrittenBy ? resource->lastWrittenBy->toString()
+                                          : "None")
+              << "\n";
+
+    for (auto access : resource->currAccesses) {
+      std::cout << "\t\tUsed by: " << access.get().toString() << "\n";
+    }
 
     if (resource->lastWrittenBy)
       function->get().lastWrites.emplace(key, *resource->lastWrittenBy);
@@ -299,12 +366,23 @@ void GraphLinker::exitFunction() {
     }
   }
 
-  function = std::nullopt;
-  funcExprsRemaining.pop();
+  for (auto read : function->get().firstUses) {
+    std::cout << "\tFunction uses: " << read.first << " in\n";
+
+    for (auto expr : read.second)
+      std::cout << "\t\t" << expr.get().toString() << "\n";
+  }
+
+  for (auto write : function->get().firstWrites)
+    std::cout << "\tFunction writes: " << write.first << " at "
+              << write.second.get().toString() << "\n";
 
   scope = savedScopes.top();
   savedScopes.pop();
   scopeLifetimes.pop();
+
+  function = std::nullopt;
+  funcExprsRemaining.pop();
 }
 
 void GraphLinker::syntaxError(int line, std::string msg) {

@@ -23,7 +23,10 @@ cloneResourceScope(std::shared_ptr<Scope<Resource>> scope) {
       std::make_shared<Scope<Resource>>(enclosing);
 
   for (auto entry : scope->getVarTable()) {
-    clone->alloc(entry.first, Resource(entry.first));
+    Resource resource(entry.first);
+    if (entry.second->function)
+      resource.function = entry.second->function;
+    clone->alloc(entry.first, resource);
   }
 
   return clone;
