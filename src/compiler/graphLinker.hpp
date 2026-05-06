@@ -27,6 +27,7 @@ class GraphLinker {
   // Uses the resource. If there is a current function, will add a write there,
   // too.
   void useResource(Expression &expr, std::string name, bool write);
+  void updateScopeLifetimes();
   void processExpression(Expression &expr);
 
   void enterFunction(std::reference_wrapper<Expression> expr);

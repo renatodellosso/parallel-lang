@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -129,7 +130,7 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
   resource.currAccesses.push_back(expr);
 }
 
-void GraphLinker::processExpression(Expression &expr) {
+void GraphLinker::updateScopeLifetimes() {
   if (scopeLifetimes.size()) {
     scopeLifetimes.top()--; // int& so this works
 
@@ -138,7 +139,9 @@ void GraphLinker::processExpression(Expression &expr) {
       scope = scope->getEnclosing();
     }
   }
+}
 
+void GraphLinker::processExpression(Expression &expr) {
   try {
     if (expr.type == InstructionType::Declare)
       createResource(expr);
@@ -351,6 +354,9 @@ void GraphLinker::exitFunction() {
 
   scope = savedScopes.top();
   savedScopes.pop();
+  // Pop both block and function scopes
+
+  scopeLifetimes.pop();
   scopeLifetimes.pop();
 
   function = std::nullopt;
@@ -366,6 +372,7 @@ void GraphLinker::linkGraph() {
     if (expr.get().type == InstructionType::Function)
       enterFunction(expr);
 
+    updateScopeLifetimes();
     processExpression(expr);
     expr.get().linkInternally();
 
