@@ -346,6 +346,12 @@ CallExpression::getWithSubExpressions() const {
   return vector;
 }
 
+void CallExpression::linkInternally() {
+  for (int i = 0; i < expressions.size(); i++) {
+    addDependency(*this, *expressions[i].get(), i);
+  }
+}
+
 int CallExpression::numberExpressions(int startWith) {
 
   for (auto &line : expressions) {

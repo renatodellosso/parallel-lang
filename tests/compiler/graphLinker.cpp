@@ -738,3 +738,143 @@ TEST(linkGraph, createsFunctionResource) {
 
   delete linker;
 }
+
+TEST(linkGraph, linksCallDependenciesWithoutParameters) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto ref = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, ref, value));
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({set, print}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  Token token = {TokenType::Identifier, TokenSubtype::None, "func", 3};
+  auto getFunc = std::make_shared<RootExpression>(
+      InstructionType::GetIdentifier, 3, token);
+  std::vector<std::shared_ptr<Expression>> callExprs = {getFunc};
+  auto call = std::make_shared<CallExpression>(callExprs, 3);
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(func);
+  expressions->push_back(call);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  ASSERT_EQ(func->dependents.size(), 2); // Block and call
+  ASSERT_EQ(call->dependencies.size(),
+            2); // The GetIdentifier already depends on the function
+
+  EXPECT_EQ(&func->dependents[1].expr.get(), getFunc.get());
+
+  EXPECT_EQ(&call->dependencies[0].get(), declaration.get());
+  EXPECT_EQ(&call->dependencies[1].get(),
+            getFunc.get()); // Internal links are after external links
+
+  ASSERT_EQ(declaration->dependents.size(), 1);
+  EXPECT_EQ(&declaration->dependents[0].expr.get(), call.get());
+
+  ASSERT_EQ(getFunc->dependencies.size(), 1);
+  EXPECT_EQ(&getFunc->dependencies[0].get(), func.get());
+
+  ASSERT_EQ(getFunc->dependents.size(), 1);
+  EXPECT_EQ(&getFunc->dependents[0].expr.get(), call.get());
+  EXPECT_EQ(getFunc->dependents[0].argIndex.value(), 0);
+
+  delete linker;
+}
+
+TEST(linkGraph, linksCallDependentsWithoutParameters) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto ref = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, ref, value));
+
+  auto block = std::make_shared<BlockExpression>(BlockExpression({set}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  Token token = {TokenType::Identifier, TokenSubtype::None, "func", 3};
+  auto getFunc = std::make_shared<RootExpression>(
+      InstructionType::GetIdentifier, 3, token);
+  std::vector<std::shared_ptr<Expression>> callExprs = {getFunc};
+  auto call = std::make_shared<CallExpression>(callExprs, 3);
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(func);
+  expressions->push_back(call);
+  expressions->push_back(print);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  ASSERT_EQ(call->dependents.size(), 1);
+  ASSERT_EQ(get->dependencies.size(), 1);
+
+  EXPECT_EQ(&call->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&get->dependencies[0].get(), call.get());
+
+  delete linker;
+}

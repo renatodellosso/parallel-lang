@@ -176,6 +176,7 @@ struct CallExpression : public BlockExpression {
   std::string toByteCode() const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
+  void linkInternally() override;
   int numberExpressions(int startWith) override;
 
   std::string getFunctionName() const;
