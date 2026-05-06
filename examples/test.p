@@ -1,9 +1,9 @@
 int a = 0;
 
-void main(int x) {
-    a = x;
+void main() {
+    a = 1;
 }
 
-main(a);
+main();
 
 print a;

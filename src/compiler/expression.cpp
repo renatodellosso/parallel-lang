@@ -327,7 +327,7 @@ std::string CallExpression::toByteCode() const {
 
   str += Expression::toByteCode();
 
-  return str.erase(str.length() - 1); // Erase trailing \n
+  return str;
 }
 
 std::vector<std::reference_wrapper<Expression>>

@@ -16,7 +16,7 @@ std::string valToStr(Value val) {
   case ValueType::Function: {
     auto func = std::get<std::shared_ptr<Function>>(val.val);
     return std::format("<function {} {}()>", func->getReturnType(),
-                       func->getReturnType());
+                       func->getName());
   }
 
   default:
