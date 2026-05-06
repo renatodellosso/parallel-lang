@@ -271,6 +271,24 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     break;
   }
+  case InstructionType::Call: {
+    auto func = std::get<std::shared_ptr<Function>>(instr.depArgs[0]->val);
+    auto body = func->getBody().clone();
+
+    if (cliArgs.verbose) {
+      log(LOCATION, "Calling function '{}' with {} instructions",
+          func->getName(), body.size());
+    }
+
+    auto &block = body[0];
+    block.depsFulfilled++;
+    queue.push(block);
+
+    if (cliArgs.verbose)
+      log(LOCATION, "Enqueuing {}", block.toString());
+
+    break;
+  }
   default:
     throw std::runtime_error(
         std::format("Unknown instruction type on instruction {}: {}", instr.id,
@@ -304,6 +322,9 @@ void Executor::execWorker(int id) {
     stalls[id] = false;
 
     auto &instr = std::get<std::reference_wrapper<Instruction>>(popped).get();
+
+    if (cliArgs.verbose)
+      log(LOCATION, "Popped: {}", instr.toString());
 
     try {
       execSingleInstruction(instr);

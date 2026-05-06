@@ -18,5 +18,7 @@ public:
   std::vector<Instruction>::iterator begin();
   std::vector<Instruction>::iterator end();
 
+  Subprogram clone() const;
+
   int size() const;
 };

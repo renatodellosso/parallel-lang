@@ -39,4 +39,6 @@ public:
   std::unordered_map<std::string, std::reference_wrapper<Instruction>>
   getLastWrites() const;
   std::vector<FunctionParam> getParams() const;
+
+  Subprogram &getBody();
 };

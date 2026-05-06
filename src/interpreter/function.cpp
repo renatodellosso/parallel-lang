@@ -124,3 +124,5 @@ Function::getLastWrites() const {
 }
 
 std::vector<FunctionParam> Function::getParams() const { return params; }
+
+Subprogram &Function::getBody() { return body; }

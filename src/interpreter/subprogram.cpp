@@ -37,3 +37,5 @@ std::vector<Instruction>::iterator Subprogram::begin() {
 std::vector<Instruction>::iterator Subprogram::end() { return instrs->end(); }
 
 int Subprogram::size() const { return instrs->size(); }
+
+Subprogram Subprogram::clone() const { return Subprogram(*this, 0, size()); }
