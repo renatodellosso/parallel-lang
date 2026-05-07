@@ -277,15 +277,12 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     if (cliArgs.verbose) {
       log(LOCATION, "Calling function '{}' with {} instructions",
-          func->getName(), body.size());
+          func->getName(), body->size());
     }
 
-    auto &block = body[0];
+    auto &block = body->at(0);
     block.depsFulfilled++;
     queue.push(block);
-
-    if (cliArgs.verbose)
-      log(LOCATION, "Enqueuing {}", block.toString());
 
     break;
   }
@@ -322,9 +319,6 @@ void Executor::execWorker(int id) {
     stalls[id] = false;
 
     auto &instr = std::get<std::reference_wrapper<Instruction>>(popped).get();
-
-    if (cliArgs.verbose)
-      log(LOCATION, "Popped: {}", instr.toString());
 
     try {
       execSingleInstruction(instr);

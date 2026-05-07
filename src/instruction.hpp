@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+class Subprogram;
+
 enum class InstructionType {
   Block,
   GetLiteral,
@@ -59,6 +61,8 @@ struct Instruction {
   std::vector<InstrDependent> dependents;
 
   std::shared_ptr<Scope<Value>> scope;
+
+  std::shared_ptr<Subprogram> program;
 
   Instruction(int id, std::shared_ptr<Scope<Value>> scope = nullptr);
 

@@ -28,8 +28,8 @@ ExitCode Interpreter::interpret(std::istream &stream) {
   }
 
   try {
-    Subprogram program(
-        std::make_shared<std::vector<Instruction>>(instructions));
+    auto instrs = std::make_shared<std::vector<Instruction>>(instructions);
+    Subprogram program(instrs);
     Executor *executor = new Executor(args, program);
     executor->startExecution();
 

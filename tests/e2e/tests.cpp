@@ -102,4 +102,29 @@ std::vector<E2eTest> tests = {
      "void extra() { print 2; }\n"
      "}",
      {}},
+
+    // Calls
+    {"CallsCallFunctions",
+     "void main() { \n"
+     "print \"Func!\";\n"
+     "}\n"
+     "main();",
+     {"Func!"}},
+    {"CallsCanCallFunctionsMultipleTimes",
+     "void main() { \n"
+     "print \"Func!\";\n"
+     "}\n"
+     "main();\n"
+     "main();",
+     {"Func!", "Func!"}},
+    {"CallsCanCallDifferentFunctions",
+     "void a() { \n"
+     "print \"A\";\n"
+     "}\n"
+     "void b() { \n"
+     "print \"B\";\n"
+     "}\n"
+     "a();\n"
+     "b();",
+     {"A", "B"}},
 };
