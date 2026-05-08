@@ -157,4 +157,15 @@ std::vector<E2eTest> tests = {
      "}\n"
      "main();",
      {"true", "false"}},
+    {"CallsAreSequencedCorrectly",
+     "int a = 0;\n"
+     "void main() {\n"
+     "print a;\n"
+     "}\n"
+     "main();\n"
+     "a = a + 1;\n"
+     "main();\n"
+     "a = a + 1;\n"
+     "main();\n",
+     {"0", "1", "2"}},
 };

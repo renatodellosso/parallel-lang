@@ -1,7 +1,9 @@
-void outer() {
-    print "a":
+int a = 0;
 
-    outer();
+void main() {
+    print a;
 }
 
-outer();
+main();
+a = 1;
+main();
