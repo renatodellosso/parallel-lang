@@ -146,4 +146,15 @@ std::vector<E2eTest> tests = {
      "}\n"
      "main();",
      {"5", "4", "3", "2", "1"}},
+    {"CallsCanCallFunctionsRecursively",
+     "bool recurse = true;\n"
+     "void main() {\n"
+     "print recurse;\n"
+     "if (recurse) {\n"
+     "recurse = false;\n"
+     "main();\n"
+     "}"
+     "}\n"
+     "main();",
+     {"true", "false"}},
 };
