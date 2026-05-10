@@ -328,7 +328,9 @@ AstBuilder::extendExpression(std::optional<std::unique_ptr<Expression>> prev,
   auto type = prev->get()->type;
   bool autoEndExpr =
       type == InstructionType::If || type == InstructionType::While ||
-      type == InstructionType::Block || type == InstructionType::Function;
+      (type == InstructionType::Block &&
+       dynamic_cast<CallExpression *>(prev.value().get()) == nullptr) ||
+      type == InstructionType::Function;
   if (!autoEndExpr && !match(endOn) && hasNext()) {
     prev = parseCompoundExpression(std::move(prev), endOn);
   }

@@ -474,7 +474,7 @@ TEST(AstBuilder, buildsFunctionsWithImplicitBlockBodies) {
   EXPECT_EQ(block->expressions[0]->type, InstructionType::Add);
 }
 
-TEST(AstBuilder, buildsCallsWithoutParameters) {
+TEST(AstBuilder, buildsCallsWithoutArguments) {
   std::vector<Token> tokens = {
       {TokenType::Identifier, TokenSubtype::None, "func", 1},
       {TokenType::LeftParen, TokenSubtype::None, "(", 1},
@@ -492,14 +492,17 @@ TEST(AstBuilder, buildsCallsWithoutParameters) {
   ASSERT_EQ(expressions->size(), 1);
 
   auto expr = expressions->at(0);
-  ASSERT_EQ(expr->type, InstructionType::Call);
+  ASSERT_EQ(expr->type, InstructionType::Block);
 
   auto func = std::static_pointer_cast<CallExpression>(expr);
 
   ASSERT_EQ(func->expressions.size(), 1);
-  ASSERT_EQ(func->expressions[0]->type, InstructionType::GetIdentifier);
+  ASSERT_EQ(func->expressions[0]->type, InstructionType::Call);
 
-  auto root = std::static_pointer_cast<RootExpression>(func->expressions[0]);
+  auto call =
+      std::static_pointer_cast<UnaryCallExpression>(func->expressions[0]);
+
+  auto root = std::static_pointer_cast<RootExpression>(call->root);
   EXPECT_EQ(root->token.raw, tokens[0].raw);
 }
 
@@ -526,13 +529,13 @@ TEST(AstBuilder, buildsCallsWithArguments) {
   ASSERT_EQ(expressions->size(), 1);
 
   auto expr = expressions->at(0);
-  ASSERT_EQ(expr->type, InstructionType::Call);
+  ASSERT_EQ(expr->type, InstructionType::Block);
 
   auto func = std::static_pointer_cast<CallExpression>(expr);
 
   ASSERT_EQ(func->expressions.size(), 4);
 
-  for (int i = 0; i < func->expressions.size(); i++) {
+  for (int i = 1; i < func->expressions.size(); i++) {
     auto expr = func->expressions[i];
     ASSERT_EQ(expr->type, InstructionType::GetIdentifier);
 
@@ -566,22 +569,19 @@ TEST(AstBuilder, buildsCallsWithComplexArguments) {
   ASSERT_EQ(expressions->size(), 1);
 
   auto expr = expressions->at(0);
-  ASSERT_EQ(expr->type, InstructionType::Call);
+  ASSERT_EQ(expr->type, InstructionType::Block);
 
   auto func = std::static_pointer_cast<CallExpression>(expr);
 
   ASSERT_EQ(func->expressions.size(), 3);
 
-  ASSERT_EQ(func->expressions[0]->type, InstructionType::GetIdentifier);
-
-  auto root = std::static_pointer_cast<RootExpression>(func->expressions[0]);
-  EXPECT_EQ(root->token.raw, tokens[0].raw);
+  ASSERT_EQ(func->expressions[0]->type, InstructionType::Call);
 
   ASSERT_EQ(func->expressions[1]->type, InstructionType::Add);
   auto binary =
       std::static_pointer_cast<BinaryExpression>(func->expressions[1]);
 
-  root = std::static_pointer_cast<RootExpression>(binary->left);
+  auto root = std::static_pointer_cast<RootExpression>(binary->left);
   EXPECT_EQ(root->type, InstructionType::GetLiteral);
   EXPECT_EQ(root->token.raw, "1");
 
@@ -617,6 +617,8 @@ TEST(AstBuilder, buildsCallsInLargerExpressions) {
   builder.build();
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  for (auto err : *builder.getErrors().get())
+    std::cout << err.toString() << "\n";
 
   auto expressions = builder.getExpressions();
 
@@ -628,7 +630,8 @@ TEST(AstBuilder, buildsCallsInLargerExpressions) {
   auto binary = std::static_pointer_cast<BinaryExpression>(expr);
   binary = std::static_pointer_cast<BinaryExpression>(binary->right);
 
-  ASSERT_EQ(binary->left->type, InstructionType::Call);
+  ASSERT_EQ(binary->left->type, InstructionType::Block);
+  ASSERT_NE(std::dynamic_pointer_cast<CallExpression>(binary->left), nullptr);
   auto func = std::static_pointer_cast<CallExpression>(binary->left);
 
   ASSERT_EQ(func->expressions.size(), 1);
