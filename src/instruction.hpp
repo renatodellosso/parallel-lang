@@ -42,6 +42,8 @@ struct InstrDependent {
   Instruction *instr;
   std::optional<int> argIndex;
 
+  bool disabled;
+
   InstrDependent(Instruction *instr, std::optional<int> argIndex);
   InstrDependent(Instruction *instr, int argIndex);
   InstrDependent(Instruction *instr);

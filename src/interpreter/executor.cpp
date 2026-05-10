@@ -16,8 +16,35 @@
 
 #define LOCATION "Executor"
 
+// Dep remaps are in the form <remap count> <dependent index> <new dependency
+// count> <new dependency ID in subprogram>
+static std::unordered_map<int, std::vector<int>>
+parseDependencyRemappings(std::vector<Value> &args) {
+  int offset = 0;
+  int count = std::get<int>(args[offset++].val);
+
+  std::unordered_map<int, std::vector<int>> remaps;
+
+  for (int i = 0; i < count; i++) {
+    int dependentIndex = std::get<int>(args[offset++].val);
+
+    int dependencyCount = std::get<int>(args[offset++].val);
+
+    std::vector<int> newDependencies;
+    for (int j = 0; j < dependencyCount; j++)
+      newDependencies.push_back(std::get<int>(args[offset++].val));
+
+    remaps[dependentIndex] = newDependencies;
+  }
+
+  return remaps;
+}
+
 void Executor::updateDependency(InstrDependent dep,
                                 std::shared_ptr<Value> result) {
+  if (dep.disabled)
+    return;
+
   int fulfilled;
 
   // Smaller scope so the lock guard is cleaned up
@@ -291,6 +318,21 @@ void Executor::execSingleInstruction(Instruction &instr) {
     auto &block = body->at(0);
     block.depsFulfilled++;
     queue.push(block);
+
+    // Handle dependency remapping
+    auto remaps = parseDependencyRemappings(instr.bytecodeArgs);
+
+    for (auto remap : remaps) {
+      auto &dependent = instr.dependents[remap.first];
+
+      for (auto dependencyIndex : remap.second)
+        body->at(dependencyIndex).dependents.push_back(dependent);
+
+      // Adjust depCount accordingly
+      dependent.instr->depCount += remap.second.size() - 1;
+
+      dependent.disabled = true;
+    }
 
     break;
   }

@@ -7,3 +7,5 @@ void main() {
 main();
 a = 1;
 main();
+a = 2;
+main();
