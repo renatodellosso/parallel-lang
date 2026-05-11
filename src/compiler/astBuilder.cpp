@@ -198,7 +198,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
     auto casted = dynamic_cast<RootExpression *>(prev.value().get());
     if (casted) {
 
-      CallExpression call(
+      auto call = std::make_unique<CallExpression>(
           std::move(prev.value()),
           line); // Can't use prev->lineNumber since it's been released
 
@@ -212,13 +212,13 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
         if (match(TokenType::Comma))
           next();
 
-        call.addArgument(std::move(arg.value()));
+        call->addArgument(std::move(arg.value()));
       }
 
       next(); // Consume ')'
 
       // We return early, so we have to handle extending manually
-      auto final = std::make_optional(std::make_unique<CallExpression>(call));
+      auto final = std::make_optional(std::move(call));
       if (!match(endOn))
         return extendExpression(std::move(final), endOn);
       return final;

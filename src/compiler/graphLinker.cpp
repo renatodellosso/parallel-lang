@@ -274,12 +274,13 @@ void GraphLinker::processExpression(Expression &expr) {
         auto uses = std::unordered_map<std::string, bool>();
 
         // Set all reads first
-        for (auto use : resource->function.value().get().firstUses) {
+        // Use last instead of first since params are only present in last
+        for (auto use : resource->function.value().get().lastUses) {
           uses[use.first] = false;
         }
 
         // Then all writes
-        for (auto use : resource->function.value().get().firstWrites) {
+        for (auto use : resource->function.value().get().lastWrites) {
           uses[use.first] = true;
         }
 
@@ -362,18 +363,20 @@ void GraphLinker::exitFunction() {
   for (auto key : scope->getKeys()) {
     auto resource = scope->get(key);
 
-    // Don't worry about resources created inside the function
-    if (resource->function && &resource->function->get() == &function->get())
-      continue;
-
     // Don't add params to last uses/writes
     bool isParam = false;
     for (auto param : function->get().params) {
-      if (param.name == key) {
+      if (param.name == key &&
+          scope->getEnclosing()->getKeys().contains((param.name))) {
         isParam = true;
         break;
       }
     }
+
+    // Don't worry about resources created inside the function
+    if (!isParam && resource->function &&
+        &resource->function->get() == &function->get())
+      continue;
 
     if (!isParam) {
       if (resource->lastWrittenBy)

@@ -132,14 +132,19 @@ struct FunctionExpression : public Expression {
   // Each entry is a resource name and the set of expressions that first use it
   // before a set (if it's immediately set, this will just contain the setting
   // expression)
+
+  // Contains params
   std::unordered_map<std::string,
                      std::vector<std::reference_wrapper<Expression>>>
       firstUses;
+  // Contains params
   std::unordered_map<std::string, std::reference_wrapper<Expression>>
       firstWrites;
+  // No params
   std::unordered_map<std::string,
                      std::vector<std::reference_wrapper<Expression>>>
       lastUses;
+  // No params
   std::unordered_map<std::string, std::reference_wrapper<Expression>>
       lastWrites;
 
@@ -186,7 +191,7 @@ struct CallExpression : public BlockExpression {
   std::optional<std::reference_wrapper<FunctionExpression>> function;
 
   CallExpression(std::shared_ptr<Expression> funcName, int lineNumber)
-      : BlockExpression({}, lineNumber), function(std::nullopt) {
+      : BlockExpression(lineNumber), function(std::nullopt) {
     expressions.push_back(
         std::make_shared<UnaryCallExpression>(*this, lineNumber, funcName));
   }
