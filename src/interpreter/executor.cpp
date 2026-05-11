@@ -120,8 +120,22 @@ void Executor::skipInstruction(Instruction &instr) {
   if (instr.type == InstructionType::Block) {
     int toSkip = std::get<int>(instr.bytecodeArgs[0].val);
     skipUntil = instr.id + toSkip;
+
+    // Set everything's depCount to -1, then skip everything
     for (int i = 1; i < toSkip; i++) {
-      // auto& not auto& - don't forget the &!
+      // auto& not auto - don't forget the &!
+      auto &skipped = instr.program->at(instr.id + i);
+      skipped.depCount = -1;
+
+      // Skipping the block skips its body, so don't skip again
+      if (skipped.type == InstructionType::Block) {
+        int blockSize = std::get<int>(skipped.bytecodeArgs[0].val);
+        i += blockSize;
+      }
+    }
+
+    for (int i = 1; i < toSkip; i++) {
+      // auto& not auto - don't forget the &!
       auto &skipped = instr.program->at(instr.id + i);
       skipInstruction(skipped);
 

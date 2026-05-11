@@ -1,5 +1,5 @@
-void add(int a, int b) {
-    print a + b;
+void outer() {
+    void inner() {
+        print "Hello, World!";
+    }
 }
-
-add(1, 2);
