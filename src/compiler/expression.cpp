@@ -361,16 +361,15 @@ std::string CallExpression::getFunctionName() const {
 }
 
 static std::shared_ptr<Expression>
-convertToDeclaration(std::shared_ptr<Expression> origExpr,
-                     FunctionExprParameter param) {
+convertToDeclaration(std::shared_ptr<Expression> origExpr) {
   std::shared_ptr<Expression> type = std::make_shared<RootExpression>(
       InstructionType::GetIdentifier, origExpr->lineNumber,
-      Token({TokenType::Identifier, TokenSubtype::None, param.type,
+      Token({TokenType::Identifier, TokenSubtype::None, "type unset",
              origExpr->lineNumber}));
 
   std::shared_ptr<Expression> name = std::make_shared<RootExpression>(
       InstructionType::GetLiteral, origExpr->lineNumber,
-      Token({TokenType::Literal, TokenSubtype::String, param.name,
+      Token({TokenType::Literal, TokenSubtype::String, "name unset",
              origExpr->lineNumber}));
 
   std::shared_ptr<Expression> declaration = std::make_shared<BinaryExpression>(
@@ -382,6 +381,18 @@ convertToDeclaration(std::shared_ptr<Expression> origExpr,
   return set;
 }
 
+static void populateDeclarationWithParam(std::shared_ptr<Expression> origExpr,
+                                         FunctionExprParameter param) {
+  auto declaration = std::static_pointer_cast<BinaryExpression>(
+      std::static_pointer_cast<BinaryExpression>(origExpr)->left);
+
+  auto type = std::static_pointer_cast<RootExpression>(declaration->left);
+  auto name = std::static_pointer_cast<RootExpression>(declaration->right);
+
+  type->token.raw = param.type;
+  name->token.raw = param.name;
+}
+
 void CallExpression::setFunction(
     std::reference_wrapper<FunctionExpression> function) {
   this->function = function;
@@ -390,8 +401,7 @@ void CallExpression::setFunction(
   // Skip first expression since it's the GetIdentifier expression for the
   // function itself
   for (int i = 1; i < expressions.size(); i++) {
-    expressions[i] =
-        convertToDeclaration(expressions[i], function.get().params[i - 1]);
+    populateDeclarationWithParam(expressions[i], function.get().params[i - 1]);
   }
 }
 
@@ -408,4 +418,9 @@ void CallExpression::linkInternally() {
   for (int i = 1; i < expressions.size(); i++) {
     addDependency(*expressions[i].get(), actualCall);
   }
+}
+
+void CallExpression::addArgument(std::shared_ptr<Expression> arg) {
+  auto declaration = convertToDeclaration(arg);
+  expressions.push_back(declaration);
 }

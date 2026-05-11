@@ -537,10 +537,21 @@ TEST(AstBuilder, buildsCallsWithArguments) {
 
   for (int i = 1; i < func->expressions.size(); i++) {
     auto expr = func->expressions[i];
-    ASSERT_EQ(expr->type, InstructionType::GetIdentifier);
+    ASSERT_EQ(expr->type, InstructionType::Set);
 
-    auto root = std::static_pointer_cast<RootExpression>(expr);
-    EXPECT_EQ(root->token.raw, tokens[i * 2].raw);
+    auto set = std::static_pointer_cast<BinaryExpression>(expr);
+
+    ASSERT_EQ(set->left->type, InstructionType::Declare);
+    auto declaration = std::static_pointer_cast<BinaryExpression>(set->left);
+
+    auto arg = std::static_pointer_cast<RootExpression>(set->right);
+    EXPECT_EQ(arg->token.raw, tokens[i * 2].raw);
+
+    auto type = std::static_pointer_cast<RootExpression>(declaration->left);
+    auto name = std::static_pointer_cast<RootExpression>(declaration->right);
+
+    EXPECT_EQ(type->type, InstructionType::GetIdentifier);
+    EXPECT_EQ(name->type, InstructionType::GetLiteral);
   }
 }
 
@@ -577,9 +588,11 @@ TEST(AstBuilder, buildsCallsWithComplexArguments) {
 
   ASSERT_EQ(func->expressions[0]->type, InstructionType::Call);
 
-  ASSERT_EQ(func->expressions[1]->type, InstructionType::Add);
   auto binary =
       std::static_pointer_cast<BinaryExpression>(func->expressions[1]);
+
+  binary = std::static_pointer_cast<BinaryExpression>(binary->right);
+  ASSERT_EQ(binary->type, InstructionType::Add);
 
   auto root = std::static_pointer_cast<RootExpression>(binary->left);
   EXPECT_EQ(root->type, InstructionType::GetLiteral);
@@ -589,8 +602,9 @@ TEST(AstBuilder, buildsCallsWithComplexArguments) {
   EXPECT_EQ(root->type, InstructionType::GetLiteral);
   EXPECT_EQ(root->token.raw, "2");
 
-  ASSERT_EQ(func->expressions[2]->type, InstructionType::Subtract);
   binary = std::static_pointer_cast<BinaryExpression>(func->expressions[2]);
+  binary = std::static_pointer_cast<BinaryExpression>(binary->right);
+  ASSERT_EQ(binary->type, InstructionType::Subtract);
 
   root = std::static_pointer_cast<RootExpression>(binary->left);
   EXPECT_EQ(root->type, InstructionType::GetLiteral);

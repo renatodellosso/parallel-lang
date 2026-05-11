@@ -199,4 +199,6 @@ struct CallExpression : public BlockExpression {
   UnaryCallExpression &getActualCall();
 
   void linkInternally() override;
+
+  void addArgument(std::shared_ptr<Expression> arg);
 };

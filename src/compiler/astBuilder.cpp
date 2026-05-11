@@ -212,7 +212,7 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
         if (match(TokenType::Comma))
           next();
 
-        call.expressions.push_back(std::move(arg.value()));
+        call.addArgument(std::move(arg.value()));
       }
 
       next(); // Consume ')'
