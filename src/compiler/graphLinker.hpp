@@ -1,5 +1,6 @@
 #pragma once
 
+#include "deferredFunctionLinking.hpp"
 #include "expression.hpp"
 #include "resource.hpp"
 #include "syntaxError.hpp"
@@ -9,6 +10,7 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 class GraphLinker {
   std::shared_ptr<std::vector<SyntaxError>> errors;
@@ -20,6 +22,8 @@ class GraphLinker {
   std::optional<std::reference_wrapper<FunctionExpression>> function;
   std::stack<std::unique_ptr<int>> funcExprsRemaining;
   std::stack<std::shared_ptr<Scope<Resource>>> savedScopes;
+
+  std::unordered_set<DeferredFunctionLinking> deferredFunctionLinkings;
 
   Resource &createResource(std::string name);
 

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <format>
 #include <functional>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -336,9 +335,6 @@ std::string UnaryCallExpression::toByteCode() const {
     bytecode += " " + std::to_string(remap.second.size());
     for (auto dep : remap.second) {
       bytecode += " " + std::to_string(dep.get().id + subprogramOffset - 1);
-      std::cout << "Remapping arg... Arg: "
-                << block.expressions[remap.first + 1]->toString()
-                << ", use: " << dep.get().toString() << "\n";
     }
   }
 

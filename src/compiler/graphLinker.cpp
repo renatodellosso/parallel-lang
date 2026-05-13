@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <format>
 #include <functional>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -120,8 +119,6 @@ void GraphLinker::createResource(Expression &expr) {
 }
 
 void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
-  std::cout << "Using: " << name << "\n";
-
   auto entry = scope->get(name);
   if (!entry)
     throw std::runtime_error(
@@ -147,7 +144,8 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
     }
 
     if (function &&
-        // (!resource.function || &resource.function->get() != &function->get()) &&
+        // (!resource.function || &resource.function->get() != &function->get())
+        // &&
         !function->get().firstUses.contains(name)) {
       // This is our first write
       function->get().firstUses[name] = resource.currAccesses;
@@ -389,27 +387,12 @@ void GraphLinker::exitFunction() {
     }
 
     if (!function->get().firstUses.contains(key)) {
-      std::cout << "Adding first use: " << key
-                << ", accesses: " << resource->currAccesses.size() << "\n";
       // This is our first use/write
       if (resource->currAccesses.size())
         function->get().firstUses[key] = resource->currAccesses;
       if (resource->lastWrittenBy)
         function->get().firstWrites.emplace(key, *resource->lastWrittenBy);
     }
-  }
-
-  std::cout << "Func: " << function->get().name << "\n";
-  std::cout << "First uses:\n";
-  for (auto entry : function->get().firstUses) {
-    std::cout << "\t" << entry.first << ":\n";
-    for (auto use : entry.second)
-      std::cout << "\t\t" << use.get().toString() << "\n";
-  }
-  std::cout << "First writes:\n";
-  for (auto entry : function->get().firstWrites) {
-    std::cout << "\t" << entry.first << ":\n";
-    std::cout << "\t\t" << entry.second.get().toString() << "\n";
   }
 
   scope = savedScopes.top();
