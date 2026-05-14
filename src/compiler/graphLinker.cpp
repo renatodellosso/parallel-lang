@@ -402,6 +402,8 @@ void GraphLinker::exitFunction() {
   scopeLifetimes.pop();
   scopeLifetimes.pop();
 
+  function->get().finishedLinking = true;
+
   function = std::nullopt;
   funcExprsRemaining.pop();
 }

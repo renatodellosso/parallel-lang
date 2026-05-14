@@ -129,6 +129,8 @@ struct FunctionExpression : public Expression {
   std::vector<FunctionExprParameter> params;
   std::shared_ptr<Expression> body;
 
+  bool finishedLinking;
+
   // Each entry is a resource name and the set of expressions that first use it
   // before a set (if it's immediately set, this will just contain the setting
   // expression)
@@ -152,7 +154,8 @@ struct FunctionExpression : public Expression {
   FunctionExpression(std::string name, std::string returnType, int lineNumber)
       : Expression(InstructionType::Function, lineNumber), name(name),
         returnType(returnType), params(std::vector<FunctionExprParameter>()),
-        body(nullptr), firstUses(), firstWrites(), lastUses(), lastWrites() {}
+        body(nullptr), firstUses(), firstWrites(), lastUses(), lastWrites(),
+        finishedLinking(false) {}
   FunctionExpression(int lineNumber)
       : FunctionExpression("unnamed_func", "void", lineNumber) {}
 

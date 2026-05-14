@@ -699,6 +699,58 @@ TEST(linkGraph, setsFunctionFirstAndLastUsesAndWrites) {
   delete linker;
 }
 
+TEST(linkGraph, setsFunctionFinishedLinking) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+
+  auto ref = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto value = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto set = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, ref, value));
+
+  auto get = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "var", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, get));
+
+  auto block =
+      std::make_shared<BlockExpression>(BlockExpression({set, print}, 1));
+
+  auto func = std::make_shared<FunctionExpression>(
+      FunctionExpression("func", "void", 1));
+  func->body = block; // Don't forget to set body!
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(declaration);
+  expressions->push_back(func);
+
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+
+  EXPECT_TRUE(func->finishedLinking);
+
+  delete linker;
+}
+
 TEST(linkGraph, createsFunctionResource) {
   auto type = std::make_shared<RootExpression>(
       RootExpression(InstructionType::GetIdentifier, 0,
