@@ -21,6 +21,7 @@ class GraphLinker {
   std::stack<int> scopeLifetimes;
 
   std::optional<std::reference_wrapper<FunctionExpression>> function;
+  std::stack<std::reference_wrapper<FunctionExpression>> funcStack;
   std::stack<std::unique_ptr<int>> funcExprsRemaining;
   std::stack<std::shared_ptr<Scope<Resource>>> savedScopes;
 

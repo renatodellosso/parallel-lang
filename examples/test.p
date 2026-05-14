@@ -1,6 +1,5 @@
 void add(bool a) {
-    print a;
-    if (a) {
+    void sub(bool a) {
         add(false);
     }
 }

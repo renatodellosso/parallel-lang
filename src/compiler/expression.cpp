@@ -209,11 +209,15 @@ int BlockExpression::countInstructions() const {
 std::string FunctionExpression::toString() const {
   auto str = Expression::toString() + " " + returnType + " " + name + "(";
 
+  str += "linking ";
+  if (!finishedLinking)
+    str += "NOT ";
+  str += "finished, ";
+
   for (auto param : params)
     str += param.type + " " + param.name + ", ";
 
-  if (params.size())
-    str.erase(str.end() - 2, str.end()); // Remove trailing ', '
+  str.erase(str.end() - 2, str.end()); // Remove trailing ', '
 
   str += ") {\n";
 

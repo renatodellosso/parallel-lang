@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <format>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -272,6 +273,11 @@ void GraphLinker::processExpression(Expression &expr) {
         call.setFunction(resource->function.value());
 
         if (!call.function->get().finishedLinking) {
+          std::cout << "Deferring " << function->get().toString() << "\n";
+          std::cout << "\tCall: " << call.toString() << "\n";
+          std::cout << "\tCall Function: " << call.function->get().toString()
+                    << "\n";
+
           // Defer linking
 
           // Only relink the immediately enclosing function, not the function
@@ -346,6 +352,9 @@ void GraphLinker::enterFunction(std::reference_wrapper<Expression> expr) {
   useResource(tempFunc->get(), name, true);
   resource.function = tempFunc;
 
+  if (function)
+    funcStack.push(function.value());
+
   function = tempFunc;
 
   int exprCount = expr.get().countInstructions();
@@ -414,7 +423,11 @@ void GraphLinker::exitFunction() {
 
   function->get().finishedLinking = true;
 
-  function = std::nullopt;
+  if (funcStack.size()) {
+    function = std::make_optional(funcStack.top());
+    funcStack.pop();
+  } else
+    function = std::nullopt;
   funcExprsRemaining.pop();
 }
 
@@ -433,8 +446,9 @@ void GraphLinker::linkGraph() {
 
     if (!funcExprsRemaining.empty()) {
       (*funcExprsRemaining.top().get())--;
-      if (*funcExprsRemaining.top() == 0)
+      while (!funcExprsRemaining.empty() && *funcExprsRemaining.top() <= 0) {
         exitFunction();
+      }
     }
   }
 
