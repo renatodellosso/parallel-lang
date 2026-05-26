@@ -95,6 +95,9 @@ GraphLinker::GraphLinker(
     : GraphLinker(CliArgs{}, exprVector) {}
 
 Resource &GraphLinker::createResource(std::string name) {
+  if (cliArgs.verbose)
+    std::cout << "Creating resource " << name << "\n";
+
   Resource resource(name);
   if (function)
     resource.function = function;
@@ -486,6 +489,9 @@ void GraphLinker::linkDeferred() {
 
 void GraphLinker::linkGraph() {
   for (auto expr : expressions) {
+    if (cliArgs.verbose)
+      std::cout << "Scope: " << scope.get()
+                << ", size: " << scope->getVarTable().size() << "\n";
     linkIteration(expr.second);
   }
 
@@ -494,6 +500,10 @@ void GraphLinker::linkGraph() {
     exitFunction();
 
   linkDeferred();
+
+  if (cliArgs.verbose)
+    std::cout << "Final Scope: " << scope.get()
+              << ", size: " << scope->getVarTable().size() << "\n";
 }
 
 std::shared_ptr<std::vector<SyntaxError>> GraphLinker::getErrors() {

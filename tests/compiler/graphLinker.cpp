@@ -3,7 +3,17 @@
 #include <memory>
 #include <vector>
 
-static GraphLinker* makeGraphLinker(std::shared_ptr<std::vector<std::shared_ptr<Expression>>> exprs) {
+void numberExpressions(
+    std::shared_ptr<std::vector<std::shared_ptr<Expression>>> expressions) {
+  // Must number expressions to properly index during linking!
+  int startWith = 0;
+  for (auto expr : *expressions) {
+    startWith = expr->numberExpressions(startWith);
+  }
+}
+
+static GraphLinker *makeGraphLinker(
+    std::shared_ptr<std::vector<std::shared_ptr<Expression>>> exprs) {
   CliArgs args = {};
   return new GraphLinker(args, exprs);
 }
@@ -24,16 +34,20 @@ TEST(linkGraph, createsResources) {
       RootExpression(InstructionType::GetIdentifier, 0,
                      {TokenType::Identifier, TokenSubtype::None, "int", 1}));
   auto name = std::make_shared<RootExpression>(
-      RootExpression(InstructionType::GetLiteral, 0,
+      RootExpression(InstructionType::GetLiteral, 1,
                      {TokenType::Identifier, TokenSubtype::None, "var", 1}));
   auto declaration = std::make_shared<BinaryExpression>(
-      BinaryExpression(InstructionType::Declare, 0, type, name));
+      BinaryExpression(InstructionType::Declare, 2, type, name));
   auto root = std::make_shared<BlockExpression>(BlockExpression());
   auto expressions =
       std::make_shared<std::vector<std::shared_ptr<Expression>>>();
   expressions->push_back(declaration);
 
-  GraphLinker *linker = new GraphLinker(expressions);
+  // Don't forget to number expressions!
+  numberExpressions(expressions);
+
+  const CliArgs args{.verbose = true};
+  GraphLinker *linker = new GraphLinker(args, expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
 
@@ -48,6 +62,8 @@ TEST(linkGraph, createsResources) {
   EXPECT_EQ(var->second->lastWrittenBy, declaration.get());
   ASSERT_EQ(var->second->currAccesses.size(), 1);
   EXPECT_EQ(&var->second->currAccesses[0].get(), declaration.get());
+
+  delete linker;
 }
 
 TEST(linkGraph, readsResources) {
@@ -68,6 +84,8 @@ TEST(linkGraph, readsResources) {
       std::make_shared<std::vector<std::shared_ptr<Expression>>>();
   expressions->push_back(declaration);
   expressions->push_back(refName);
+
+  numberExpressions(expressions);
 
   GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
@@ -115,6 +133,8 @@ TEST(linkGraph, writesResources) {
   expressions->push_back(declaration);
   expressions->push_back(set);
 
+  numberExpressions(expressions);
+
   GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
@@ -154,6 +174,8 @@ TEST(linkGraph, linksInternally) {
   auto expressions =
       std::make_shared<std::vector<std::shared_ptr<Expression>>>();
   expressions->push_back(binary);
+
+  numberExpressions(expressions);
 
   GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
@@ -245,8 +267,8 @@ TEST(linkGraph, allowsVariableShadowing) {
   expressions->push_back(block);
   expressions->push_back(refName1);
 
-  // Must number expressions to properly index during linking!
-  block->numberExpressions(0);
+  numberExpressions(expressions);
+  
   GraphLinker *linker = new GraphLinker(expressions);
 
   EXPECT_NO_THROW(linker->linkGraph());
