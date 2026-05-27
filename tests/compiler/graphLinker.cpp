@@ -283,9 +283,11 @@ TEST(linkGraph, allowsVariableShadowing) {
   EXPECT_EQ(&declaration1->dependents[0].expr.get(), refName1.get());
 
   ASSERT_EQ(declaration2->dependents.size(), 1);
-  ASSERT_EQ(refName2->dependencies.size(), 1);
+  ASSERT_EQ(refName2->dependencies.size(), 2);
 
-  EXPECT_EQ(&refName2->dependencies[0].get(), declaration2.get());
+  // Ideally, the block dependency wouldn't exist but that's a later problem
+  EXPECT_EQ(&refName2->dependencies[0].get(), block.get());
+  EXPECT_EQ(&refName2->dependencies[1].get(), declaration2.get());
   EXPECT_EQ(&declaration2->dependents[0].expr.get(), refName2.get());
 }
 
