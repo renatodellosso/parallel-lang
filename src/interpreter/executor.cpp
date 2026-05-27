@@ -302,8 +302,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
   case InstructionType::While: {
     bool condition = valToBool(*instr.depArgs[0]);
     if (condition) {
-      updateDeps =
-          false; // Only update if condition is false, as we won't loop back
+      // Only update if condition is false, as we won't loop back
+      updateDeps = false;
 
       // Manually update block
       for (auto dep : instr.dependents) {

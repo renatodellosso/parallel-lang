@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
+#define LOCATION "GraphLinker"
+
 static void deduplicateDependenciesForSet(BinaryExpression &set,
                                           RootExpression &identifier) {
   // Deduplicate dependency
@@ -152,10 +154,7 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
       addDependency(expr, dep, name);
     }
 
-    if (function &&
-        // (!resource.function || &resource.function->get() != &function->get())
-        // &&
-        !function->get().firstUses.contains(name) &&
+    if (function && !function->get().firstUses.contains(name) &&
         function->get().scope->get(name) == scope->get(name)) {
       // This is our first write
       function->get().firstUses[name] = resource.currAccesses;
@@ -287,7 +286,7 @@ void GraphLinker::processExpression(Expression &expr) {
           // Only relink the immediately enclosing function, not the function
           // that trigger the deferment
           if (cliArgs.verbose)
-            log("GraphLinker", "Deferring linking for function '{}'...",
+            log(LOCATION, "Deferring linking for function '{}'...",
                 function->get().name);
           deferredFunctionLinkings.insert(function.value().get());
         } else {
@@ -420,11 +419,34 @@ void GraphLinker::exitFunction() {
 
     if (!function->get().firstUses.contains(key)) {
       // This is our first use/write
-      if (resource->currAccesses.size())
+      if (resource->currAccesses.size()) {
         function->get().firstUses[key] = resource->currAccesses;
+      }
       if (resource->lastWrittenBy)
         function->get().firstWrites.emplace(key, *resource->lastWrittenBy);
     }
+  }
+
+  if (cliArgs.verbose) {
+    std::string msg = "";
+
+    std::unordered_map<std::string, bool> isWrite;
+    for (auto use : function->get().firstUses) {
+      isWrite[use.first] = false;
+    }
+    for (auto use : function->get().firstWrites) {
+      isWrite[use.first] = true;
+    }
+
+    for (auto use : function->get().firstUses) {
+      msg += std::format("\n\t- {} {} by ", use.first,
+                         isWrite[use.first] ? "written" : "read");
+      for (auto expr : use.second)
+        msg += std::to_string(expr.get().id) + ", ";
+      msg.erase(msg.size() - 2, 2); // Erase trailing comma
+    }
+
+    log(LOCATION, "Function '{}' uses:{}", function->get().name, msg);
   }
 
   scope = savedScopes.top();
@@ -466,7 +488,7 @@ void GraphLinker::linkIteration(std::reference_wrapper<Expression> expr) {
 
 void GraphLinker::linkDeferred() {
   if (cliArgs.verbose)
-    log("GraphLinker", "Linking {} deferred functions",
+    log(LOCATION, "Linking {} deferred functions",
         deferredFunctionLinkings.size());
 
   processingDeferred = true;

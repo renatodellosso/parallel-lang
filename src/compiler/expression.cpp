@@ -333,7 +333,6 @@ std::string UnaryCallExpression::toByteCode() const {
   auto argMappings = getCallArgMappings(*this);
   bytecode += " " + std::to_string(argMappings.size());
   for (auto remap : argMappings) {
-
     // Write offset relative to this, +1 to avoid this (the call
     // instruction)
     bytecode +=

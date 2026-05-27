@@ -47,9 +47,9 @@ template <class T> inline Scope<T>::Scope() : Scope(nullptr) {}
 
 template <class T>
 inline std::shared_ptr<T> Scope<T>::alloc(std::string key, T val) {
-  std::unique_lock<std::shared_mutex> lock(mutex);
-
   auto ptr = std::make_shared<T>(val);
+
+  std::unique_lock<std::shared_mutex> lock(mutex);
   vars[key] = ptr;
 
   return ptr;

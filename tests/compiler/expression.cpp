@@ -40,13 +40,15 @@ TEST(ExprDependent, allowsDifferentInUnorderedSets) {
   Expression expr2(InstructionType::Block, 1);
   ExprDependent dep1(expr1, 1);
   ExprDependent dep2(expr1, 2);
-  ExprDependent dep3(expr2);
+  ExprDependent dep3(expr1);
+  ExprDependent dep4(expr2);
 
   std::unordered_set<ExprDependent> set;
 
   set.insert(dep1);
   set.insert(dep2);
   set.insert(dep3);
+  set.insert(dep4);
 
-  EXPECT_EQ(set.size(), 3);
+  EXPECT_EQ(set.size(), 4);
 }
