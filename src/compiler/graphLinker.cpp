@@ -43,8 +43,10 @@ addDependency(Expression &expr, Expression &dependsOn,
     return;
   }
 
-  dependsOn.dependents.push_back(expr);
-  expr.dependencies.push_back(dependsOn);
+  int origSize = dependsOn.dependents.size();
+  dependsOn.dependents.insert(expr);
+  if (dependsOn.dependents.size() != origSize)
+    expr.dependencies.push_back(dependsOn);
 
   if (dependsOn.type == InstructionType::Call) {
     // Handle dependency remapping
@@ -250,7 +252,7 @@ void GraphLinker::processExpression(Expression &expr) {
             inner.get().type != InstructionType::Function &&
             dynamic_cast<RootExpression *>(&inner.get()) == nullptr)
           continue;
-          
+
         addDependency(inner, expr);
 
         if (inner.get().type == InstructionType::Function) {

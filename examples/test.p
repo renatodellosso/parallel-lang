@@ -1,11 +1,1 @@
-void outer(bool x) {
-    void inner(bool x) {
-        outer(false);
-    }
-    
-    print x;
-    if (x)
-        inner(true);
-}
-
-outer(true);
+print 1+1+1;

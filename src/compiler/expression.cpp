@@ -10,9 +10,12 @@
 #include <vector>
 
 void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
-  expr.dependencies.push_back(dependsOn);
-  dependsOn.dependents.push_back(ExprDependent(
+  int origSize = dependsOn.dependents.size();
+  dependsOn.dependents.insert(ExprDependent(
       expr, argIndex != -1 ? std::make_optional(argIndex) : std::nullopt));
+
+  if (dependsOn.dependents.size() != origSize)
+    expr.dependencies.push_back(dependsOn);
 }
 
 ExprDependent::ExprDependent(Expression &expr, std::optional<int> argIndex)

@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 struct Expression;
@@ -25,17 +26,15 @@ struct ExprDependent {
 // Custom hasher and equality
 namespace std {
 template <> struct hash<ExprDependent> {
-  std::size_t operator()(
-      const ExprDependent &defer) const noexcept {
+  std::size_t operator()(const ExprDependent &defer) const noexcept {
     // Reinterpret the memory address as a size_t
     return reinterpret_cast<size_t>(&defer.expr.get());
   }
 };
 
 template <> struct equal_to<ExprDependent> {
-  bool
-  operator()(const ExprDependent &a,
-             const ExprDependent &b) const noexcept {
+  bool operator()(const ExprDependent &a,
+                  const ExprDependent &b) const noexcept {
     return &a.expr.get() == &b.expr.get() &&
            a.argIndex.value_or(-1) == b.argIndex.value_or(-1);
   }
@@ -48,13 +47,14 @@ struct Expression {
   int id;
 
   std::vector<std::reference_wrapper<Expression>> dependencies;
-  std::vector<ExprDependent> dependents;
+  std::unordered_set<ExprDependent> dependents;
   Expression *dependentRedirect;
 
   Expression(InstructionType type, int lineNumber)
       : type(type), lineNumber(lineNumber), id(-1),
         dependencies(std::vector<std::reference_wrapper<Expression>>()),
-        dependents(std::vector<ExprDependent>()), dependentRedirect(nullptr) {}
+        dependents(std::unordered_set<ExprDependent>()),
+        dependentRedirect(nullptr) {}
 
   virtual std::string toString() const;
   virtual std::string toByteCode() const;

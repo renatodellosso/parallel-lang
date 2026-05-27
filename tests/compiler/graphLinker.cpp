@@ -46,8 +46,7 @@ TEST(linkGraph, createsResources) {
   // Don't forget to number expressions!
   numberExpressions(expressions);
 
-  const CliArgs args{.verbose = true};
-  GraphLinker *linker = new GraphLinker(args, expressions);
+  GraphLinker *linker = new GraphLinker(expressions);
   auto &resources = linker->getResources();
   int originalResourceCount = resources.size();
 
@@ -103,7 +102,7 @@ TEST(linkGraph, readsResources) {
   ASSERT_EQ(refName.get()->dependencies.size(), 1);
   ASSERT_EQ(lastWrite->dependents.size(), 1);
   EXPECT_EQ(&refName.get()->dependencies[0].get(), lastWrite);
-  EXPECT_EQ(&lastWrite->dependents[0].expr.get(), refName.get());
+  EXPECT_EQ(&lastWrite->dependents.begin()->expr.get(), refName.get());
 
   ASSERT_EQ(var->second->currAccesses.size(), 2);
   EXPECT_EQ(&var->second->currAccesses[1].get(), refName.get());
@@ -157,8 +156,17 @@ TEST(linkGraph, writesResources) {
   ASSERT_EQ(set.get()->dependencies.size(), 3);
   ASSERT_EQ(declaration.get()->dependents.size(), 2);
   EXPECT_EQ(&set.get()->dependencies[0].get(), declaration.get());
-  EXPECT_EQ(&declaration.get()->dependents[0].expr.get(), refName.get());
-  EXPECT_EQ(&declaration.get()->dependents[1].expr.get(), set.get());
+
+  bool refFound, setFound;
+  for (auto entry : declaration.get()->dependents) {
+    if (&entry.expr.get() == refName.get())
+      refFound = true;
+    else if (&entry.expr.get() == set.get())
+      setFound = true;
+  }
+
+  EXPECT_TRUE(refFound);
+  EXPECT_TRUE(setFound);
 }
 
 TEST(linkGraph, linksInternally) {
@@ -194,14 +202,14 @@ TEST(linkGraph, linksInternally) {
   EXPECT_EQ(&binary.get()->dependencies[1].get(), right.get());
 
   // Check left, right -> binary
-  EXPECT_EQ(&left.get()->dependents[0].expr.get(), binary.get());
-  EXPECT_EQ(&right.get()->dependents[0].expr.get(), binary.get());
+  EXPECT_EQ(&left.get()->dependents.begin()->expr.get(), binary.get());
+  EXPECT_EQ(&right.get()->dependents.begin()->expr.get(), binary.get());
 
   // Check arg indices
-  ASSERT_TRUE(left.get()->dependents[0].argIndex.has_value());
-  ASSERT_TRUE(right.get()->dependents[0].argIndex.has_value());
-  EXPECT_EQ(left.get()->dependents[0].argIndex.value(), 0);
-  EXPECT_EQ(right.get()->dependents[0].argIndex.value(), 1);
+  ASSERT_TRUE(left.get()->dependents.begin()->argIndex.has_value());
+  ASSERT_TRUE(right.get()->dependents.begin()->argIndex.has_value());
+  EXPECT_EQ(left.get()->dependents.begin()->argIndex.value(), 0);
+  EXPECT_EQ(right.get()->dependents.begin()->argIndex.value(), 1);
 }
 
 TEST(linkGraph, linksNestedBlocks) {
@@ -225,10 +233,10 @@ TEST(linkGraph, linksNestedBlocks) {
   ASSERT_EQ(inner->dependents.size(), 1);
   ASSERT_EQ(base->dependencies.size(), 1);
 
-  EXPECT_EQ(&outer->dependents[0].expr.get(), inner.get());
+  EXPECT_EQ(&outer->dependents.begin()->expr.get(), inner.get());
   EXPECT_EQ(&inner->dependencies[0].get(), outer.get());
 
-  EXPECT_EQ(&inner->dependents[0].expr.get(), base.get());
+  EXPECT_EQ(&inner->dependents.begin()->expr.get(), base.get());
   EXPECT_EQ(&base->dependencies[0].get(), inner.get());
 }
 
@@ -268,7 +276,7 @@ TEST(linkGraph, allowsVariableShadowing) {
   expressions->push_back(refName1);
 
   numberExpressions(expressions);
-  
+
   GraphLinker *linker = new GraphLinker(expressions);
 
   EXPECT_NO_THROW(linker->linkGraph());
@@ -280,7 +288,7 @@ TEST(linkGraph, allowsVariableShadowing) {
   ASSERT_EQ(refName1->dependencies.size(), 1);
 
   EXPECT_EQ(&refName1->dependencies[0].get(), declaration1.get());
-  EXPECT_EQ(&declaration1->dependents[0].expr.get(), refName1.get());
+  EXPECT_EQ(&declaration1->dependents.begin()->expr.get(), refName1.get());
 
   ASSERT_EQ(declaration2->dependents.size(), 1);
   ASSERT_EQ(refName2->dependencies.size(), 2);
@@ -288,7 +296,7 @@ TEST(linkGraph, allowsVariableShadowing) {
   // Ideally, the block dependency wouldn't exist but that's a later problem
   EXPECT_EQ(&refName2->dependencies[0].get(), block.get());
   EXPECT_EQ(&refName2->dependencies[1].get(), declaration2.get());
-  EXPECT_EQ(&declaration2->dependents[0].expr.get(), refName2.get());
+  EXPECT_EQ(&declaration2->dependents.begin()->expr.get(), refName2.get());
 }
 
 TEST(linkGraph, linksWhileLoops) {
@@ -325,7 +333,7 @@ TEST(linkGraph, linksWhileLoops) {
 
   ASSERT_EQ(condition->dependents.size(), 1);
 
-  EXPECT_EQ(&condition->dependents[0].expr.get(), block.get());
+  EXPECT_EQ(&condition->dependents.begin()->expr.get(), block.get());
 
   ASSERT_EQ(block->dependencies.size(), 1);
   EXPECT_EQ(&block->dependencies[0].get(), condition.get());
@@ -395,8 +403,17 @@ TEST(linkGraph, linksWhileLoopsWithFollowingStatements) {
   EXPECT_EQ(&getIdentifierAfter->dependencies[0].get(), condition.get());
 
   ASSERT_EQ(condition->dependents.size(), 2);
-  EXPECT_EQ(&condition->dependents[0].expr.get(), block.get());
-  EXPECT_EQ(&condition->dependents[1].expr.get(), getIdentifierAfter.get());
+
+  bool blockFound, getFound;
+  for (auto entry : condition.get()->dependents) {
+    if (&entry.expr.get() == block.get())
+      blockFound = true;
+    else if (&entry.expr.get() == getIdentifierAfter.get())
+      getFound = true;
+  }
+
+  EXPECT_TRUE(block);
+  EXPECT_TRUE(getFound);
 }
 
 TEST(linkGraph, linksPrintStatementsWithVariables) {
@@ -443,7 +460,7 @@ TEST(linkGraph, linksPrintStatementsWithVariables) {
   ASSERT_EQ(set->dependents.size(), 1);
   ASSERT_EQ(get->dependencies.size(), 1);
 
-  EXPECT_EQ(&set->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&set->dependents.begin()->expr.get(), get.get());
   EXPECT_EQ(&get->dependencies[0].get(), set.get());
 
   delete linker;
@@ -495,7 +512,7 @@ TEST(linkGraph, linksFunctionsInternally) {
   ASSERT_EQ(set->dependents.size(), 1);
   ASSERT_EQ(get->dependencies.size(), 2);
 
-  EXPECT_EQ(&set->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&set->dependents.begin()->expr.get(), get.get());
   EXPECT_EQ(&get->dependencies[0].get(), block.get());
   EXPECT_EQ(&get->dependencies[1].get(), set.get());
 
@@ -553,7 +570,7 @@ TEST(linkGraph, linksFunctionsNonExternally) {
   ASSERT_EQ(declaration->dependents.size(), 1);
   ASSERT_EQ(get->dependencies.size(), 1);
 
-  EXPECT_EQ(&declaration->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&declaration->dependents.begin()->expr.get(), get.get());
   EXPECT_EQ(&get->dependencies[0].get(), declaration.get());
 
   delete linker;
@@ -601,7 +618,7 @@ TEST(linkGraph, linksFunctionsInternallyWithParams) {
   ASSERT_EQ(set->dependents.size(), 1);
   ASSERT_EQ(get->dependencies.size(), 2);
 
-  EXPECT_EQ(&set->dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&set->dependents.begin()->expr.get(), get.get());
   EXPECT_EQ(&get->dependencies[0].get(), block.get());
   EXPECT_EQ(&get->dependencies[1].get(), set.get());
 
@@ -877,22 +894,29 @@ TEST(linkGraph, linksCallDependenciesWithoutParameters) {
   ASSERT_EQ(call->getActualCall().dependencies.size(),
             2); // The GetIdentifier already depends on the function
 
-  EXPECT_EQ(&func->dependents[1].expr.get(), getFunc.get());
+  bool getFound;
+  for (auto entry : func.get()->dependents) {
+    if (&entry.expr.get() == getFunc.get())
+      getFound = true;
+  }
+
+  EXPECT_TRUE(getFound);
 
   EXPECT_EQ(&call->getActualCall().dependencies[0].get(), declaration.get());
   EXPECT_EQ(&call->getActualCall().dependencies[1].get(),
             getFunc.get()); // Internal links are after external links
 
   ASSERT_EQ(declaration->dependents.size(), 1);
-  EXPECT_EQ(&declaration->dependents[0].expr.get(), &call->getActualCall());
+  EXPECT_EQ(&declaration->dependents.begin()->expr.get(),
+            &call->getActualCall());
 
   ASSERT_EQ(getFunc->dependencies.size(),
             2); // 1st dep is the enclosing call block
   EXPECT_EQ(&getFunc->dependencies[1].get(), func.get());
 
   ASSERT_EQ(getFunc->dependents.size(), 1);
-  EXPECT_EQ(&getFunc->dependents[0].expr.get(), &call->getActualCall());
-  EXPECT_EQ(getFunc->dependents[0].argIndex.value(), 0);
+  EXPECT_EQ(&getFunc->dependents.begin()->expr.get(), &call->getActualCall());
+  EXPECT_EQ(getFunc->dependents.begin()->argIndex.value(), 0);
 
   delete linker;
 }
@@ -953,7 +977,7 @@ TEST(linkGraph, linksCallDependentsWithoutParameters) {
   ASSERT_EQ(call->getActualCall().dependents.size(), 1);
   ASSERT_EQ(get->dependencies.size(), 1);
 
-  EXPECT_EQ(&call->getActualCall().dependents[0].expr.get(), get.get());
+  EXPECT_EQ(&call->getActualCall().dependents.begin()->expr.get(), get.get());
   EXPECT_EQ(&get->dependencies[0].get(), &call->getActualCall());
 
   delete linker;
