@@ -180,4 +180,14 @@ std::vector<E2eTest> tests = {
      "}\n"
      "add(1, 2);",
      {"3"}},
-};
+    {"CallsWorkFromEnclosedFunctionsToEnclosingFunctions",
+     "void outer(int x) {\n"
+     "void inner(bool y) {\n"
+     "outer(0);\n"
+     "}\n"
+     "print x - 1;\n"
+     "if (x)\n"
+     "inner(true);\n"
+     "print x + 1;\n"
+     "}\n"
+     "outer(5);\n", {"-1", "1", "4", "6"}}};
