@@ -27,6 +27,8 @@ std::vector<Instruction> getInstrs() {
 }
 
 std::vector<Instruction> getCompareInstrs(Value left, Value right,
+                                          InstructionType type =
+                                              InstructionType::CompareEquals,
                                           bool printResult = true) {
   std::vector<Instruction> instrs = printResult
                                         ? std::vector<Instruction>{
@@ -44,7 +46,7 @@ std::vector<Instruction> getCompareInstrs(Value left, Value right,
   instrs[1].bytecodeArgs.push_back(right);
   instrs[1].dependents.push_back(InstrDependent(&instrs[2], 1));
 
-  instrs[2].type = InstructionType::CompareEquals;
+  instrs[2].type = type;
   instrs[2].depCount = 2;
 
   if (printResult) {
@@ -56,8 +58,9 @@ std::vector<Instruction> getCompareInstrs(Value left, Value right,
   return instrs;
 }
 
-std::string runCompare(Value left, Value right) {
-  auto instrs = getCompareInstrs(left, right);
+std::string runCompare(Value left, Value right,
+                       InstructionType type = InstructionType::CompareEquals) {
+  auto instrs = getCompareInstrs(left, right, type);
   Subprogram program(std::make_shared<std::vector<Instruction>>(instrs));
 
   Executor executor({.threads = 1}, program);
@@ -66,6 +69,16 @@ std::string runCompare(Value left, Value right) {
   auto output = REENABLE_COUT
 
   return output;
+}
+
+void expectCompareThrows(Value left, Value right, InstructionType type) {
+  auto instrs = getCompareInstrs(left, right, type, false);
+  Subprogram program(std::make_shared<std::vector<Instruction>>(instrs));
+
+  Executor executor({.threads = 1}, program);
+  DISABLE_COUT
+  EXPECT_THROW(executor.startExecution(), std::runtime_error);
+  REENABLE_COUT
 }
 
 TEST(startExecution, doesntError) {
@@ -143,6 +156,7 @@ TEST(startExecution, compareEqualsThrowsForSameTypeNonPrimitives) {
   auto func = std::shared_ptr<Function>();
   auto instrs = getCompareInstrs({.type = ValueType::Function, .val = func},
                                  {.type = ValueType::Function, .val = func},
+                                 InstructionType::CompareEquals,
                                  false);
   Subprogram program(std::make_shared<std::vector<Instruction>>(instrs));
 
@@ -150,6 +164,97 @@ TEST(startExecution, compareEqualsThrowsForSameTypeNonPrimitives) {
   DISABLE_COUT
   EXPECT_THROW(executor.startExecution(), std::runtime_error);
   REENABLE_COUT
+}
+
+TEST(startExecution, compareNotEqualsComparesPrimitives) {
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 1},
+                       {.type = ValueType::Integer, .val = 2},
+                       InstructionType::CompareNotEquals),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::String, .val = std::string("a")},
+                       {.type = ValueType::String, .val = std::string("a")},
+                       InstructionType::CompareNotEquals),
+            "false\n");
+  EXPECT_EQ(runCompare({.type = ValueType::Bool, .val = true},
+                       {.type = ValueType::Bool, .val = false},
+                       InstructionType::CompareNotEquals),
+            "true\n");
+}
+
+TEST(startExecution, compareNotEqualsReturnsTrueForDifferentTypes) {
+  auto func = std::shared_ptr<Function>();
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 1},
+                       {.type = ValueType::Bool, .val = true},
+                       InstructionType::CompareNotEquals),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::Function, .val = func},
+                       {.type = ValueType::Integer, .val = 1},
+                       InstructionType::CompareNotEquals),
+            "true\n");
+}
+
+TEST(startExecution, compareNotEqualsThrowsForSameTypeNonPrimitives) {
+  auto func = std::shared_ptr<Function>();
+  expectCompareThrows({.type = ValueType::Function, .val = func},
+                      {.type = ValueType::Function, .val = func},
+                      InstructionType::CompareNotEquals);
+}
+
+TEST(startExecution, orderedComparisonsCompareIntegers) {
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 1},
+                       {.type = ValueType::Integer, .val = 2},
+                       InstructionType::CompareLessThan),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 2},
+                       {.type = ValueType::Integer, .val = 2},
+                       InstructionType::CompareLessThanEquals),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 3},
+                       {.type = ValueType::Integer, .val = 2},
+                       InstructionType::CompareGreaterThan),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 2},
+                       {.type = ValueType::Integer, .val = 2},
+                       InstructionType::CompareGreaterThanEquals),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::Integer, .val = 2},
+                       {.type = ValueType::Integer, .val = 1},
+                       InstructionType::CompareLessThan),
+            "false\n");
+}
+
+TEST(startExecution, orderedComparisonsCompareStringsAlphabetically) {
+  EXPECT_EQ(runCompare({.type = ValueType::String, .val = std::string("a")},
+                       {.type = ValueType::String, .val = std::string("b")},
+                       InstructionType::CompareLessThan),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::String, .val = std::string("b")},
+                       {.type = ValueType::String, .val = std::string("a")},
+                       InstructionType::CompareGreaterThan),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::String, .val = std::string("a")},
+                       {.type = ValueType::String, .val = std::string("a")},
+                       InstructionType::CompareLessThanEquals),
+            "true\n");
+  EXPECT_EQ(runCompare({.type = ValueType::String, .val = std::string("b")},
+                       {.type = ValueType::String, .val = std::string("b")},
+                       InstructionType::CompareGreaterThanEquals),
+            "true\n");
+}
+
+TEST(startExecution, orderedComparisonsThrowForBools) {
+  expectCompareThrows({.type = ValueType::Bool, .val = false},
+                      {.type = ValueType::Bool, .val = true},
+                      InstructionType::CompareLessThan);
+  expectCompareThrows({.type = ValueType::Bool, .val = false},
+                      {.type = ValueType::Integer, .val = 1},
+                      InstructionType::CompareGreaterThan);
+}
+
+TEST(startExecution, orderedComparisonsThrowForDifferentTypes) {
+  expectCompareThrows({.type = ValueType::Integer, .val = 1},
+                      {.type = ValueType::String, .val = std::string("1")},
+                      InstructionType::CompareLessThan);
 }
 
 Instruction getFuncInstr() {

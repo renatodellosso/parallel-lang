@@ -67,6 +67,15 @@ void Tokenizer::parseToken() {
   case '/':
     token.type = TokenType::Slash;
     break;
+  case '!':
+    if (stream.peek() == '=') {
+      stream.get();
+      raw += '=';
+      token.type = TokenType::NotEquals;
+    } else {
+      token.type = TokenType::Exclamation;
+    }
+    break;
   case '=':
     if (stream.peek() == '=') {
       stream.get();
@@ -77,10 +86,22 @@ void Tokenizer::parseToken() {
     }
     break;
   case '<':
-    token.type = TokenType::LessThan;
+    if (stream.peek() == '=') {
+      stream.get();
+      raw += '=';
+      token.type = TokenType::LessThanEquals;
+    } else {
+      token.type = TokenType::LessThan;
+    }
     break;
   case '>':
-    token.type = TokenType::GreaterThan;
+    if (stream.peek() == '=') {
+      stream.get();
+      raw += '=';
+      token.type = TokenType::GreaterThanEquals;
+    } else {
+      token.type = TokenType::GreaterThan;
+    }
     break;
   case ',':
     token.type = TokenType::Comma;

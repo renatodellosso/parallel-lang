@@ -86,6 +86,48 @@ TEST(AstBuilder, buildsEqualsExpressions) {
   EXPECT_TOKEN_EQ(right->token, tokens[2]);
 }
 
+TEST(AstBuilder, buildsComparisonExpressions) {
+  std::vector<std::pair<Token, InstructionType>> cases = {
+      {{TokenType::NotEquals, TokenSubtype::None, "!=", 1},
+       InstructionType::CompareNotEquals},
+      {{TokenType::LessThan, TokenSubtype::None, "<", 1},
+       InstructionType::CompareLessThan},
+      {{TokenType::LessThanEquals, TokenSubtype::None, "<=", 1},
+       InstructionType::CompareLessThanEquals},
+      {{TokenType::GreaterThan, TokenSubtype::None, ">", 1},
+       InstructionType::CompareGreaterThan},
+      {{TokenType::GreaterThanEquals, TokenSubtype::None, ">=", 1},
+       InstructionType::CompareGreaterThanEquals},
+  };
+
+  for (auto testCase : cases) {
+    std::vector<Token> tokens = {
+        {TokenType::Literal, TokenSubtype::Integer, "1", 1}, testCase.first,
+        {TokenType::Literal, TokenSubtype::Integer, "2", 1},
+        {TokenType::Semicolon, TokenSubtype::None, ";", 1}};
+
+    AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+    builder.build();
+
+    EXPECT_EQ(builder.getErrors().get()->size(), 0);
+
+    auto expressions = *builder.getExpressions().get();
+    ASSERT_EQ(expressions.size(), 1);
+
+    auto expr = expressions[0].get();
+    EXPECT_EQ(expr->type, testCase.second);
+
+    BinaryExpression *binary = static_cast<BinaryExpression *>(expr);
+    RootExpression *left = static_cast<RootExpression *>(binary->left.get());
+    RootExpression *right = static_cast<RootExpression *>(binary->right.get());
+
+    EXPECT_EQ(binary->type, testCase.second);
+    EXPECT_TOKEN_EQ(left->token, tokens[0]);
+    EXPECT_TOKEN_EQ(right->token, tokens[2]);
+  }
+}
+
 TEST(AstBuilder, buildsDeclarations) {
   std::vector<Token> tokens = {
       {TokenType::Identifier, TokenSubtype::None, "int", 1},

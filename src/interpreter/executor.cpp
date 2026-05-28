@@ -76,6 +76,14 @@ parseArgumentDeclarations(std::vector<Value> &args, int offset) {
   return std::make_pair(declarations, offset);
 }
 
+static std::runtime_error invalidArgTypesError(Instruction &instr,
+                                               ValueType left,
+                                               ValueType right) {
+  return std::runtime_error(std::format(
+      "Invalid arg types on instruction {}: {}, {}", instr.id, (int)left,
+      (int)right));
+}
+
 void Executor::updateDependency(InstrDependent dep,
                                 std::shared_ptr<Value> result) {
   if (dep.disabled)
@@ -290,28 +298,69 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     break;
   }
-  case InstructionType::CompareEquals: {
+  case InstructionType::CompareEquals:
+  case InstructionType::CompareNotEquals: {
     std::shared_ptr<Value> left = instr.depArgs[0], right = instr.depArgs[1];
 
+    bool equal;
     if (left->type != right->type) {
-      result = std::make_shared<Value>(ValueType::Bool, false);
+      equal = false;
     } else if (left->type == ValueType::Integer) {
-      result = std::make_shared<Value>(ValueType::Bool,
-                                       std::get<int>(left->val) ==
-                                           std::get<int>(right->val));
+      equal = std::get<int>(left->val) == std::get<int>(right->val);
     } else if (left->type == ValueType::String) {
-      result = std::make_shared<Value>(ValueType::Bool,
-                                       std::get<std::string>(left->val) ==
-                                           std::get<std::string>(right->val));
+      equal =
+          std::get<std::string>(left->val) == std::get<std::string>(right->val);
     } else if (left->type == ValueType::Bool) {
-      result = std::make_shared<Value>(ValueType::Bool,
-                                       std::get<bool>(left->val) ==
-                                           std::get<bool>(right->val));
+      equal = std::get<bool>(left->val) == std::get<bool>(right->val);
     } else {
-      throw std::runtime_error(
-          std::format("Invalid arg types on instruction {}: {}, {}", instr.id,
-                      (int)left->type, (int)right->type));
+      throw invalidArgTypesError(instr, left->type, right->type);
     }
+
+    result = std::make_shared<Value>(
+        ValueType::Bool,
+        instr.type == InstructionType::CompareEquals ? equal : !equal);
+
+    break;
+  }
+  case InstructionType::CompareLessThan:
+  case InstructionType::CompareLessThanEquals:
+  case InstructionType::CompareGreaterThan:
+  case InstructionType::CompareGreaterThanEquals: {
+    std::shared_ptr<Value> left = instr.depArgs[0], right = instr.depArgs[1];
+
+    if (left->type != right->type)
+      throw invalidArgTypesError(instr, left->type, right->type);
+
+    bool comparison;
+    if (left->type == ValueType::Integer) {
+      int leftVal = std::get<int>(left->val);
+      int rightVal = std::get<int>(right->val);
+
+      if (instr.type == InstructionType::CompareLessThan)
+        comparison = leftVal < rightVal;
+      else if (instr.type == InstructionType::CompareLessThanEquals)
+        comparison = leftVal <= rightVal;
+      else if (instr.type == InstructionType::CompareGreaterThan)
+        comparison = leftVal > rightVal;
+      else
+        comparison = leftVal >= rightVal;
+    } else if (left->type == ValueType::String) {
+      auto leftVal = std::get<std::string>(left->val);
+      auto rightVal = std::get<std::string>(right->val);
+
+      if (instr.type == InstructionType::CompareLessThan)
+        comparison = leftVal < rightVal;
+      else if (instr.type == InstructionType::CompareLessThanEquals)
+        comparison = leftVal <= rightVal;
+      else if (instr.type == InstructionType::CompareGreaterThan)
+        comparison = leftVal > rightVal;
+      else
+        comparison = leftVal >= rightVal;
+    } else {
+      throw invalidArgTypesError(instr, left->type, right->type);
+    }
+
+    result = std::make_shared<Value>(ValueType::Bool, comparison);
 
     break;
   }

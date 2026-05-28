@@ -144,6 +144,21 @@ std::optional<std::unique_ptr<Expression>> AstBuilder::parseCompoundExpression(
   case TokenType::EqualsEquals:
     type = InstructionType::CompareEquals;
     break;
+  case TokenType::NotEquals:
+    type = InstructionType::CompareNotEquals;
+    break;
+  case TokenType::LessThan:
+    type = InstructionType::CompareLessThan;
+    break;
+  case TokenType::LessThanEquals:
+    type = InstructionType::CompareLessThanEquals;
+    break;
+  case TokenType::GreaterThan:
+    type = InstructionType::CompareGreaterThan;
+    break;
+  case TokenType::GreaterThanEquals:
+    type = InstructionType::CompareGreaterThanEquals;
+    break;
   case TokenType::Identifier: {
     // Special case with no middle token
 

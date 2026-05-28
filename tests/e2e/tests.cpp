@@ -44,6 +44,32 @@ std::vector<E2eTest> tests = {
      "if (count == 0) print \"done\";",
      {"done"}},
 
+    // Inequality
+    {"InequalityWorksWithUnequalNumbers", "print 1 != 2;", {"true"}},
+    {"InequalityWorksWithEqualNumbers", "print 1 != 1;", {"false"}},
+    {"InequalityWorksWithUnequalStrings", "print \"a\" != \"b\";", {"true"}},
+    {"InequalityWorksWithEqualStrings", "print \"a\" != \"a\";", {"false"}},
+    {"InequalityWorksWithBools", "print true != false;", {"true"}},
+    {"InequalityDefaultsToTrueForMixedTypes", "print 1 != true;", {"true"}},
+
+    // Ordered comparisons
+    {"LessThanWorksWithNumbers", "print 1 < 2;", {"true"}},
+    {"LessThanWorksWithNumbersFalse", "print 2 < 1;", {"false"}},
+    {"LessThanEqualsWorksWithNumbers", "print 2 <= 2;", {"true"}},
+    {"GreaterThanWorksWithNumbers", "print 2 > 1;", {"true"}},
+    {"GreaterThanEqualsWorksWithNumbers", "print 2 >= 2;", {"true"}},
+    {"LessThanComparesStringsAlphabetically", "print \"a\" < \"b\";", {"true"}},
+    {"GreaterThanComparesStringsAlphabetically", "print \"b\" > \"a\";", {"true"}},
+    {"LessThanEqualsComparesStringsAlphabetically",
+     "print \"a\" <= \"a\";",
+     {"true"}},
+    {"GreaterThanEqualsComparesStringsAlphabetically",
+     "print \"b\" >= \"a\";",
+     {"true"}},
+    {"OrderedComparisonsWorkInConditions",
+     "if (\"a\" < \"b\") print \"ordered\";",
+     {"ordered"}},
+
     // Variables
     {"VariablesCanBeDeclared", "int a;", {}},
     {"VariablesCanBeDeclaredAndInitialized", "int a = 1;\nprint a;", {"1"}},

@@ -62,6 +62,30 @@ TEST(Tokenizer, identifiesEqualsEquals) {
   delete tokenizer;
 }
 
+TEST(Tokenizer, identifiesComparisonOperators) {
+  std::string text("!= <= >= < >");
+  std::vector<TokenType> expected = {
+      TokenType::NotEquals, TokenType::LessThanEquals,
+      TokenType::GreaterThanEquals, TokenType::LessThan,
+      TokenType::GreaterThan};
+  std::vector<std::string> expectedRaw = {"!=", "<=", ">=", "<", ">"};
+
+  std::istringstream stream(text);
+  Tokenizer *tokenizer = new Tokenizer(stream);
+
+  tokenizer->parse();
+  auto tokens = *(tokenizer->close().get());
+
+  ASSERT_EQ(tokens.size(), expected.size());
+  for (int i = 0; i < tokens.size(); i++) {
+    EXPECT_EQ(tokens[i].type, expected[i]);
+    EXPECT_EQ(tokens[i].raw, expectedRaw[i]);
+  }
+
+  // Cleanup
+  delete tokenizer;
+}
+
 TEST(Tokenizer, tracksLineNumbers) {
   std::string text(";\n;;\r;");
 

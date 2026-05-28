@@ -24,20 +24,27 @@ std::string testCompile(std::string program) {
   return out;
 }
 
-TEST(compile, compilesBasicProgram) {
-  auto out = testCompile("1 + 1");
+void expectCompileBinary(std::string program, InstructionType type) {
+  auto out = testCompile(program);
   EXPECT_EQ(out, std::format("0 2.0 {} 1\n0 2.1 {} 1\n2  {}",
                              (int)InstructionType::GetLiteral,
-                             (int)InstructionType::GetLiteral,
-                             (int)InstructionType::Add));
+                             (int)InstructionType::GetLiteral, (int)type));
+}
+
+TEST(compile, compilesBasicProgram) {
+  expectCompileBinary("1 + 1", InstructionType::Add);
 }
 
 TEST(compile, compilesEqualsExpressions) {
-  auto out = testCompile("1 == 1");
-  EXPECT_EQ(out, std::format("0 2.0 {} 1\n0 2.1 {} 1\n2  {}",
-                             (int)InstructionType::GetLiteral,
-                             (int)InstructionType::GetLiteral,
-                             (int)InstructionType::CompareEquals));
+  expectCompileBinary("1 == 1", InstructionType::CompareEquals);
+}
+
+TEST(compile, compilesComparisonExpressions) {
+  expectCompileBinary("1 != 1", InstructionType::CompareNotEquals);
+  expectCompileBinary("1 < 1", InstructionType::CompareLessThan);
+  expectCompileBinary("1 <= 1", InstructionType::CompareLessThanEquals);
+  expectCompileBinary("1 > 1", InstructionType::CompareGreaterThan);
+  expectCompileBinary("1 >= 1", InstructionType::CompareGreaterThanEquals);
 }
 
 TEST(compile, compilesMultilineProgram) {

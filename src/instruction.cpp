@@ -28,6 +28,8 @@ std::string instructionTypeToString(InstructionType type) {
     return "Negate";
   case InstructionType::CompareEquals:
     return "CompareEquals";
+  case InstructionType::CompareNotEquals:
+    return "CompareNotEquals";
   case InstructionType::CompareLessThan:
     return "CompareLessThan";
   case InstructionType::CompareLessThanEquals:
