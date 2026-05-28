@@ -104,6 +104,7 @@ struct IfExpression : public UnaryExpression {
   std::shared_ptr<BlockExpression> thenBlock;
   std::shared_ptr<Expression> elseInstruction;
   std::shared_ptr<BlockExpression> elseBlock;
+  std::shared_ptr<Expression> mergeInstruction;
 
   IfExpression(int lineNumber, std::shared_ptr<Expression> condition,
                std::shared_ptr<BlockExpression> thenBlock,

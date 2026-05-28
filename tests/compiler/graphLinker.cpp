@@ -18,6 +18,16 @@ static GraphLinker *makeGraphLinker(
   return new GraphLinker(args, exprs);
 }
 
+static bool dependsOn(std::shared_ptr<Expression> expr,
+                      std::shared_ptr<Expression> dependency) {
+  for (auto dep : expr->dependencies) {
+    if (&dep.get() == dependency.get())
+      return true;
+  }
+
+  return false;
+}
+
 TEST(constructor, createsDefaultResources) {
   GraphLinker *linker = new GraphLinker(
       std::make_shared<std::vector<std::shared_ptr<Expression>>>());
@@ -414,6 +424,111 @@ TEST(linkGraph, linksWhileLoopsWithFollowingStatements) {
 
   EXPECT_TRUE(block);
   EXPECT_TRUE(getFound);
+}
+
+TEST(linkGraph, linksElseBranchesFromPreBranchResourceState) {
+  auto type = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "int", 1}));
+  auto declareName = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Identifier, TokenSubtype::None, "a", 1}));
+  auto declaration = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Declare, 0, type, declareName));
+  auto initialValue = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 0,
+                     {TokenType::Literal, TokenSubtype::Integer, "0", 1}));
+  auto initialSet = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 0, declaration, initialValue));
+
+  auto condition = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Bool, "false", 1}));
+
+  auto thenRef = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 1,
+                     {TokenType::Identifier, TokenSubtype::None, "a", 1}));
+  auto thenValue = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto thenSet = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, thenRef, thenValue));
+  auto thenBlock =
+      std::make_shared<BlockExpression>(BlockExpression({thenSet}, 1));
+
+  auto elseRef = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::ReferenceIdentifier, 1,
+                     {TokenType::Identifier, TokenSubtype::None, "a", 1}));
+  auto elseValue = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "2", 1}));
+  auto elseSet = std::make_shared<BinaryExpression>(
+      BinaryExpression(InstructionType::Set, 1, elseRef, elseValue));
+  auto elseBlock =
+      std::make_shared<BlockExpression>(BlockExpression({elseSet}, 1));
+
+  auto ifExpr =
+      std::make_shared<IfExpression>(1, condition, thenBlock, elseBlock);
+
+  auto afterRef = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetIdentifier, 2,
+                     {TokenType::Identifier, TokenSubtype::None, "a", 2}));
+  auto print = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, afterRef));
+
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(initialSet);
+  expressions->push_back(ifExpr);
+  expressions->push_back(print);
+
+  numberExpressions(expressions);
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+  delete linker;
+
+  EXPECT_TRUE(dependsOn(elseRef, initialSet));
+  EXPECT_FALSE(dependsOn(elseRef, thenSet));
+  EXPECT_TRUE(dependsOn(ifExpr->mergeInstruction, initialSet));
+  EXPECT_TRUE(dependsOn(afterRef, ifExpr->mergeInstruction));
+}
+
+TEST(linkGraph, linksFollowingStatementsToIfBranchMerge) {
+  auto condition = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Bool, "true", 1}));
+
+  auto branchValue = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 1,
+                     {TokenType::Literal, TokenSubtype::Integer, "1", 1}));
+  auto branchPrint = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 1, branchValue));
+  auto thenBlock =
+      std::make_shared<BlockExpression>(BlockExpression({branchPrint}, 1));
+  auto ifExpr = std::make_shared<IfExpression>(1, condition, thenBlock);
+
+  auto afterValue = std::make_shared<RootExpression>(
+      RootExpression(InstructionType::GetLiteral, 2,
+                     {TokenType::Literal, TokenSubtype::Integer, "2", 2}));
+  auto afterPrint = std::make_shared<UnaryExpression>(
+      UnaryExpression(InstructionType::Print, 2, afterValue));
+
+  auto block = std::make_shared<BlockExpression>(
+      BlockExpression({ifExpr, afterPrint}, 1));
+  auto expressions =
+      std::make_shared<std::vector<std::shared_ptr<Expression>>>();
+  expressions->push_back(block);
+
+  numberExpressions(expressions);
+
+  GraphLinker *linker = new GraphLinker(expressions);
+  EXPECT_NO_THROW(linker->linkGraph());
+  EXPECT_EQ(linker->getErrors()->size(), 0);
+  delete linker;
+
+  EXPECT_TRUE(dependsOn(afterPrint, ifExpr->mergeInstruction));
 }
 
 TEST(linkGraph, linksPrintStatementsWithVariables) {

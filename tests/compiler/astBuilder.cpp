@@ -310,7 +310,9 @@ TEST(AstBuilder, buildsElseStatements) {
   ASSERT_NE(ifExpr, nullptr);
   ASSERT_NE(ifExpr->elseBlock, nullptr);
   ASSERT_NE(ifExpr->elseInstruction, nullptr);
+  ASSERT_NE(ifExpr->mergeInstruction, nullptr);
   EXPECT_EQ(ifExpr->elseInstruction->type, InstructionType::Else);
+  EXPECT_EQ(ifExpr->mergeInstruction->type, InstructionType::BranchMerge);
   ASSERT_EQ(ifExpr->thenBlock->expressions.size(), 1);
   ASSERT_EQ(ifExpr->elseBlock->expressions.size(), 1);
 }

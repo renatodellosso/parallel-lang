@@ -84,6 +84,8 @@ TEST(compile, compilesElseStatements) {
             std::string::npos);
   EXPECT_NE(out.find(std::format(" {}", (int)InstructionType::Else)),
             std::string::npos);
+  EXPECT_NE(out.find(std::format(" {}", (int)InstructionType::BranchMerge)),
+            std::string::npos);
   EXPECT_NE(out.find("then"), std::string::npos);
   EXPECT_NE(out.find("else"), std::string::npos);
 }

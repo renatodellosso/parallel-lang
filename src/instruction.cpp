@@ -52,6 +52,8 @@ std::string instructionTypeToString(InstructionType type) {
     return "Call";
   case InstructionType::Else:
     return "Else";
+  case InstructionType::BranchMerge:
+    return "BranchMerge";
   default:
     return std::format("UnknownInstructionType:{}", (int)type);
   }

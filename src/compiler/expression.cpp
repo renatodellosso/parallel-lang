@@ -214,7 +214,10 @@ IfExpression::IfExpression(int lineNumber, std::shared_ptr<Expression> condition
                            std::shared_ptr<BlockExpression> elseBlock)
     : UnaryExpression(InstructionType::If, lineNumber, condition),
       thenBlock(std::move(thenBlock)), elseInstruction(nullptr),
-      elseBlock(std::move(elseBlock)) {
+      elseBlock(std::move(elseBlock)),
+      mergeInstruction(
+          std::make_shared<Expression>(InstructionType::BranchMerge,
+                                       lineNumber)) {
   if (this->elseBlock)
     elseInstruction = std::make_shared<Expression>(InstructionType::Else,
                                                    lineNumber);
@@ -239,6 +242,8 @@ std::string IfExpression::toByteCode() const {
            elseBlock->toByteCode();
   }
 
+  str += "\n" + mergeInstruction->toByteCode();
+
   return str;
 }
 
@@ -260,20 +265,32 @@ IfExpression::getWithSubExpressions() const {
     std::move(elseVec.begin(), elseVec.end(), std::back_inserter(vector));
   }
 
+  vector.push_back(*mergeInstruction);
+
   return vector;
 }
 
 void IfExpression::linkInternally() {
   addDependency(*this, *root, 0);
 
+  auto thenExprs = thenBlock->getWithSubExpressions();
+  addDependency(*mergeInstruction, *this);
+  for (auto expr : thenExprs)
+    addDependency(*mergeInstruction, expr.get());
+
   if (!elseBlock)
     return;
 
   addDependency(*elseInstruction, *this, 0);
 
-  auto thenExprs = thenBlock->getWithSubExpressions();
   for (auto expr : thenExprs)
     addDependency(*elseInstruction, expr.get());
+
+  addDependency(*mergeInstruction, *elseInstruction);
+
+  auto elseExprs = elseBlock->getWithSubExpressions();
+  for (auto expr : elseExprs)
+    addDependency(*mergeInstruction, expr.get());
 }
 
 int IfExpression::numberExpressions(int startWith) {
@@ -286,7 +303,7 @@ int IfExpression::numberExpressions(int startWith) {
     startWith = elseBlock->numberExpressions(startWith);
   }
 
-  return startWith;
+  return mergeInstruction->numberExpressions(startWith);
 }
 
 int IfExpression::countInstructions() const {
@@ -295,7 +312,7 @@ int IfExpression::countInstructions() const {
   if (elseBlock)
     count += 1 + elseBlock->countInstructions();
 
-  return count;
+  return count + 1;
 }
 
 std::string FunctionExpression::toString() const {

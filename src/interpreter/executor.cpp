@@ -10,6 +10,7 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
+#include <unordered_set>
 #include <thread>
 #include <utility>
 #include <variant>
@@ -74,6 +75,28 @@ parseArgumentDeclarations(std::vector<Value> &args, int offset) {
   }
 
   return std::make_pair(declarations, offset);
+}
+
+static std::vector<int>
+getCompletionInstructionIds(std::shared_ptr<Subprogram> program) {
+  std::vector<int> ids;
+
+  for (int i = 0; i < program->size(); i++) {
+    auto &instr = program->at(i);
+    bool hasInternalDependent = false;
+
+    for (auto dep : instr.dependents) {
+      if (!dep.disabled && dep.instr->program == program) {
+        hasInternalDependent = true;
+        break;
+      }
+    }
+
+    if (instr.type == InstructionType::Call || !hasInternalDependent)
+      ids.push_back(i);
+  }
+
+  return ids;
 }
 
 static std::runtime_error invalidArgTypesError(Instruction &instr,
@@ -422,6 +445,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     break;
   }
+  case InstructionType::BranchMerge:
+    break;
   case InstructionType::Print: {
     result = instr.depArgs[0];
 
@@ -442,6 +467,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
     break;
   }
   case InstructionType::Call: {
+    updateDeps = false;
+
     auto func = std::get<std::shared_ptr<Function>>(instr.depArgs[0]->val);
     auto body = func->getBody().clone();
 
@@ -464,7 +491,11 @@ void Executor::execSingleInstruction(Instruction &instr) {
         body->at(dependencyIndex).dependents.push_back(dependent);
 
       // Adjust depCount accordingly
-      dependent.instr->depCount += remap.second.size() - 1;
+      {
+        std::lock_guard<std::mutex> fulfilledLock(
+            depsFulfilledMutexes[dependent.instr->id]);
+        dependent.instr->depCount += remap.second.size() - 1;
+      }
 
       dependent.disabled = true;
     }
@@ -478,8 +509,12 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
       for (auto dependentIndex : remap.second) {
         arg.dependents.emplace_back(&body->at(dependentIndex));
-        body->at(dependentIndex)
-            .depCount++; // Be sure to adjust depCount accordingly!
+        {
+          std::lock_guard<std::mutex> fulfilledLock(
+              depsFulfilledMutexes[body->at(dependentIndex).id]);
+          body->at(dependentIndex)
+              .depCount++; // Be sure to adjust depCount accordingly!
+        }
 
         if (cliArgs.verbose)
           log(LOCATION, "Made {} depend on {}",
@@ -489,8 +524,34 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
     // Update arg declaration scopes
     auto argDecRes = parseArgumentDeclarations(instr.bytecodeArgs, res.second);
+    auto argDeclarationIds = std::unordered_set<int>();
     for (auto argDecIndex : argDecRes.first) {
+      argDeclarationIds.insert(instr.id + argDecIndex);
       instr.program->at(instr.id + argDecIndex).scope = block.scope;
+    }
+
+    auto completionIds = getCompletionInstructionIds(body);
+    for (auto dep : instr.dependents) {
+      if (dep.disabled)
+        continue;
+
+      if (dep.argIndex.has_value() || argDeclarationIds.contains(dep.instr->id)) {
+        updateDependency(dep, result);
+        continue;
+      }
+
+      if (completionIds.empty()) {
+        updateDependency(dep, result);
+        continue;
+      }
+
+      {
+        std::lock_guard<std::mutex> fulfilledLock(
+            depsFulfilledMutexes[dep.instr->id]);
+        dep.instr->depCount += completionIds.size() - 1;
+      }
+      for (auto completionId : completionIds)
+        body->at(completionId).dependents.push_back(dep);
     }
 
     // Only push once we've relinked everything
@@ -521,14 +582,15 @@ void Executor::execWorker(int id) {
     log(location.c_str(), "Worker {} awake", id);
 
   while (!halt) {
+    stalls[id].store(false);
     auto popped = queue.pop();
 
     // Check popped holds a nullptr_t
     if (std::holds_alternative<nullptr_t>(popped)) {
-      stalls[id] = true;
+      stalls[id].store(true);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
       continue;
     }
-    stalls[id] = false;
 
     auto &instr = std::get<std::reference_wrapper<Instruction>>(popped).get();
 
@@ -552,12 +614,15 @@ void Executor::supervisor() {
   do {
     isDone = true;
 
-    for (auto stall : stalls) {
-      if (!stall) {
+    for (auto &stall : stalls) {
+      if (!stall.load()) {
         isDone = false;
         break;
       }
     }
+
+    if (isDone && queue.size() > 0)
+      isDone = false;
 
     // Removing this breaks tests on Ubuntu. Not sure why, but it reduces the
     // cycles used by the supervisor
@@ -630,7 +695,10 @@ void Executor::startExecution() {
 
 Executor::Executor(const CliArgs &cliArgs, Subprogram &program)
     : cliArgs(cliArgs), program(program),
-      stalls(std::vector<bool>(cliArgs.threads)),
+      stalls(std::vector<std::atomic_bool>(cliArgs.threads)),
       depArgsMutexes(std::vector<std::mutex>(program.size())),
       depsFulfilledMutexes(std::vector<std::mutex>(program.size())),
-      halt(false), failed(false), haltCause("Unknown") {}
+      halt(false), failed(false), haltCause("Unknown") {
+  for (auto &stall : stalls)
+    stall.store(false);
+}

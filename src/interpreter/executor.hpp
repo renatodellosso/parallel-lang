@@ -4,6 +4,7 @@
 #include "../concurrentQueue.hpp"
 #include "../instruction.hpp"
 #include "subprogram.hpp"
+#include <atomic>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -14,7 +15,7 @@ class Executor {
   Subprogram &program;
   ConcurrentQueue<std::reference_wrapper<Instruction>> queue;
   std::vector<std::thread> workers;
-  std::vector<bool> stalls;
+  std::vector<std::atomic_bool> stalls;
 
   // We have to put the mutexes in here since we can't move them
   std::vector<std::mutex> depArgsMutexes, depsFulfilledMutexes;
@@ -22,8 +23,8 @@ class Executor {
   std::mutex coutMutex;
 
   // Set to true to end workers
-  bool halt;
-  bool failed;
+  std::atomic_bool halt;
+  std::atomic_bool failed;
   std::string haltCause;
 
   // Increment depsFulfilled and, if relevant, sets depArgs[i]

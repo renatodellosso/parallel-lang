@@ -138,6 +138,7 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
                     name, expr.toString()));
 
   Resource &resource = *entry.get();
+  markBranchResourceUse(expr, name, write);
 
   // If not written yet, don't add dependency to nullptr
   // If we're writing to this resource, the last write is in currAccesses, so we
@@ -166,6 +167,118 @@ void GraphLinker::useResource(Expression &expr, std::string name, bool write) {
   }
 
   resource.currAccesses.push_back(expr);
+}
+
+std::unordered_map<std::string, GraphLinker::ResourceState>
+GraphLinker::captureResourceSnapshot() {
+  auto snapshot = std::unordered_map<std::string, ResourceState>();
+
+  for (auto key : scope->getKeys()) {
+    auto resource = scope->get(key);
+    if (!resource)
+      continue;
+
+    snapshot[key] = {resource, resource->lastWrittenBy,
+                     resource->currAccesses};
+  }
+
+  return snapshot;
+}
+
+void GraphLinker::restoreResourceSnapshot(
+    const std::unordered_map<std::string, ResourceState> &snapshot) {
+  for (auto entry : snapshot) {
+    entry.second.resource->lastWrittenBy = entry.second.lastWrittenBy;
+    entry.second.resource->currAccesses = entry.second.currAccesses;
+  }
+}
+
+void GraphLinker::markBranchResourceUse(Expression &expr, std::string name,
+                                        bool write) {
+  for (int i = 0; i < branchContexts.size(); i++) {
+    auto &context = branchContexts[i];
+    bool inThen = expr.id >= context.thenStart && expr.id <= context.thenEnd;
+    bool inElse = context.elseInstructionId.has_value() &&
+                  expr.id >= context.elseStart && expr.id <= context.elseEnd;
+
+    if (inThen || inElse) {
+      context.touchedResources.insert(name);
+      if (write)
+        context.writtenResources.insert(name);
+    }
+  }
+}
+
+void GraphLinker::registerIfExpression(IfExpression &expr) {
+  if (branchByMergeId.contains(expr.mergeInstruction->id))
+    return;
+
+  BranchContext context = {
+      .thenStart = expr.thenBlock->id,
+      .thenEnd = expr.thenBlock->id + expr.thenBlock->countInstructions() - 1,
+      .elseInstructionId = std::nullopt,
+      .elseStart = -1,
+      .elseEnd = -1,
+      .mergeId = expr.mergeInstruction->id,
+      .snapshot = captureResourceSnapshot(),
+      .touchedResources = std::unordered_set<std::string>(),
+      .writtenResources = std::unordered_set<std::string>()};
+
+  if (expr.elseBlock) {
+    context.elseInstructionId = expr.elseInstruction->id;
+    context.elseStart = expr.elseBlock->id;
+    context.elseEnd =
+        expr.elseBlock->id + expr.elseBlock->countInstructions() - 1;
+  }
+
+  int index = branchContexts.size();
+  branchContexts.push_back(context);
+  branchByMergeId[context.mergeId] = index;
+
+  if (context.elseInstructionId.has_value())
+    branchByElseInstructionId[context.elseInstructionId.value()] = index;
+}
+
+void GraphLinker::enterElseBranch(Expression &expr) {
+  auto entry = branchByElseInstructionId.find(expr.id);
+  if (entry == branchByElseInstructionId.end())
+    return;
+
+  restoreResourceSnapshot(branchContexts[entry->second].snapshot);
+}
+
+void GraphLinker::finalizeBranchMerge(Expression &expr) {
+  auto entry = branchByMergeId.find(expr.id);
+  if (entry == branchByMergeId.end())
+    return;
+
+  auto &context = branchContexts[entry->second];
+  for (auto name : context.touchedResources) {
+    auto snapshotEntry = context.snapshot.find(name);
+    if (snapshotEntry != context.snapshot.end()) {
+      if (snapshotEntry->second.lastWrittenBy &&
+          snapshotEntry->second.lastWrittenBy != &expr) {
+        addDependency(expr, *snapshotEntry->second.lastWrittenBy, name);
+      }
+
+      for (auto access : snapshotEntry->second.currAccesses) {
+        if (&access.get() != &expr)
+          addDependency(expr, access.get(), name);
+      }
+    }
+
+    auto resource = scope->get(name);
+    if (!resource)
+      continue;
+
+    if (context.writtenResources.contains(name))
+      resource->lastWrittenBy = &expr;
+    else if (snapshotEntry != context.snapshot.end())
+      resource->lastWrittenBy = snapshotEntry->second.lastWrittenBy;
+
+    resource->currAccesses = std::vector<std::reference_wrapper<Expression>>();
+    resource->currAccesses.push_back(expr);
+  }
 }
 
 void GraphLinker::updateScopeLifetimes() {
@@ -217,11 +330,19 @@ void GraphLinker::processExpression(Expression &expr) {
       }
     } else if (expr.type == InstructionType::If ||
                expr.type == InstructionType::While) {
+      auto ifExpr = dynamic_cast<IfExpression *>(&expr);
+      if (ifExpr)
+        registerIfExpression(*ifExpr);
+
       auto next = expressions.find(expr.id + 1);
       addDependency(next->second, expr); // Add dependency with block
     } else if (expr.type == InstructionType::Else) {
+      enterElseBranch(expr);
+
       auto next = expressions.find(expr.id + 1);
       addDependency(next->second, expr); // Add dependency with else block
+    } else if (expr.type == InstructionType::BranchMerge) {
+      finalizeBranchMerge(expr);
     } else if (expr.type == InstructionType::Block) {
       BlockExpression &block = *static_cast<BlockExpression *>(&expr);
       int size =
@@ -233,6 +354,16 @@ void GraphLinker::processExpression(Expression &expr) {
 
       // Don't add dependencies to things inside of a nested blocks
       // Deps only need to go out one layer
+
+      Expression *previousBranchMerge = nullptr;
+      for (auto &innerExpr : block.expressions) {
+        if (previousBranchMerge)
+          addDependency(*innerExpr, *previousBranchMerge);
+
+        auto ifExpr = dynamic_cast<IfExpression *>(innerExpr.get());
+        previousBranchMerge =
+            ifExpr ? ifExpr->mergeInstruction.get() : nullptr;
+      }
 
       int skip = 0;
       for (int i = 0; i < size; i++) {

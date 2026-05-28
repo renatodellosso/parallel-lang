@@ -34,12 +34,39 @@ class GraphLinker {
       deferredFunctionLinkings;
   bool processingDeferred;
 
+  struct ResourceState {
+    std::shared_ptr<Resource> resource;
+    Expression *lastWrittenBy;
+    std::vector<std::reference_wrapper<Expression>> currAccesses;
+  };
+
+  struct BranchContext {
+    int thenStart, thenEnd;
+    std::optional<int> elseInstructionId;
+    int elseStart, elseEnd;
+    int mergeId;
+    std::unordered_map<std::string, ResourceState> snapshot;
+    std::unordered_set<std::string> touchedResources;
+    std::unordered_set<std::string> writtenResources;
+  };
+
+  std::vector<BranchContext> branchContexts;
+  std::unordered_map<int, int> branchByElseInstructionId;
+  std::unordered_map<int, int> branchByMergeId;
+
   Resource &createResource(std::string name);
 
   void createResource(Expression &expr);
   // Uses the resource. If there is a current function, will add a write there,
   // too.
   void useResource(Expression &expr, std::string name, bool write);
+  std::unordered_map<std::string, ResourceState> captureResourceSnapshot();
+  void restoreResourceSnapshot(
+      const std::unordered_map<std::string, ResourceState> &snapshot);
+  void markBranchResourceUse(Expression &expr, std::string name, bool write);
+  void registerIfExpression(IfExpression &expr);
+  void enterElseBranch(Expression &expr);
+  void finalizeBranchMerge(Expression &expr);
   void updateScopeLifetimes();
   void processExpression(Expression &expr);
 
