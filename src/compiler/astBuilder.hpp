@@ -52,6 +52,9 @@ private:
   FunctionExprParameter parseFuncParam();
   std::optional<std::unique_ptr<FunctionExpression>>
   parseFunction(std::unique_ptr<BinaryExpression> declaration);
+  std::optional<std::unique_ptr<IfExpression>> parseIf();
+  std::optional<std::unique_ptr<BlockExpression>>
+  parseStatementBlock(std::string context);
   // Parses a block, including the { }
   std::optional<std::unique_ptr<BlockExpression>> parseBlock();
 

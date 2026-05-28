@@ -12,6 +12,7 @@
 #include <vector>
 
 struct Expression;
+struct BlockExpression;
 
 struct ExprDependent {
   std::reference_wrapper<Expression> expr;
@@ -89,6 +90,24 @@ struct UnaryExpression : public Expression {
   UnaryExpression(InstructionType type, int lineNumber,
                   std::shared_ptr<Expression> root)
       : Expression(type, lineNumber), root(std::move(root)) {}
+
+  std::string toString() const override;
+  std::string toByteCode() const override;
+  std::vector<std::reference_wrapper<Expression>>
+  getWithSubExpressions() const override;
+  void linkInternally() override;
+  int numberExpressions(int startWith) override;
+  int countInstructions() const override;
+};
+
+struct IfExpression : public UnaryExpression {
+  std::shared_ptr<BlockExpression> thenBlock;
+  std::shared_ptr<Expression> elseInstruction;
+  std::shared_ptr<BlockExpression> elseBlock;
+
+  IfExpression(int lineNumber, std::shared_ptr<Expression> condition,
+               std::shared_ptr<BlockExpression> thenBlock,
+               std::shared_ptr<BlockExpression> elseBlock = nullptr);
 
   std::string toString() const override;
   std::string toByteCode() const override;

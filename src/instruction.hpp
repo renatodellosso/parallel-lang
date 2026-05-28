@@ -32,7 +32,8 @@ enum class InstructionType {
   Print,
   Function,
   Call,
-  CompareNotEquals
+  CompareNotEquals,
+  Else
 };
 
 std::string instructionTypeToString(InstructionType type);

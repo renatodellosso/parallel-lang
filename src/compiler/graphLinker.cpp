@@ -219,6 +219,9 @@ void GraphLinker::processExpression(Expression &expr) {
                expr.type == InstructionType::While) {
       auto next = expressions.find(expr.id + 1);
       addDependency(next->second, expr); // Add dependency with block
+    } else if (expr.type == InstructionType::Else) {
+      auto next = expressions.find(expr.id + 1);
+      addDependency(next->second, expr); // Add dependency with else block
     } else if (expr.type == InstructionType::Block) {
       BlockExpression &block = *static_cast<BlockExpression *>(&expr);
       int size =

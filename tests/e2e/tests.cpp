@@ -95,6 +95,35 @@ std::vector<E2eTest> tests = {
     {"IfsAllowVariablesInCondition",
      "bool a = true;\nif (a) print \"ran\";",
      {"ran"}},
+    {"ElsesDoNotRunIfConditionIsTrue",
+     "if (true) print \"then\"; else print \"else\";",
+     {"then"}},
+    {"ElsesRunIfConditionIsFalse",
+     "if (false) print \"then\"; else print \"else\";",
+     {"else"}},
+    {"ElsesAllowBlocks",
+     "if (false) { print \"then\"; } else { print \"else\"; }",
+     {"else"}},
+    {"ElseIfsRunFirstTrueBranch",
+     "if (false) print \"if\";\n"
+     "else if (true) print \"else if\";\n"
+     "else print \"else\";",
+     {"else if"}},
+    {"ElseIfsRunFinalElse",
+     "if (false) print \"if\";\n"
+     "else if (false) print \"else if\";\n"
+     "else print \"else\";",
+     {"else"}},
+    {"ElsesSetVariablesFromThenBranch",
+     "int a = 0;\n"
+     "if (true) a = 1; else a = 2;\n"
+     "print a;",
+     {"1"}},
+    {"ElsesSetVariablesFromElseBranch",
+     "int a = 0;\n"
+     "if (false) a = 1; else a = 2;\n"
+     "print a;",
+     {"2"}},
 
     // While loops
     {"WhileLoopsRunWhileConditionIsTrue",

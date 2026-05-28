@@ -76,3 +76,14 @@ TEST(compile, compilesBlockExpressions) {
                              (int)InstructionType::GetLiteral,
                              (int)InstructionType::Add));
 }
+
+TEST(compile, compilesElseStatements) {
+  auto out = testCompile("if (true) print \"then\"; else print \"else\";");
+
+  EXPECT_NE(out.find(std::format(" {}", (int)InstructionType::If)),
+            std::string::npos);
+  EXPECT_NE(out.find(std::format(" {}", (int)InstructionType::Else)),
+            std::string::npos);
+  EXPECT_NE(out.find("then"), std::string::npos);
+  EXPECT_NE(out.find("else"), std::string::npos);
+}

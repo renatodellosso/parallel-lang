@@ -274,8 +274,96 @@ TEST(AstBuilder, buildsIfStatements) {
   builder.build();
 
   EXPECT_EQ(builder.getErrors().get()->size(), 0);
-  ASSERT_EQ(builder.getExpressions().get()->size(), 2);
-  EXPECT_EQ(builder.getExpressions().get()->at(0)->type, InstructionType::If);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+
+  auto ifExpr =
+      std::dynamic_pointer_cast<IfExpression>(builder.getExpressions()->at(0));
+  ASSERT_NE(ifExpr, nullptr);
+  EXPECT_EQ(ifExpr->type, InstructionType::If);
+  ASSERT_EQ(ifExpr->thenBlock->expressions.size(), 1);
+  EXPECT_EQ(ifExpr->thenBlock->expressions.at(0)->type, InstructionType::Add);
+  EXPECT_EQ(ifExpr->elseBlock, nullptr);
+}
+
+TEST(AstBuilder, buildsElseStatements) {
+  std::vector<Token> tokens = {
+      {TokenType::If, TokenSubtype::None, "if", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Literal, TokenSubtype::Bool, "true", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+      {TokenType::Else, TokenSubtype::None, "else", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+
+  auto ifExpr =
+      std::dynamic_pointer_cast<IfExpression>(builder.getExpressions()->at(0));
+  ASSERT_NE(ifExpr, nullptr);
+  ASSERT_NE(ifExpr->elseBlock, nullptr);
+  ASSERT_NE(ifExpr->elseInstruction, nullptr);
+  EXPECT_EQ(ifExpr->elseInstruction->type, InstructionType::Else);
+  ASSERT_EQ(ifExpr->thenBlock->expressions.size(), 1);
+  ASSERT_EQ(ifExpr->elseBlock->expressions.size(), 1);
+}
+
+TEST(AstBuilder, buildsElseIfStatements) {
+  std::vector<Token> tokens = {
+      {TokenType::If, TokenSubtype::None, "if", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Literal, TokenSubtype::Bool, "false", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+      {TokenType::Else, TokenSubtype::None, "else", 1},
+      {TokenType::If, TokenSubtype::None, "if", 1},
+      {TokenType::LeftParen, TokenSubtype::None, "(", 1},
+      {TokenType::Literal, TokenSubtype::Bool, "true", 1},
+      {TokenType::RightParen, TokenSubtype::None, ")", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "2", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 0);
+  ASSERT_EQ(builder.getExpressions().get()->size(), 1);
+
+  auto ifExpr =
+      std::dynamic_pointer_cast<IfExpression>(builder.getExpressions()->at(0));
+  ASSERT_NE(ifExpr, nullptr);
+  ASSERT_NE(ifExpr->elseBlock, nullptr);
+  ASSERT_EQ(ifExpr->elseBlock->expressions.size(), 1);
+
+  auto nestedIf =
+      std::dynamic_pointer_cast<IfExpression>(ifExpr->elseBlock->expressions[0]);
+  ASSERT_NE(nestedIf, nullptr);
+  EXPECT_EQ(nestedIf->type, InstructionType::If);
+}
+
+TEST(AstBuilder, errorsOnElseWithoutIf) {
+  std::vector<Token> tokens = {
+      {TokenType::Else, TokenSubtype::None, "else", 1},
+      {TokenType::Literal, TokenSubtype::Integer, "1", 1},
+      {TokenType::Semicolon, TokenSubtype::None, ";", 1},
+  };
+
+  AstBuilder builder(std::make_unique<std::vector<Token>>(tokens));
+
+  builder.build();
+
+  EXPECT_EQ(builder.getErrors().get()->size(), 1);
+  EXPECT_EQ(builder.getExpressions().get()->size(), 0);
 }
 
 TEST(AstBuilder, buildsWhileStatements) {

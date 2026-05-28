@@ -131,7 +131,7 @@ void Executor::skipInstruction(Instruction &instr) {
     skipUntil = instr.id + toSkip;
 
     // Set everything's depCount to -1, then skip everything
-    for (int i = 1; i < toSkip; i++) {
+    for (int i = 1; i <= toSkip; i++) {
       // auto& not auto - don't forget the &!
       auto &skipped = instr.program->at(instr.id + i);
       skipped.depCount = -1;
@@ -143,7 +143,7 @@ void Executor::skipInstruction(Instruction &instr) {
       }
     }
 
-    for (int i = 1; i < toSkip; i++) {
+    for (int i = 1; i <= toSkip; i++) {
       // auto& not auto - don't forget the &!
       auto &skipped = instr.program->at(instr.id + i);
       skipInstruction(skipped);
@@ -366,7 +366,17 @@ void Executor::execSingleInstruction(Instruction &instr) {
   }
   case InstructionType::If: {
     bool condition = valToBool(*instr.depArgs[0]);
+    result = instr.depArgs[0];
     if (condition)
+      break;
+
+    // Skip next instruction
+    skipInstruction(instr.program->at(instr.id + 1));
+    break;
+  }
+  case InstructionType::Else: {
+    bool condition = valToBool(*instr.depArgs[0]);
+    if (!condition)
       break;
 
     // Skip next instruction

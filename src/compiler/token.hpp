@@ -26,7 +26,8 @@ enum class TokenType {
   Identifier,
   If,
   While,
-  Print
+  Print,
+  Else
 };
 
 enum class TokenSubtype { None, String, Integer, Bool };

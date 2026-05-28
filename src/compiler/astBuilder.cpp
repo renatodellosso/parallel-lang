@@ -88,29 +88,31 @@ AstBuilder::parseLeadingExpression() {
         RootExpression(InstructionType::GetLiteral, line, next())));
   if (match(TokenType::LeftBrace))
     return parseBlock();
-  if (match({TokenType::If, TokenType::While})) {
-    bool loop = match(TokenType::While);
-    next(); // Consume 'if'/'while'
+  if (match(TokenType::If))
+    return parseIf();
+  if (match(TokenType::Else))
+    throw std::runtime_error("Cannot have an else statement without an if!");
+  if (match(TokenType::While)) {
+    next(); // Consume 'while'
 
     if (!match(TokenType::LeftParen))
       throw std::runtime_error(
-          std::format("Expected '(' after 'if'. Got: '{}'", peek().raw));
+          std::format("Expected '(' after 'while'. Got: '{}'", peek().raw));
     next(); // Consume '('
 
     auto condition = parseExpression({TokenType::RightParen});
     if (!condition.has_value())
       throw std::runtime_error(
-          std::format("Expected condition in if statement!"));
+          std::format("Expected condition in while statement!"));
 
     if (!match(TokenType::RightParen))
       throw std::runtime_error(
-          std::format("Expected ')' after condition in if statement. Got: '{}'",
+          std::format("Expected ')' after condition in while statement. Got: '{}'",
                       peek().raw));
     next(); // Consume ')'
 
     return std::make_optional(std::make_unique<UnaryExpression>(
-        loop ? InstructionType::While : InstructionType::If, line,
-        std::move(condition.value())));
+        InstructionType::While, line, std::move(condition.value())));
   }
   if (match(TokenType::Print)) {
     next(); // Be sure to consume the leading token itself!
@@ -267,7 +269,7 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
 
   next(); // Consume '{'
 
-  while (!match(TokenType::RightBrace)) {
+  while (hasNext() && !match(TokenType::RightBrace)) {
     auto expr = parseExpression({TokenType::Semicolon});
     if (!expr.has_value())
       break;
@@ -280,11 +282,12 @@ std::optional<std::unique_ptr<BlockExpression>> AstBuilder::parseBlock() {
     block.expressions.push_back(std::move(expr.value()));
   }
 
+  if (!hasNext())
+    throw std::runtime_error("Expected '}' after block!");
+
   next(); // Consume '}'
 
-  if (block.expressions.size())
-    return std::make_optional(std::make_unique<BlockExpression>(block));
-  return std::nullopt;
+  return std::make_optional(std::make_unique<BlockExpression>(block));
 }
 
 FunctionExprParameter AstBuilder::parseFuncParam() {
@@ -327,6 +330,72 @@ AstBuilder::parseFunction(std::unique_ptr<BinaryExpression> declaration) {
   next(); // Consume ')'
 
   return std::make_optional(std::move(func));
+}
+
+std::optional<std::unique_ptr<BlockExpression>>
+AstBuilder::parseStatementBlock(std::string context) {
+  if (!hasNext())
+    throw std::runtime_error(
+        std::format("Expected body after {} statement!", context));
+
+  if (match(TokenType::LeftBrace))
+    return parseBlock();
+
+  if (match({TokenType::Else, TokenType::RightBrace, TokenType::Semicolon}))
+    throw std::runtime_error(
+        std::format("Expected body after {} statement. Got: '{}'", context,
+                    peek().raw));
+
+  auto expr = parseExpression({TokenType::Semicolon});
+  if (!expr.has_value())
+    throw std::runtime_error(
+        std::format("Expected body after {} statement!", context));
+
+  if (hasNext() && match(TokenType::Semicolon))
+    next();
+
+  auto block = std::make_unique<BlockExpression>(expr.value()->lineNumber);
+  block->expressions.push_back(std::move(expr.value()));
+
+  return std::make_optional(std::move(block));
+}
+
+std::optional<std::unique_ptr<IfExpression>> AstBuilder::parseIf() {
+  int ifLine = next().line; // Consume 'if'
+
+  if (!match(TokenType::LeftParen))
+    throw std::runtime_error(
+        std::format("Expected '(' after 'if'. Got: '{}'", peek().raw));
+  next(); // Consume '('
+
+  auto condition = parseExpression({TokenType::RightParen});
+  if (!condition.has_value())
+    throw std::runtime_error(std::format("Expected condition in if statement!"));
+
+  if (!match(TokenType::RightParen))
+    throw std::runtime_error(std::format(
+        "Expected ')' after condition in if statement. Got: '{}'",
+        peek().raw));
+  next(); // Consume ')'
+
+  auto thenBlock = parseStatementBlock("if");
+  if (!thenBlock.has_value())
+    throw std::runtime_error("Expected body after if statement!");
+
+  std::shared_ptr<BlockExpression> elseBlock = nullptr;
+  if (hasNext() && match(TokenType::Else)) {
+    next(); // Consume 'else'
+
+    auto parsedElse = parseStatementBlock("else");
+    if (!parsedElse.has_value())
+      throw std::runtime_error("Expected body after else statement!");
+
+    elseBlock = std::move(parsedElse.value());
+  }
+
+  return std::make_optional(std::make_unique<IfExpression>(
+      ifLine, std::move(condition.value()), std::move(thenBlock.value()),
+      elseBlock));
 }
 
 std::optional<std::unique_ptr<Expression>>
@@ -373,6 +442,14 @@ void AstBuilder::postProcess(
     std::vector<std::shared_ptr<Expression>> *expressions) {
   for (int i = 0; i < expressions->size(); i++) {
     auto &expr = *expressions->at(i).get();
+
+    auto ifExpr = dynamic_cast<IfExpression *>(&expr);
+    if (ifExpr) {
+      postProcess(&ifExpr->thenBlock->expressions);
+      if (ifExpr->elseBlock)
+        postProcess(&ifExpr->elseBlock->expressions);
+      continue;
+    }
 
     // If statements should be followed by blocks
     if (expr.type == InstructionType::If ||

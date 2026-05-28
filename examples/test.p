@@ -1,14 +1,10 @@
-void outer(int x) {
-    void inner(bool y) {
-        outer(0);
-    }
+int x = 3;
 
-    print x - 1;
-    
-    if (x)
-        inner(true);
-
-    print x + 1;
-}
-
-outer(5);
+if (x == 0)
+    print "zero";
+else if (x == 1)
+    print "one";
+else if (x == 2)
+    print "two";
+else
+    print "many";

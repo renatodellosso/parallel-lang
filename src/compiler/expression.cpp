@@ -209,6 +209,95 @@ int BlockExpression::countInstructions() const {
   return count;
 }
 
+IfExpression::IfExpression(int lineNumber, std::shared_ptr<Expression> condition,
+                           std::shared_ptr<BlockExpression> thenBlock,
+                           std::shared_ptr<BlockExpression> elseBlock)
+    : UnaryExpression(InstructionType::If, lineNumber, condition),
+      thenBlock(std::move(thenBlock)), elseInstruction(nullptr),
+      elseBlock(std::move(elseBlock)) {
+  if (this->elseBlock)
+    elseInstruction = std::make_shared<Expression>(InstructionType::Else,
+                                                   lineNumber);
+}
+
+std::string IfExpression::toString() const {
+  auto str = Expression::toString() + "(" + root->toString() + ") {\n";
+  str += "\t" + thenBlock->toString() + "\n";
+
+  if (elseBlock)
+    str += "} else {\n\t" + elseBlock->toString() + "\n";
+
+  return str + "}";
+}
+
+std::string IfExpression::toByteCode() const {
+  std::string str = root->toByteCode() + "\n" + Expression::toByteCode() +
+                    "\n" + thenBlock->toByteCode();
+
+  if (elseBlock) {
+    str += "\n" + elseInstruction->toByteCode() + "\n" +
+           elseBlock->toByteCode();
+  }
+
+  return str;
+}
+
+std::vector<std::reference_wrapper<Expression>>
+IfExpression::getWithSubExpressions() const {
+  std::vector<std::reference_wrapper<Expression>> vector =
+      root->getWithSubExpressions();
+
+  auto super = Expression::getWithSubExpressions();
+  std::move(super.begin(), super.end(), std::back_inserter(vector));
+
+  auto thenVec = thenBlock->getWithSubExpressions();
+  std::move(thenVec.begin(), thenVec.end(), std::back_inserter(vector));
+
+  if (elseBlock) {
+    vector.push_back(*elseInstruction);
+
+    auto elseVec = elseBlock->getWithSubExpressions();
+    std::move(elseVec.begin(), elseVec.end(), std::back_inserter(vector));
+  }
+
+  return vector;
+}
+
+void IfExpression::linkInternally() {
+  addDependency(*this, *root, 0);
+
+  if (!elseBlock)
+    return;
+
+  addDependency(*elseInstruction, *this, 0);
+
+  auto thenExprs = thenBlock->getWithSubExpressions();
+  for (auto expr : thenExprs)
+    addDependency(*elseInstruction, expr.get());
+}
+
+int IfExpression::numberExpressions(int startWith) {
+  startWith = root->numberExpressions(startWith);
+  startWith = Expression::numberExpressions(startWith);
+  startWith = thenBlock->numberExpressions(startWith);
+
+  if (elseBlock) {
+    startWith = elseInstruction->numberExpressions(startWith);
+    startWith = elseBlock->numberExpressions(startWith);
+  }
+
+  return startWith;
+}
+
+int IfExpression::countInstructions() const {
+  int count = root->countInstructions() + 1 + thenBlock->countInstructions();
+
+  if (elseBlock)
+    count += 1 + elseBlock->countInstructions();
+
+  return count;
+}
+
 std::string FunctionExpression::toString() const {
   auto str = Expression::toString() + " " + returnType + " " + name + "(";
 

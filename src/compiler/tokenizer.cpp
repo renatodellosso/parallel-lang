@@ -166,6 +166,8 @@ void Tokenizer::parseToken() {
       token.subtype = TokenSubtype::Bool;
     } else if (raw == "if") {
       token.type = TokenType::If;
+    } else if (raw == "else") {
+      token.type = TokenType::Else;
     } else if (raw == "while") {
       token.type = TokenType::While;
     } else if (raw == "print") {
