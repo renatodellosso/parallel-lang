@@ -10,8 +10,8 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
-#include <unordered_set>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -99,12 +99,11 @@ getCompletionInstructionIds(std::shared_ptr<Subprogram> program) {
   return ids;
 }
 
-static std::runtime_error invalidArgTypesError(Instruction &instr,
-                                               ValueType left,
-                                               ValueType right) {
-  return std::runtime_error(std::format(
-      "Invalid arg types on instruction {}: {}, {}", instr.id, (int)left,
-      (int)right));
+static std::runtime_error
+invalidArgTypesError(Instruction &instr, ValueType left, ValueType right) {
+  return std::runtime_error(
+      std::format("Invalid arg types on instruction {}: {}, {}", instr.id,
+                  (int)left, (int)right));
 }
 
 void Executor::updateDependency(InstrDependent dep,
@@ -202,6 +201,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
   switch (instr.type) {
   case InstructionType::Block: {
+    // Bytecode args are [block size, call count, call 1 offset, ..., call n offset]
+    
     // Create new scope
     std::shared_ptr<Scope<Value>> scope = std::make_shared<Scope<Value>>(
         instr.scope); // make_shared() uses the constructor
@@ -220,6 +221,30 @@ void Executor::execSingleInstruction(Instruction &instr) {
       }
       inner.scope = scope;
     }
+
+    // Remap dependents to calls
+    int callCount = std::get<int>(instr.bytecodeArgs[1].val);
+    if (callCount == 0)
+      break;
+
+    std::vector<std::reference_wrapper<Instruction>> calls;
+
+    for (int i = 0; i < callCount; i++) {
+      int id = instr.id + std::get<int>(instr.bytecodeArgs[2 + i].val);
+      calls.push_back(instr.program->at(id));
+    }
+
+    for (auto &dep : instr.dependents) {
+      if (dep.disabled || !dep.argIndex)
+        continue;
+
+      for (auto &call : calls) {
+        call.get().dependents.push_back(dep);
+      }
+
+      dep.disabled = true;
+    }
+
     break;
   }
   case InstructionType::GetLiteral:
@@ -535,7 +560,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
       if (dep.disabled)
         continue;
 
-      if (dep.argIndex.has_value() || argDeclarationIds.contains(dep.instr->id)) {
+      if (dep.argIndex.has_value() ||
+          argDeclarationIds.contains(dep.instr->id)) {
         updateDependency(dep, result);
         continue;
       }
