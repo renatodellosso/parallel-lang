@@ -59,7 +59,9 @@ std::vector<E2eTest> tests = {
     {"GreaterThanWorksWithNumbers", "print 2 > 1;", {"true"}},
     {"GreaterThanEqualsWorksWithNumbers", "print 2 >= 2;", {"true"}},
     {"LessThanComparesStringsAlphabetically", "print \"a\" < \"b\";", {"true"}},
-    {"GreaterThanComparesStringsAlphabetically", "print \"b\" > \"a\";", {"true"}},
+    {"GreaterThanComparesStringsAlphabetically",
+     "print \"b\" > \"a\";",
+     {"true"}},
     {"LessThanEqualsComparesStringsAlphabetically",
      "print \"a\" <= \"a\";",
      {"true"}},
@@ -242,6 +244,14 @@ std::vector<E2eTest> tests = {
      "a = a + 1;\n"
      "main();\n",
      {"0", "1", "2"}},
+    {"CallsAreSequencedCorrectlyWhenWritesAreInCalls",
+     "int a = 0;\n"
+     "void main() {\n"
+     "a = 1;\n"
+     "}\n"
+     "main();\n"
+     "print a;\n",
+     {"1"}},
     {"CallsWorkWithArguments",
      "void add(int a, int b) {\n"
      "print a + b;\n"
@@ -258,4 +268,5 @@ std::vector<E2eTest> tests = {
      "inner(true);\n"
      "print x + 1;\n"
      "}\n"
-     "outer(5);\n", {"-1", "1", "4", "6"}}};
+     "outer(5);\n",
+     {"-1", "1", "4", "6"}}};

@@ -176,7 +176,8 @@ std::string BlockExpression::toString() const {
   return str + "}";
 }
 
-// Outputs in format: "[# of calls] [call offset 1] [call offset 2] [call offset 3]""
+// Outputs in format: "[# of calls] [call offset 1] [call offset 2] [call offset
+// 3]""
 std::string BlockExpression::toByteCode() const {
   // Subtract 1 from count to exclude this instruction
   std::string str =
@@ -449,7 +450,8 @@ getCallArgMappings(const UnaryCallExpression &call) {
 std::string UnaryCallExpression::toByteCode() const {
   std::string bytecode = UnaryExpression::toByteCode();
 
-  int subprogramOffset = -function.value().get().id;
+  // -1 so the block (1st in subprogram) is at offset 0
+  int subprogramOffset = -function.value().get().id - 1;
 
   // Write dependent remappings
   bytecode += " " + std::to_string(depRemaps.size());
@@ -471,7 +473,7 @@ std::string UnaryCallExpression::toByteCode() const {
 
     bytecode += " " + std::to_string(remap.second.size());
     for (auto dep : remap.second) {
-      bytecode += " " + std::to_string(dep.get().id + subprogramOffset - 1);
+      bytecode += " " + std::to_string(dep.get().id + subprogramOffset);
     }
   }
 
