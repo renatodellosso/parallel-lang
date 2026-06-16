@@ -356,38 +356,11 @@ std::string FunctionExpression::toString() const {
   return str + "}";
 }
 
-// Formats as "[size] [key] [valueCount] [value1] [value2] [value3] " (note the
-// trailing space!)
-static std::string stringifyUses(
-    std::unordered_map<std::string,
-                       std::vector<std::reference_wrapper<Expression>>>
-        uses) {
-  std::string str = std::to_string(uses.size());
-
-  str += " ";
-  for (auto entry : uses) {
-    str += entry.first + " " + std::to_string(entry.second.size()) + " ";
-
-    for (auto expr : entry.second)
-      str += std::to_string(expr.get().id) + " ";
+void FunctionExpression::findReturnStatements() {
+  for (auto expr : body->getWithSubExpressions()) {
+    if (expr.get().type == InstructionType::Return)
+      returnStatements.push_back(expr);
   }
-
-  return str;
-}
-
-// Formats as "[size] [key] [value] " (note the trailing space!)
-static std::string stringifyWrites(
-    std::unordered_map<std::string, std::reference_wrapper<Expression>>
-        writes) {
-  std::string str = std::to_string(writes.size()) + " ";
-
-  for (auto entry : writes) {
-    str += entry.first + " ";
-    str += std::to_string(entry.second.get().id);
-    str += " ";
-  }
-
-  return str;
 }
 
 // Bytecode params are in format "[returnType] [name] [# of params] [param i
@@ -446,7 +419,7 @@ getCallArgMappings(const UnaryCallExpression &call) {
 // Bytecode args are in format "[dependency remapping count] [[param index]
 // [dependent count] [dependent subprogram ID]] [argument remapping count]
 // [[argument ID relative to call] [first uses count] [first use subprogram ID]]
-// [argument count] [[argument offset relative to call]]"
+// [argument count] [[argument offset relative to call]] [return statement count] [[return statement subprogram ID]]"
 std::string UnaryCallExpression::toByteCode() const {
   std::string bytecode = UnaryExpression::toByteCode();
 
@@ -483,6 +456,12 @@ std::string UnaryCallExpression::toByteCode() const {
     auto expr = block.expressions[i];
     auto declaration = std::static_pointer_cast<BinaryExpression>(expr)->left;
     bytecode += " " + std::to_string(declaration->id - id);
+  }
+
+  // Write return statement remappings
+  bytecode += " " + std::to_string(function->get().returnStatements.size());
+  for (auto returnStatement : function->get().returnStatements) {
+    bytecode += " " + std::to_string(returnStatement.get().id + subprogramOffset);
   }
 
   return bytecode;

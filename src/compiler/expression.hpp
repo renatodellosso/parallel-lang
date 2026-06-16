@@ -196,6 +196,8 @@ struct FunctionExpression : public Expression {
   std::unordered_map<std::string, std::reference_wrapper<Expression>>
       lastWrites;
 
+  std::vector<std::reference_wrapper<Expression>> returnStatements;
+
   FunctionExpression() : FunctionExpression("unnamed_func", "void", 0) {}
   FunctionExpression(std::string name, std::string returnType, int lineNumber)
       : Expression(InstructionType::Function, lineNumber), name(name),
@@ -212,6 +214,9 @@ struct FunctionExpression : public Expression {
   void linkInternally() override;
   int numberExpressions(int startWith) override;
   int countInstructions() const override;
+
+  // Populates returnStatements vector by finding all return statements in body
+  void findReturnStatements();
 };
 
 struct CallExpression;

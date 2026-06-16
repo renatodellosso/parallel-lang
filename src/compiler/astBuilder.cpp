@@ -501,6 +501,8 @@ void AstBuilder::postProcess(
       func.body = expressions->at(i + 1);
 
       expressions->erase(expressions->begin() + i + 1);
+
+      func.findReturnStatements();
     }
   }
 }

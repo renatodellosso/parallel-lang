@@ -1,8 +1,6 @@
-int x = 0;
-
-void a() {
-  x = 1;
+void get() {
+  return 1;
+  return 1+2;
 }
 
-a();
-print x;
+get();
