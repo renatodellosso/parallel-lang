@@ -201,8 +201,9 @@ void Executor::execSingleInstruction(Instruction &instr) {
 
   switch (instr.type) {
   case InstructionType::Block: {
-    // Bytecode args are [block size, call count, call 1 offset, ..., call n offset]
-    
+    // Bytecode args are [block size, call count, call 1 offset, ..., call n
+    // offset]
+
     // Create new scope
     std::shared_ptr<Scope<Value>> scope = std::make_shared<Scope<Value>>(
         instr.scope); // make_shared() uses the constructor
@@ -223,6 +224,9 @@ void Executor::execSingleInstruction(Instruction &instr) {
     }
 
     // Remap dependents to calls
+    if (instr.bytecodeArgs.size() < 2)
+      break;
+
     int callCount = std::get<int>(instr.bytecodeArgs[1].val);
     if (callCount == 0)
       break;

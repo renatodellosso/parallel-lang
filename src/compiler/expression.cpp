@@ -397,9 +397,9 @@ std::string FunctionExpression::toByteCode() const {
   std::string str =
       Expression::toByteCode() + " " + returnType + " " + name + "\n";
 
-  str += body->toByteCode() + "\n";
+  str += body->toByteCode();
 
-  return str.erase(str.length() - 1); // Erase trailing \n
+  return str;
 }
 
 std::vector<std::reference_wrapper<Expression>>
