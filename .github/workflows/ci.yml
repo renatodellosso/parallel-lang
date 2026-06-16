@@ -23,9 +23,21 @@ jobs:
         run: cmake -B build
       - name: Configure CMake (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake -B build -G Ninja
       - name: Build
+        if: ${{ matrix.os != 'windows-latest' }}
         run: cmake --build build
+      - name: Build (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake --build build
 
   test:
     strategy:
@@ -43,12 +55,24 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
       - name: Configure CMake (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - name: Build
+        if: ${{ matrix.os != 'windows-latest' }}
         run: cmake --build build --config Release
+      - name: Build (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake --build build
       - name: Run Tests
         run: build/Tests
         if: ${{ matrix.os != 'windows-latest' }}
       - name: Run Tests (Windows)
-        run: ./build/Release/Tests.exe
+        run: ./build/Tests.exe
         if: ${{ matrix.os == 'windows-latest' }}
