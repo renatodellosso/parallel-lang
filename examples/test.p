@@ -1,6 +1,5 @@
-void get() {
-  return 1;
-  return 1+2;
+int i = 0;
+while (i < 25) {
+  i = i + 1;
 }
-
-get();
+print i;

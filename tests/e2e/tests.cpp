@@ -269,4 +269,39 @@ std::vector<E2eTest> tests = {
      "print x + 1;\n"
      "}\n"
      "outer(5);\n",
-     {"-1", "1", "4", "6"}}};
+     {"-1", "1", "4", "6"}},
+
+    {"ReturnsWork", "int main() { return 1; }\nprint main();", {"1"}},
+    {"ReturnsWorkWithMultipleCalls",
+     "int main(bool a) {\n"
+     "if (a) return 1;\n"
+     "else return 2;\n"
+     "}\n"
+     "print main(true);\n"
+     "print main(false);",
+     {"1", "2"}},
+    {"ReturnsWorkWithEnclosedFunctions",
+     "void outer() {\n"
+     "void inner() {\n"
+     "return 1;\n"
+     "}\n"
+     "print inner();\n"
+     "print \"done\";\n"
+     "}\n"
+     "outer();",
+     {"1", "done"}},
+    {"ReturnsWorkWithMultipleReturnStatementsInOneFunction",
+     "int main(int a) {\n"
+     "if (a == 0) return 1;\n"
+     "if (a == 1) return 2;\n"
+     "}\n"
+     "print main(0);\n"
+     "print main(1);\n", {"1", "2"}},
+    {"ReturnsDoNotEndFunctionsPrematurely",
+     "int main() {\n"
+     "return 0;\n"
+     "print \"done\";\n"
+     "}\n"
+     "print main();",
+     {"0", "done"}},
+};

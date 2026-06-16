@@ -77,6 +77,20 @@ parseArgumentDeclarations(std::vector<Value> &args, int offset) {
   return std::make_pair(declarations, offset);
 }
 
+static std::pair<std::vector<int>, int>
+parseReturnIdsFromBytecodeArgs(std::vector<Value> &args, int offset) {
+  int count = std::get<int>(args[offset++].val);
+
+  std::vector<int> returnIds;
+
+  for (int i = 0; i < count; i++) {
+    int returnId = std::get<int>(args[offset++].val);
+    returnIds.push_back(returnId);
+  }
+
+  return std::make_pair(returnIds, offset);
+}
+
 static std::vector<int>
 getCompletionInstructionIds(std::shared_ptr<Subprogram> program) {
   std::vector<int> ids;
@@ -109,6 +123,12 @@ invalidArgTypesError(Instruction &instr, ValueType left, ValueType right) {
 void Executor::updateDependency(InstrDependent dep,
                                 std::shared_ptr<Value> result) {
   if (dep.disabled)
+    return;
+
+  // Don't re-set dep args
+  if (dep.argIndex.has_value() &&
+      dep.instr->depArgs.size() > dep.argIndex.value() &&
+      dep.instr->depArgs[dep.argIndex.value()].get() != nullptr)
     return;
 
   if (dep.argIndex.has_value()) {
@@ -559,6 +579,22 @@ void Executor::execSingleInstruction(Instruction &instr) {
       instr.program->at(instr.id + argDecIndex).scope = block.scope;
     }
 
+    // Remap subprogram return statements
+    auto returnIdsRes =
+        parseReturnIdsFromBytecodeArgs(instr.bytecodeArgs, argDecRes.second);
+    auto returnIds = returnIdsRes.first;
+
+    for (auto &dep : instr.dependents) {
+      if (dep.disabled || !dep.argIndex)
+        continue;
+
+      for (auto returnId : returnIds) {
+        body->at(returnId).dependents.push_back(dep);
+      }
+
+      dep.disabled = true;
+    }
+
     auto completionIds = getCompletionInstructionIds(body);
     for (auto dep : instr.dependents) {
       if (dep.disabled)
@@ -587,6 +623,10 @@ void Executor::execSingleInstruction(Instruction &instr) {
     // Only push once we've relinked everything
     queue.push(block);
 
+    break;
+  }
+  case InstructionType::Return: {
+    result = instr.depArgs[0];
     break;
   }
   default:
