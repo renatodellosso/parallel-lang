@@ -62,7 +62,7 @@ std::string instructionTypeToString(InstructionType type) {
 }
 
 InstrDependent::InstrDependent(Instruction *instr, std::optional<int> argIndex)
-    : instr(instr), argIndex(argIndex), disabled(false) {}
+    : instr(instr), argIndex(argIndex), disabled(false), returnLatch(nullptr) {}
 
 InstrDependent::InstrDependent(Instruction *instr, int argIndex)
     : InstrDependent(instr, std::make_optional(argIndex)) {}

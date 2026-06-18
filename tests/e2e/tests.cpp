@@ -150,6 +150,13 @@ std::vector<E2eTest> tests = {
      "}\n"
      "}",
      {"1", "2", "3", "4", "5"}},
+    {"WhileLoopsUpdateConditionAcrossIterations",
+     "int i = 0;\n"
+     "while (i < 3) {\n"
+     "i = i + 1;\n"
+     "}\n"
+     "print i;",
+     {"3"}},
 
     // Functions
     {"FunctionsCanBeDeclared", "void main() { print 1; }", {}},
@@ -258,6 +265,14 @@ std::vector<E2eTest> tests = {
      "}\n"
      "add(1, 2);",
      {"3"}},
+    {"CallsWithArgumentsDoNotShareParameterScopes",
+     "void printArg(int a) {\n"
+     "print a;\n"
+     "}\n"
+     "printArg(1);\n"
+     "printArg(2);\n"
+     "printArg(3);",
+     {"1", "2", "3"}},
     {"CallsWorkFromEnclosedFunctionsToEnclosingFunctions",
      "void outer(int x) {\n"
      "void inner(bool y) {\n"
@@ -297,6 +312,32 @@ std::vector<E2eTest> tests = {
      "}\n"
      "print main(0);\n"
      "print main(1);\n", {"1", "2"}},
+    {"ReturnsUseFirstExecutedReturnStatement",
+     "int main() {\n"
+     "return 1;\n"
+     "print \"done\";\n"
+     "return 2;\n"
+     "}\n"
+     "print main();",
+     {"1", "done"}},
+    {"ReturnsRunLaterSideEffectsWithoutOverwritingReturnValue",
+     "int a = 0;\n"
+     "int main() {\n"
+     "return 1;\n"
+     "a = 5;\n"
+     "return 2;\n"
+     "}\n"
+     "print main();\n"
+     "print a;",
+     {"1", "5"}},
+    {"ReturnsDoNotShareStateAcrossRepeatedArgumentCalls",
+     "int id(int a) {\n"
+     "return a;\n"
+     "}\n"
+     "print id(10);\n"
+     "print id(20);\n"
+     "print id(30);",
+     {"10", "20", "30"}},
     {"ReturnsDoNotEndFunctionsPrematurely",
      "int main() {\n"
      "return 0;\n"

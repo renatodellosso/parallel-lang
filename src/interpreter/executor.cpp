@@ -125,6 +125,9 @@ void Executor::updateDependency(InstrDependent dep,
   if (dep.disabled)
     return;
 
+  if (dep.returnLatch && dep.returnLatch->exchange(true))
+    return;
+
   // Don't re-set dep args
   if (dep.argIndex.has_value() &&
       dep.instr->depArgs.size() > dep.argIndex.value() &&
@@ -484,13 +487,18 @@ void Executor::execSingleInstruction(Instruction &instr) {
     int returnTo = instr.id + dist;
 
     for (int i = returnTo; i <= instr.id; i++) {
+      instr.program->at(i).depArgs.clear();
       for (auto dep : instr.program->at(i).dependents) {
         if (dep.instr->id > returnTo && dep.instr->id <= instr.id)
           dep.instr->depsFulfilled--;
       }
     }
 
-    queue.push(instr.program->at(returnTo));
+    for (int i = returnTo; i <= instr.id; i++) {
+      auto &loopInstr = instr.program->at(i);
+      if (loopInstr.depsFulfilled == loopInstr.depCount)
+        queue.push(loopInstr);
+    }
 
     break;
   }
@@ -527,6 +535,7 @@ void Executor::execSingleInstruction(Instruction &instr) {
     }
 
     auto &block = body->at(0);
+    block.scope = std::make_shared<Scope<Value>>(block.scope);
     block.depsFulfilled++;
 
     // Handle dependency remapping
@@ -584,15 +593,30 @@ void Executor::execSingleInstruction(Instruction &instr) {
         parseReturnIdsFromBytecodeArgs(instr.bytecodeArgs, argDecRes.second);
     auto returnIds = returnIdsRes.first;
 
+    auto returnLatch = std::make_shared<std::atomic_bool>(false);
     for (auto &dep : instr.dependents) {
       if (dep.disabled || !dep.argIndex)
         continue;
 
       for (auto returnId : returnIds) {
-        body->at(returnId).dependents.push_back(dep);
+        auto returnDep = dep;
+        returnDep.returnLatch = returnLatch;
+        body->at(returnId).dependents.push_back(returnDep);
       }
 
       dep.disabled = true;
+    }
+
+    for (int i = 1; i < returnIds.size(); i++) {
+      auto &prevReturn = body->at(returnIds[i - 1]);
+      auto &nextReturn = body->at(returnIds[i]);
+
+      prevReturn.dependents.emplace_back(&nextReturn);
+      {
+        std::lock_guard<std::mutex> fulfilledLock(
+            depsFulfilledMutexes[nextReturn.id]);
+        nextReturn.depCount++;
+      }
     }
 
     auto completionIds = getCompletionInstructionIds(body);

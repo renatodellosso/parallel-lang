@@ -2,6 +2,7 @@
 
 #include "scope.hpp"
 #include "value.hpp"
+#include <atomic>
 #include <memory>
 #include <optional>
 #include <string>
@@ -47,6 +48,7 @@ struct InstrDependent {
   std::optional<int> argIndex;
 
   bool disabled;
+  std::shared_ptr<std::atomic_bool> returnLatch;
 
   InstrDependent(Instruction *instr, std::optional<int> argIndex);
   InstrDependent(Instruction *instr, int argIndex);
