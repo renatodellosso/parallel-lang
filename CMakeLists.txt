@@ -19,7 +19,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(CLI)
 add_executable(Tests)
-add_executable(benchmark)
+add_executable(Benchmark)
 
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS src/*.cpp)
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
@@ -38,7 +38,7 @@ target_sources(Tests
     ${test_sources}
 )
 
-target_sources(benchmark
+target_sources(Benchmark
   PRIVATE
     ${sources}
     ${benchmark_sources}
