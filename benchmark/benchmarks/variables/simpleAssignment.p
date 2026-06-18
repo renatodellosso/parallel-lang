@@ -1,0 +1,4 @@
+int x = 42;
+int y = x;
+int z = y;
+print z;
