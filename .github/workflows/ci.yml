@@ -76,3 +76,44 @@ jobs:
       - name: Run Tests (Windows)
         run: ./build/Tests.exe
         if: ${{ matrix.os == 'windows-latest' }}
+
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    needs:
+      - build
+      - test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 4.1.1
+      - name: Configure CMake
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: cmake --build build --config Release
+      - name: Build (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cmake --build build
+      - name: Run Benchmarks
+        run: build/Benchmarks
+        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Run Benchmarks (Windows)
+        run: ./build/Benchmarks.exe
+        if: ${{ matrix.os == 'windows-latest' }}

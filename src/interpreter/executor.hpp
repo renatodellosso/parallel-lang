@@ -5,14 +5,22 @@
 #include "../instruction.hpp"
 #include "subprogram.hpp"
 #include <atomic>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
 
+struct ExecutionStats {
+  std::atomic_uint64_t executedInstructions;
+
+  ExecutionStats();
+};
+
 class Executor {
   const CliArgs &cliArgs;
   Subprogram &program;
+  ExecutionStats *stats;
   ConcurrentQueue<std::reference_wrapper<Instruction>> queue;
   std::vector<std::thread> workers;
   std::vector<std::atomic_bool> stalls;
@@ -43,6 +51,7 @@ class Executor {
   void initScopes();
 
 public:
-  Executor(const CliArgs &cliArgs, Subprogram &program);
+  Executor(const CliArgs &cliArgs, Subprogram &program,
+           ExecutionStats *stats = nullptr);
   void startExecution();
 };

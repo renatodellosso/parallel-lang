@@ -4,6 +4,7 @@
 #include "function.hpp"
 #include "subprogram.hpp"
 #include <chrono>
+#include <cstdint>
 #include <format>
 #include <functional>
 #include <memory>
@@ -17,6 +18,8 @@
 #include <vector>
 
 #define LOCATION "Executor"
+
+ExecutionStats::ExecutionStats() : executedInstructions(0) {}
 
 // Dep remaps are in the form <remap count> <dependent index> <new dependency
 // count> <new dependency ID in subprogram>. Returns <remaps, new offset>
@@ -216,6 +219,9 @@ void Executor::skipInstruction(Instruction &instr) {
 }
 
 void Executor::execSingleInstruction(Instruction &instr) {
+  if (stats)
+    stats->executedInstructions.fetch_add(1, std::memory_order_relaxed);
+
   if (cliArgs.verbose)
     log(LOCATION, "Executing instruction: {}", instr.toString());
   std::shared_ptr<Value> result;
@@ -787,8 +793,9 @@ void Executor::startExecution() {
     throw std::runtime_error(haltCause);
 }
 
-Executor::Executor(const CliArgs &cliArgs, Subprogram &program)
-    : cliArgs(cliArgs), program(program),
+Executor::Executor(const CliArgs &cliArgs, Subprogram &program,
+                   ExecutionStats *stats)
+    : cliArgs(cliArgs), program(program), stats(stats),
       stalls(std::vector<std::atomic_bool>(cliArgs.threads)),
       depArgsMutexes(std::vector<std::mutex>(program.size())),
       depsFulfilledMutexes(std::vector<std::mutex>(program.size())),
