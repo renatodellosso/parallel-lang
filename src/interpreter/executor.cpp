@@ -524,7 +524,8 @@ void Executor::execSingleInstruction(Instruction &instr) {
           depsFulfilledMutexes[loopInstr.id]);
       if (loopInstr.depsFulfilled == loopInstr.depCount) {
         if (cliArgs.verbose) {
-          log(LOCATION, "Looping back to instruction {}", loopInstr.toString());
+          log(LOCATION, "\tLooping back to instruction {}",
+              loopInstr.toString());
         }
         queue.push(loopInstr);
       }

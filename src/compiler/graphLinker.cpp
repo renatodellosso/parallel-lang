@@ -3,6 +3,7 @@
 #include "expression.hpp"
 #include "resource.hpp"
 #include <cmath>
+#include <deque>
 #include <format>
 #include <functional>
 #include <memory>
@@ -178,8 +179,7 @@ GraphLinker::captureResourceSnapshot() {
     if (!resource)
       continue;
 
-    snapshot[key] = {resource, resource->lastWrittenBy,
-                     resource->currAccesses};
+    snapshot[key] = {resource, resource->lastWrittenBy, resource->currAccesses};
   }
 
   return snapshot;
@@ -361,8 +361,7 @@ void GraphLinker::processExpression(Expression &expr) {
           addDependency(*innerExpr, *previousBranchMerge);
 
         auto ifExpr = dynamic_cast<IfExpression *>(innerExpr.get());
-        previousBranchMerge =
-            ifExpr ? ifExpr->mergeInstruction.get() : nullptr;
+        previousBranchMerge = ifExpr ? ifExpr->mergeInstruction.get() : nullptr;
       }
 
       int skip = 0;
@@ -452,25 +451,48 @@ void GraphLinker::processExpression(Expression &expr) {
 
       // Depend on everything between returnTo and expr
       // This is to allow loop bodies to run before restarting them
-      int conditionIndex = -1;
+      Expression *conditionExpr = nullptr;
       for (int i = returnTo; i < expr.id; i++) {
-        // Skip everything before the if statement
-        if (conditionIndex == -1) {
-          if (expressions.find(i)->second.get().type ==
-              InstructionType::While) {
-            conditionIndex = i;
-          }
+        auto &loopExpr = expressions.find(i)->second.get();
+
+        if (loopExpr.type == InstructionType::While) {
+          conditionExpr = &loopExpr;
+          break;
+        }
+      }
+
+      std::deque<std::pair<int, int>> skipRanges;
+      for (int i = returnTo; i < expr.id; i++) {
+        auto &loopExpr = expressions.find(i)->second.get();
+        if (i == conditionExpr->id || loopExpr.type != InstructionType::While)
           continue;
+
+        int rangeStart = loopExpr.id - loopExpr.countInstructions() + 1;
+        int blockSize = static_cast<BlockExpression *>(
+                            &expressions.find(loopExpr.id + 1)->second.get())
+                            ->expressions.size();
+
+        skipRanges.push_back({rangeStart, rangeStart + blockSize});
+      }
+
+      for (int i = returnTo; i < expr.id; i++) {
+        // Handle skipping nested loops
+        if (skipRanges.size() && i >= skipRanges.front().first &&
+            i <= skipRanges.front().second) {
+          i = skipRanges.front().second + 1;
+          skipRanges.pop_front();
         }
 
+        auto &loopExpr = expressions.find(i)->second.get();
+
         // Don't a dependency to the block since we'll already have one
-        if (i != conditionIndex + 1)
-          addDependency(expr, expressions.find(i)->second);
+        if (i > conditionExpr->id + 1)
+          addDependency(expr, loopExpr);
 
         // We've already linked everything in the loop body, so we don't have to
         // worry Nesting multiple levels of redirects
-        expressions.find(i)->second.get().dependentRedirect =
-            &expressions.find(conditionIndex)->second.get();
+        if (&loopExpr != conditionExpr)
+          loopExpr.dependentRedirect = conditionExpr;
       }
     }
   } catch (std::runtime_error err) {

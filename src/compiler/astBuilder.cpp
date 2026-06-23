@@ -484,8 +484,6 @@ void AstBuilder::postProcess(
 
       auto &unary = static_cast<UnaryExpression &>(expr);
       if (expr.type == InstructionType::While) {
-        expr.dependentRedirect = block.get();
-
         // Add goto
         int dist = -block->countInstructions() -
                    expr.countInstructions(); // negative so we go back
@@ -494,6 +492,7 @@ void AstBuilder::postProcess(
 
         auto jump = std::make_shared<RootExpression>(
             RootExpression(InstructionType::GoTo, expr.lineNumber, token));
+        jump->dependentRedirect = &expr;
         block->expressions.push_back(jump);
       }
     }
