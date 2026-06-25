@@ -11,3 +11,4 @@
 bool beginsWith(std::string str, std::string prefix);
 bool isInteger(const std::string &s);
 std::string formatNs(std::chrono::nanoseconds time);
+std::string replaceAll(std::string str, std::string from, std::string to);

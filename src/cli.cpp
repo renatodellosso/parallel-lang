@@ -16,7 +16,8 @@ const char *LOCATION = "CLI";
 
 const std::unordered_map<std::string, std::string> shortcuts = {
     {"-t", "--target"}, {"-c", "--compile"}, {"-i", "--interpret"},
-    {"-o", "--out"},    {"-e", "--verbose"}, {"-h", "--threads"}};
+    {"-o", "--out"},    {"-e", "--verbose"}, {"-h", "--threads"},
+    {"-d", "--debug"}};
 
 #define OPTIONS_HANDLER_PARAMS CliArgs &args, int i, int count, char *argv[]
 
@@ -24,77 +25,81 @@ const std::unordered_map<std::string, std::string> shortcuts = {
 // consumed
 const std::unordered_map<std::string,
                          std::function<int(CliArgs &, int, int, char *[])>>
-    options = {
-        {"--target",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           if (i == count - 1) {
-             logError(LOCATION, "Missing value for --target");
-             return 0;
-           }
+    options = {{"--target",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  if (i == count - 1) {
+                    logError(LOCATION, "Missing value for --target");
+                    return 0;
+                  }
 
-           args.target = std::string(argv[i + 1]);
+                  args.target = std::string(argv[i + 1]);
 
-           return 1;
-         }},
-        {"--out",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           if (i == count - 1) {
-             logError(LOCATION, "Missing value for --out");
-             return 0;
-           }
+                  return 1;
+                }},
+               {"--out",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  if (i == count - 1) {
+                    logError(LOCATION, "Missing value for --out");
+                    return 0;
+                  }
 
-           args.outputFile = std::make_optional(std::string(argv[i + 1]));
+                  args.outputFile =
+                      std::make_optional(std::string(argv[i + 1]));
 
-           return 1;
-         }},
-        {"--compile",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           if (args.mode != CliMode::Unset) {
-             logWarning(LOCATION, "CLI mode was set twice!");
-           }
+                  return 1;
+                }},
+               {"--compile",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  if (args.mode != CliMode::Unset) {
+                    logWarning(LOCATION, "CLI mode was set twice!");
+                  }
 
-           args.mode = CliMode::Compile;
+                  args.mode = CliMode::Compile;
 
-           return 0;
-         }},
-        {"--interpret",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           if (args.mode != CliMode::Unset) {
-             logWarning(LOCATION, "CLI mode was set twice!");
-           }
+                  return 0;
+                }},
+               {"--interpret",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  if (args.mode != CliMode::Unset) {
+                    logWarning(LOCATION, "CLI mode was set twice!");
+                  }
 
-           args.mode = CliMode::Interpret;
+                  args.mode = CliMode::Interpret;
 
-           return 0;
-         }},
-        {"--buildAndRun",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           if (args.mode != CliMode::Unset) {
-             logWarning(LOCATION, "CLI mode was set twice!");
-           }
+                  return 0;
+                }},
+               {"--buildAndRun",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  if (args.mode != CliMode::Unset) {
+                    logWarning(LOCATION, "CLI mode was set twice!");
+                  }
 
-           args.mode = CliMode::CompileAndInterpret;
+                  args.mode = CliMode::CompileAndInterpret;
 
-           return 0;
-         }},
-        {"--verbose",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           args.verbose = true;
+                  return 0;
+                }},
+               {"--verbose",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  args.verbose = true;
 
-           return 0;
-         }},
-        {"--threads",
-         [](OPTIONS_HANDLER_PARAMS) -> int {
-           if (i == count - 1) {
-             logError(LOCATION, "Missing value for --out");
-             return 0;
-           }
+                  return 0;
+                }},
+               {"--threads",
+                [](OPTIONS_HANDLER_PARAMS) -> int {
+                  if (i == count - 1) {
+                    logError(LOCATION, "Missing value for --out");
+                    return 0;
+                  }
 
-           args.threads = std::atoi(argv[i + 1]);
+                  args.threads = std::atoi(argv[i + 1]);
 
-           return 1;
-         }},
-};
+                  return 1;
+                }},
+               {"--debug", [](OPTIONS_HANDLER_PARAMS) -> int {
+                  args.debugBytecode = true;
+
+                  return 0;
+                }}};
 
 /**
  * If key is a shortcut, returns the expanded key. Otherwise, returns key.
@@ -108,8 +113,10 @@ std::string resolveShortcuts(std::string key) {
 
 CliArgs parseArgs(int argc, char *argv[]) {
   std::unordered_map<std::string, std::string> argMap;
-  CliArgs args = {
-      .outputFile = std::nullopt, .mode = CliMode::Unset, .threads = 1};
+  CliArgs args = {.outputFile = std::nullopt,
+                  .mode = CliMode::Unset,
+                  .threads = 1,
+                  .debugBytecode = false};
 
   // argv[0] is the executable path
   for (int i = 1; i < argc; i++) {
@@ -154,6 +161,11 @@ bool validateArgs(const CliArgs &args) {
         LOCATION,
         "Must specify an output file location using --out when compiling!");
     valid = false;
+  }
+
+  if (args.mode != CliMode::Compile && args.debugBytecode) {
+    logWarning(LOCATION,
+               "Bytecode debug mode only has an effect with compiling!");
   }
 
   return valid;

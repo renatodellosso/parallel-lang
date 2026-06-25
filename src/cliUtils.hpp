@@ -11,4 +11,5 @@ struct CliArgs {
   CliMode mode;
   bool verbose;
   int threads;
+  bool debugBytecode;
 };

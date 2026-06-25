@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../cli.hpp"
 #include "../instruction.hpp"
 #include "token.hpp"
 #include <cstddef>
@@ -58,7 +59,7 @@ struct Expression {
         dependentRedirect(nullptr) {}
 
   virtual std::string toString() const;
-  virtual std::string toByteCode() const;
+  virtual std::string toByteCode(CliArgs args) const;
   // Returns this expression and all its subexpressions, in the order they will
   // be executed
   virtual std::vector<std::reference_wrapper<Expression>>
@@ -81,7 +82,7 @@ struct RootExpression : public Expression {
       : Expression(type, lineNumber), token(token) {}
 
   std::string toString() const override;
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
 };
 
 struct UnaryExpression : public Expression {
@@ -92,7 +93,7 @@ struct UnaryExpression : public Expression {
       : Expression(type, lineNumber), root(std::move(root)) {}
 
   std::string toString() const override;
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   void linkInternally() override;
@@ -111,7 +112,7 @@ struct IfExpression : public UnaryExpression {
                std::shared_ptr<BlockExpression> elseBlock = nullptr);
 
   std::string toString() const override;
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   void linkInternally() override;
@@ -128,7 +129,7 @@ struct BinaryExpression : public Expression {
       : Expression(type, lineNumber), left(left), right(right) {}
 
   std::string toString() const override;
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   void linkInternally() override;
@@ -154,7 +155,7 @@ struct BlockExpression : public Expression {
   std::vector<int> getUnaryCallOffsets() const;
 
   std::string toString() const override;
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   int numberExpressions(int startWith) override;
@@ -208,7 +209,7 @@ struct FunctionExpression : public Expression {
       : FunctionExpression("unnamed_func", "void", lineNumber) {}
 
   std::string toString() const override;
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
   std::vector<std::reference_wrapper<Expression>>
   getWithSubExpressions() const override;
   void linkInternally() override;
@@ -236,7 +237,7 @@ struct UnaryCallExpression : public UnaryExpression {
     type = InstructionType::Call;
   }
 
-  std::string toByteCode() const override;
+  std::string toByteCode(CliArgs args) const override;
 };
 
 // First expression in expressions is the function identifier

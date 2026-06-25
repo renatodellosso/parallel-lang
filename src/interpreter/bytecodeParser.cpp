@@ -126,6 +126,15 @@ void BytecodeParser::buildSingleInstruction() {
     curr += c;
   }
 
+  if (curr == "//") {
+    // Skip comment line
+    while (stream.peek() != '\n' && stream.peek() != '\r' && !stream.fail() &&
+           !stream.eof()) {
+      stream.get();
+    }
+    return;
+  }
+
   // Skip ' '
   if (stream.peek() == ' ')
     stream.get();

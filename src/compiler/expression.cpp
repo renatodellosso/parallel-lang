@@ -1,4 +1,5 @@
 #include "expression.hpp"
+#include "../utils.hpp"
 #include "token.hpp"
 #include <algorithm>
 #include <format>
@@ -8,6 +9,10 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+static std::string getDebugString(const Expression &expr) {
+  return "// " + replaceAll(expr.toString(), "\n", "\n// ");
+}
 
 void addDependency(Expression &expr, Expression &dependsOn, int argIndex = -1) {
   int origSize = dependsOn.dependents.size();
@@ -38,8 +43,12 @@ std::string Expression::toString() const {
   return std::format("({}){}", id, instructionTypeToString(type));
 }
 
-std::string Expression::toByteCode() const {
+std::string Expression::toByteCode(CliArgs args) const {
   std::string bytecode = "";
+
+  if (args.debugBytecode) {
+    bytecode += getDebugString(*this) + "\n";
+  }
 
   // Write number of dependencies
   bytecode += std::to_string(dependencies.size());
@@ -79,16 +88,16 @@ std::string RootExpression::toString() const {
   return Expression::toString() + "(" + token.raw + ")";
 }
 
-std::string RootExpression::toByteCode() const {
-  return Expression::toByteCode() + " " + token.raw;
+std::string RootExpression::toByteCode(CliArgs args) const {
+  return Expression::toByteCode(args) + " " + token.raw;
 }
 
 std::string UnaryExpression::toString() const {
   return Expression::toString() + "(" + root.get()->toString() + ")";
 }
 
-std::string UnaryExpression::toByteCode() const {
-  return root->toByteCode() + "\n" + Expression::toByteCode();
+std::string UnaryExpression::toByteCode(CliArgs args) const {
+  return root->toByteCode(args) + "\n" + Expression::toByteCode(args);
 }
 
 std::vector<std::reference_wrapper<Expression>>
@@ -118,9 +127,9 @@ std::string BinaryExpression::toString() const {
          right.get()->toString() + ")";
 }
 
-std::string BinaryExpression::toByteCode() const {
-  return left->toByteCode() + "\n" + right->toByteCode() + "\n" +
-         Expression::toByteCode();
+std::string BinaryExpression::toByteCode(CliArgs args) const {
+  return left->toByteCode(args) + "\n" + right->toByteCode(args) + "\n" +
+         Expression::toByteCode(args);
 }
 
 std::vector<std::reference_wrapper<Expression>>
@@ -178,10 +187,10 @@ std::string BlockExpression::toString() const {
 
 // Outputs in format: "[# of calls] [call offset 1] [call offset 2] [call offset
 // 3]""
-std::string BlockExpression::toByteCode() const {
+std::string BlockExpression::toByteCode(CliArgs args) const {
   // Subtract 1 from count to exclude this instruction
-  std::string str =
-      Expression::toByteCode() + " " + std::to_string(countInstructions() - 1);
+  std::string str = Expression::toByteCode(args) + " " +
+                    std::to_string(countInstructions() - 1);
 
   auto callOffsets = getUnaryCallOffsets();
   str += " " + std::to_string(callOffsets.size());
@@ -192,7 +201,7 @@ std::string BlockExpression::toByteCode() const {
 
   // Use references
   for (auto &line : expressions) {
-    str += line->toByteCode() + "\n";
+    str += line->toByteCode(args) + "\n";
   }
 
   return str.erase(str.length() - 1); // Erase trailing \n
@@ -254,16 +263,17 @@ std::string IfExpression::toString() const {
   return str + "}";
 }
 
-std::string IfExpression::toByteCode() const {
-  std::string str = root->toByteCode() + "\n" + Expression::toByteCode() +
-                    "\n" + thenBlock->toByteCode();
+std::string IfExpression::toByteCode(CliArgs args) const {
+  std::string str = root->toByteCode(args) + "\n" +
+                    Expression::toByteCode(args) + "\n" +
+                    thenBlock->toByteCode(args);
 
   if (elseBlock) {
-    str +=
-        "\n" + elseInstruction->toByteCode() + "\n" + elseBlock->toByteCode();
+    str += "\n" + elseInstruction->toByteCode(args) + "\n" +
+           elseBlock->toByteCode(args);
   }
 
-  str += "\n" + mergeInstruction->toByteCode();
+  str += "\n" + mergeInstruction->toByteCode(args);
 
   return str;
 }
@@ -366,12 +376,12 @@ void FunctionExpression::findReturnStatements() {
 // Bytecode params are in format "[returnType] [name] [# of params] [param i
 // type] [param i name] [first uses] [first writes] [last uses] [last
 // writes]"
-std::string FunctionExpression::toByteCode() const {
+std::string FunctionExpression::toByteCode(CliArgs args) const {
   // Subtract 1 from count to exclude this instruction
   std::string str =
-      Expression::toByteCode() + " " + returnType + " " + name + "\n";
+      Expression::toByteCode(args) + " " + returnType + " " + name + "\n";
 
-  str += body->toByteCode();
+  str += body->toByteCode(args);
 
   return str;
 }
@@ -419,9 +429,10 @@ getCallArgMappings(const UnaryCallExpression &call) {
 // Bytecode args are in format "[dependency remapping count] [[param index]
 // [dependent count] [dependent subprogram ID]] [argument remapping count]
 // [[argument ID relative to call] [first uses count] [first use subprogram ID]]
-// [argument count] [[argument offset relative to call]] [return statement count] [[return statement subprogram ID]]"
-std::string UnaryCallExpression::toByteCode() const {
-  std::string bytecode = UnaryExpression::toByteCode();
+// [argument count] [[argument offset relative to call]] [return statement
+// count] [[return statement subprogram ID]]"
+std::string UnaryCallExpression::toByteCode(CliArgs args) const {
+  std::string bytecode = UnaryExpression::toByteCode(args);
 
   // -1 so the block (1st in subprogram) is at offset 0
   int subprogramOffset = -function.value().get().id - 1;
@@ -461,7 +472,8 @@ std::string UnaryCallExpression::toByteCode() const {
   // Write return statement remappings
   bytecode += " " + std::to_string(function->get().returnStatements.size());
   for (auto returnStatement : function->get().returnStatements) {
-    bytecode += " " + std::to_string(returnStatement.get().id + subprogramOffset);
+    bytecode +=
+        " " + std::to_string(returnStatement.get().id + subprogramOffset);
   }
 
   return bytecode;

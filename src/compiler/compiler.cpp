@@ -1,5 +1,6 @@
 #include "compiler.hpp"
 #include "../logging.hpp"
+#include "../utils.hpp"
 #include "astBuilder.hpp"
 #include "graphLinker.hpp"
 #include "tokenizer.hpp"
@@ -81,7 +82,7 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   std::string bytecode = "";
   for (auto expr : *astBuilder.getExpressions().get()) {
-    bytecode += expr->toByteCode() + "\n";
+    bytecode += expr->toByteCode(args) + "\n";
   }
   bytecode = bytecode.substr(0, bytecode.length() - 1); // Remove trailing '\n'
   auto result = writeOutput(bytecode);
