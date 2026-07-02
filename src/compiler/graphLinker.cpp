@@ -54,14 +54,25 @@ addDependency(Expression &expr, Expression &dependsOn,
   if (dependsOn.type == InstructionType::Call) {
     // Handle dependency remapping
 
-    if (!resourceName)
-      throw std::runtime_error(
-          std::format("Tried to add dependency from {} to {}, but no resource "
-                      "name was provided!",
-                      expr.toString(), dependsOn.toString()));
-
     auto &call = static_cast<UnaryCallExpression &>(dependsOn);
     auto func = call.function.value().get();
+
+    if (!resourceName) {
+      if (expr.type != InstructionType::GoTo)
+        throw std::runtime_error(std::format(
+            "Tried to add dependency from {} to {}, but no resource name was "
+            "provided!",
+            expr.toString(), dependsOn.toString()));
+
+      // We have a GoTo as part of a while loop
+      // Depend on everything right now
+
+      for (auto &use : func.lastUses) {
+        call.depRemaps[call.dependents.size() - 1] = use.second;
+      }
+
+      return;
+    }
 
     auto lastUses = func.lastUses.find(resourceName.value());
     if (lastUses == func.lastUses.end())
@@ -372,10 +383,21 @@ void GraphLinker::processExpression(Expression &expr) {
         }
 
         // Handle nested blocks
-        auto inner = expressions.find(expr.id + i + 1)->second;
+        auto found = expressions.find(expr.id + i + 1);
+        if (found == expressions.end())
+          log(LOCATION,
+              "Block expression at {} expected to have "
+              "an inner expression at "
+              "id {}, but it did not exist!",
+              expr.toString(), expr.id + i + 1);
+
+        auto inner = found->second;
         if (inner.get().type == InstructionType::Block) {
           skip = static_cast<BlockExpression *>(&expr)->expressions.size();
         }
+
+        if (cliArgs.verbose)
+          log(LOCATION, "Inner expression: {}", inner.get().toString());
 
         // Only add dependencies to root-level expressions, blocks, and
         // functions. All other exprs will have intra-block dependencies that
@@ -629,6 +651,9 @@ void GraphLinker::syntaxError(int line, std::string msg) {
 }
 
 void GraphLinker::linkIteration(std::reference_wrapper<Expression> expr) {
+  if (cliArgs.verbose)
+    log(LOCATION, "Linking expression: {}", expr.get().toString());
+
   if (expr.get().type == InstructionType::Function)
     enterFunction(expr);
 

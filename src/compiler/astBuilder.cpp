@@ -2,6 +2,7 @@
 #include "expression.hpp"
 #include "token.hpp"
 #include <format>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -451,13 +452,10 @@ void AstBuilder::postProcessWhileLoop(
   auto body = std::static_pointer_cast<BlockExpression>(expressions->at(i + 1));
 
   // Add goto
-  int dist = -body->countInstructions() -
-             loop->countInstructions(); // negative so we go back
-  Token token = {TokenType::Literal, TokenSubtype::Integer,
-                 std::to_string(dist), loop->lineNumber};
-
+  Token jumpToken = {TokenType::Literal, TokenSubtype::Integer,
+                     std::to_string(-1), loop->lineNumber};
   auto jump = std::make_shared<RootExpression>(
-      RootExpression(InstructionType::GoTo, loop->lineNumber, token));
+      RootExpression(InstructionType::GoTo, loop->lineNumber, jumpToken));
   jump->dependentRedirect = loop.get();
 
   auto origLoop = std::make_shared<UnaryExpression>(
@@ -479,16 +477,24 @@ void AstBuilder::postProcessWhileLoop(
       std::vector<std::shared_ptr<Expression>>{std::move(call), jump},
       loop->lineNumber);
 
+  // Update jump distance
+  std::static_pointer_cast<RootExpression>(jump)->token.raw = std::to_string(
+      -1 * (loop->countInstructions() + innerBlock->countInstructions() - 1));
+
   // Make outer block
   auto block = std::make_unique<BlockExpression>(loop->lineNumber);
   block->expressions.push_back(std::move(func));
+  block->expressions.push_back(body); // func->body will be set in postProcess
   block->expressions.push_back(std::make_shared<UnaryExpression>(
       *static_cast<UnaryExpression *>(loop.get())));
   block->expressions.push_back(std::move(innerBlock));
 
-  *loop = *block.release();
+  // Replace the expression at loop with block
+  (*expressions)[i] = std::move(block);
 
-  postProcess(&block->expressions);
+  // Can't use block anymore
+  postProcess(&std::static_pointer_cast<BlockExpression>(expressions->at(i))
+                   ->expressions);
 }
 
 void AstBuilder::postProcess(

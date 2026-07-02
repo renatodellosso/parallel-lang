@@ -41,7 +41,10 @@ compile(const CliArgs &args, std::istream &inputStream,
 
   int exprId = 0;
   for (auto expr : *astBuilder.getExpressions().get()) {
+    int orig = exprId;
     exprId = expr->numberExpressions(exprId);
+    std::cout << "Numbered from " << orig << " to " << exprId << ": "
+              << expr->toString() << std::endl;
   }
 
   if (shouldLog)

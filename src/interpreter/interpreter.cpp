@@ -35,6 +35,8 @@ ExitCode Interpreter::interpret(std::istream &stream) {
     auto program = std::make_shared<Subprogram>(instrs);
     program->setSubprogramPointers(program);
 
+    std::cout << "Subprogram size: " << program->size() << std::endl;
+
     Executor *executor = new Executor(args, *program.get());
     executor->startExecution();
 
